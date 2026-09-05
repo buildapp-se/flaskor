@@ -4,7 +4,7 @@
 
 ## Byggt
 
-v1 byggd 2026-09-05 i chunk-läge (commits `ca195ed` till `1359ed6`): tsc, 23 enhetstester, 11 Worker-tester i workerd, `vite build`, Chromium 1 280 och 390 px mot `vite dev` och `wrangler dev`. Ingen molndeploy än, se `HANDOFF.md` §Nästa steg.
+v1 byggd 2026-09-05 i chunk-läge (commits `ca195ed` till `c1de427`): tsc, 23 enhetstester, 11 Worker-tester i workerd, `vite build`, Chromium 1 280 och 390 px mot `vite dev` och `wrangler dev`. Samma kväll i molnet: D1, Worker på `flaskor-api.buildapp.se`, GitHub Pages på `buildapp.se/flaskor`, 21 seedade rader. Secreten `GATE_CODE` saknas, se `HANDOFF.md` §Nästa steg.
 
 ## Designrunda (före kod)
 
@@ -31,7 +31,7 @@ v1 byggd 2026-09-05 i chunk-läge (commits `ca195ed` till `1359ed6`): tsc, 23 en
 
 ## Efter första molndeployen
 
-- [ ] `[P1]` Verifiera live: grinden mot `flaskor-api.buildapp.se`, seed mot molnets D1, cron-körningen morgonen efter, PWA-installation på Patriks och Julias telefoner.
+- [ ] `[P1]` Verifiera live efter att `GATE_CODE` satts: grinden mot `flaskor-api.buildapp.se`, cron-körningen morgonen efter, PWA-installation på Patriks och Julias telefoner. (D1, Worker, Pages och seed gjorda 2026-09-05.)
 - [ ] `[P2]` Caviste-bilden: sidans första `CAV<nr>`-bild är paketets liggande banner, inte en flaska (upptäckt vid seed 2026-09-05). Antingen `object-fit: cover`, en annan bild från sidan, eller ingen bild för Caviste-rader.
 - [ ] `[P2]` Grindkoden ligger i localStorage i klartext på delad dator; räcker tills Firebase Auth (beslut 2).
 - [ ] `[P2]` Ta bort en rad (finns inte i v1: en felinlagd rad kan bara flyttas mellan önskelista och källare).

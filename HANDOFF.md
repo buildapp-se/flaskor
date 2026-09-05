@@ -1,37 +1,31 @@
 ---
 schemaVersion: 1
 status: active
-currentGoal: v1 byggd och verifierad lokalt 2026-09-05 (alla P0 och P1 i BACKLOG.md). Inget i molnet än, Patrik skapar D1, secret och Pages.
-nextAction: Patrik kör kommandona under §Nästa steg i ordning (D1, secret, migrering, Worker-deploy, Pages, seed), sedan verifieras live.
-blockers: []
+currentGoal: v1 byggd 2026-09-05 och live på buildapp.se/flaskor med Worker och seedad D1. Bara grindkodens secret saknas.
+nextAction: Patrik kör `npx wrangler secret put GATE_CODE` i C:\dev\flaskor, öppnar https://buildapp.se/flaskor, skriver koden och ser 21 viner. Sedan ja eller nej på §Val tagna åt Patrik.
+blockers: [GATE_CODE saknas i molnet, alla API-anrop ger 500 "GATE_CODE is not configured" tills den finns]
 reviewedAt: 2026-09-05
 ---
 
 # Handoff: Flaskor
 
-Senast uppdaterad: 2026-09-05 kl. 21:20, v1 byggd.
+Senast uppdaterad: 2026-09-05 kl. 21:27, v1 i molnet utom secreten.
 
 ## Läge
 
-Hela v1 finns i `main` (commits `ca195ed` till `1359ed6` plus dokumentcommit), en commit per backlogpunkt. Verifierat lokalt: `tsc -b`, 23 enhetstester (piller, tumregel, format, Systembolaget-parsern mot två sparade produktsidor i `worker/test/fixtures/`), 11 Worker-tester i riktig workerd med lokal D1, `wrangler deploy --dry-run`, `vite build`, och alla fem vyer i Chromium på 1 280 och 390 px mot `vite dev` (port 5180) och `wrangler dev` (8787). Startdatan (21 Caviste-rader, alla med bild) ligger i den lokala D1:n via `npm run seed`.
+Hela v1 finns i `main` (commits `ca195ed` till `c1de427`), en commit per backlogpunkt. Verifierat lokalt: `tsc -b`, 23 enhetstester (piller, tumregel, format, Systembolaget-parsern mot två sparade produktsidor i `worker/test/fixtures/`), 11 Worker-tester i riktig workerd med lokal D1, `wrangler deploy --dry-run`, `vite build`, och alla fem vyer i Chromium på 1 280 och 390 px mot `vite dev` (port 5180) och `wrangler dev` (8787).
 
-Molnet: D1 finns inte, secreten finns inte, Workern är inte deployad, GitHub Pages är inte aktiverat. CI-körningarna på `main` faller på steget `configure-pages` av just det skälet; test, dry-run och build är gröna i CI.
+Molnet, 2026-09-05 kl. 21:25: D1 `flaskor` skapad (region EEUR, id i `wrangler.jsonc`), migrering 0001 körd, Workern deployad som version `b251db85` med routen `flaskor-api.buildapp.se` (DNS skapad av wrangler, `/health` svarar 200) och cron `0 2 * * *`, GitHub Pages aktiverat med Actions och workflowkörningen grön, https://buildapp.se/flaskor svarar 200 och bundeln bär API-adressen, `npm run seed -- --remote` la 21 rader med bild i molnets D1. **Secreten `GATE_CODE` finns inte**: Workern svarar 500 på `/api/*` tills den sätts, så appen går inte att låsa upp än.
 
 Layout: `src/` (React, en CSS-fil `app.css` ovanpå `tokens.css`), `shared/` (typer, fel, piller- och tumregellogik, delas av klient och Worker), `worker/` (routes i `src/index.ts`, D1 i `src/db.ts`, Systembolaget i `src/systembolaget.ts`, migreringar, tester, fixturer), `scripts/seed.ts`, `design/` (facit).
 
 ## Nästa steg
 
-Kör i `C:\dev\flaskor`, i ordning. Steg 1, 2 och 5 är dina enligt stoppreglerna (skapa databas, skapa secret, publicera).
+1. **Grindkoden, ditt steg:** i `C:\dev\flaskor`: `npx wrangler secret put GATE_CODE`, skriv koden när den frågar. Den hamnar aldrig i repot eller i en chatt. Lokalt läser `wrangler dev` `.dev.vars`, kopierad från `.dev.vars.example`. (D1, migrering, Worker-deploy, Pages och seed kördes 2026-09-05 kl. 21:25 på Patriks "kör dom".)
+2. **Verifiera live:** öppna https://buildapp.se/flaskor, skriv koden, se 21 viner i Källaren. Lägg till ett Systembolagsvin via nummer. Installera som app på telefonen (Dela, Lägg till på hemskärmen).
+3. **Cron:** morgonen efter, `npx wrangler tail flaskor-api` runt 04:00 eller kolla "Kollat" i detaljvyn för ett Systembolagsvin.
 
-1. **D1 i molnet:** `npx wrangler d1 create flaskor`. Klistra in `database_id` ur svaret i `wrangler.jsonc` (raden med nollor) och committa.
-2. **Grindkoden:** `npx wrangler secret put GATE_CODE` (skriv koden när den frågar; den hamnar aldrig i repot). Lokalt läser `wrangler dev` `.dev.vars`, kopierad från `.dev.vars.example`.
-3. **Schemat:** `npm run db:migrate:remote`.
-4. **Workern:** `npm run worker:deploy`. Routen `flaskor-api.buildapp.se` står som `custom_domain` i `wrangler.jsonc`, så wrangler skapar DNS-posten i Cloudflare-zonen `buildapp.se` själv, som för Beefcake. Kolla: `curl https://flaskor-api.buildapp.se/health` ska ge `{"ok":true}`.
-5. **GitHub Pages:** `gh api -X POST repos/buildapp-se/flaskor/pages -f build_type=workflow`, sedan `gh workflow run deploy.yml --repo buildapp-se/flaskor`. Live på https://buildapp.se/flaskor efter körningen (user-site-tricket, som Sipdeck).
-6. **Startdata:** `npm run seed -- --remote` (hämtar Caviste-bilderna på nytt, tar ~10 s).
-7. **Verifiera live:** öppna https://buildapp.se/flaskor, skriv koden, se 21 viner i Källaren. Morgonen efter: `npx wrangler tail flaskor-api` runt 04:00 eller kolla `price_checked_at` i detaljvyn för ett Systembolagsvin.
-
-Sedan: punkterna under "Efter första molndeployen" i `BACKLOG.md`, främst Caviste-bilden.
+Sedan: punkterna under "Efter första molndeployen" i `BACKLOG.md`, främst Caviste-bilden, och ja eller nej på §Val tagna åt Patrik.
 
 ## Val tagna åt Patrik
 
