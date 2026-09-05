@@ -11,7 +11,7 @@ värdering, ingen community.
 
 ## Produkten
 
-Fyra vyer ur samma data:
+Fem vyer ur samma data:
 - **Källaren**: ägda viner, grupperade på typ (rött, vitt, mousserande), sorterade på
   pris. Sök, chips för typ, land och drickstatus. En rad överst: "Dags att dricka: N".
 - **Önskelistan**: vin och sprit man vill köpa, lagda via Systembolagets artikelnummer
