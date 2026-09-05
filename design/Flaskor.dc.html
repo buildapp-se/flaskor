@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#E4DCCB;color:#211B12;font-family:'Work Sans',sans-serif;-webkit-font-smoothing:antialiased}
+a{color:#85444F}a:hover{color:#6F303C}
+</style>
+</helmet>
+
+<div style="padding:56px;display:flex;flex-direction:column;gap:64px;font-size:14px;line-height:1.5;color:#211B12">
+
+<!-- ═══ 0. Titel ═══ -->
+<section data-screen-label="Intro" style="max-width:920px;display:flex;flex-direction:column;gap:12px">
+  <div style="font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#6E6455;font-weight:500">Designspecifikation · syskon till Sipdeck</div>
+  <h1 style="font-family:'Instrument Serif',serif;font-weight:400;font-size:64px;line-height:1;margin:0">Flaskor</h1>
+  <p style="font-size:16px;color:#6E6455;max-width:640px;margin:0;text-wrap:pretty">Hushållets viner och spritflaskor: vad som finns hemma, vad som ska köpas, och när vinet bör drickas. Fem vyer ur samma data, för Patrik och Julia.</p>
+  <div style="display:flex;gap:24px;font-size:13px;color:#6E6455;margin-top:8px"><span>1 Tokens</span><span>2 Piller</span><span>3 Artboards</span><span>4 Appikon</span><span>5 Gör inte</span></div>
+</section>
+
+<!-- ═══ 1. Tokens ═══ -->
+<section data-screen-label="1 Tokens" style="display:flex;flex-direction:column;gap:32px">
+  <div style="display:flex;flex-direction:column;gap:6px"><div style="font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#6E6455;font-weight:500">1 · Tokens</div><h2 style="font-family:'Instrument Serif',serif;font-weight:400;font-size:36px;margin:0">Färg, typ, avstånd</h2><p style="color:#6E6455;margin:0;max-width:640px">Ljust läge. Mörkt läge stryks: appen används hemma och i butik i dagsljus, och den varma papperskänslan är själva identiteten. Läggs till senare om behovet uppstår.</p></div>
+
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px;max-width:1240px">
+    <div style="background:#FBF7EF;border-radius:12px;box-shadow:0 1px 2px rgba(33,27,18,.06),0 12px 32px -12px rgba(33,27,18,.25);overflow:hidden"><div style="height:72px;background:#EFE8DB"></div><div style="padding:12px 14px;display:flex;flex-direction:column;gap:2px"><div style="font-weight:500">--fl-bg</div><div style="color:#6E6455;font-size:12px;font-family:ui-monospace,monospace">#EFE8DB</div><div style="font-size:12px;color:#6E6455">Bakgrund · ärvd</div></div></div>
+    <div style="background:#FBF7EF;border-radius:12px;box-shadow:0 1px 2px rgba(33,27,18,.06),0 12px 32px -12px rgba(33,27,18,.25);overflow:hidden"><div style="height:72px;background:#FBF7EF;border-bottom:1px solid rgba(33,27,18,.14)"></div><div style="padding:12px 14px;display:flex;flex-direction:column;gap:2px"><div style="font-weight:500">--fl-surface</div><div style="color:#6E6455;font-size:12px;font-family:ui-monospace,monospace">#FBF7EF</div><div style="font-size:12px;color:#6E6455">Yta, kort · ärvd</div></div></div>
+    <div style="background:#FBF7EF;border-radius:12px;box-shadow:0 1px 2px rgba(33,27,18,.06),0 12px 32px -12px rgba(33,27,18,.25);overflow:hidden"><div style="height:72px;background:#211B12"></div><div style="padding:12px 14px;display:flex;flex-direction:column;gap:2px"><div style="font-weight:500">--fl-ink</div><div style="color:#6E6455;font-size:12px;font-family:ui-monospace,monospace">#211B12</div><div style="font-size:12px;color:#6E6455">Bläck · ärvd</div></div></div>
+    <div style="background:#FBF7EF;border-radius:12px;box-shadow:0 1px 2px rgba(33,27,18,.06),0 12px 32px -12px rgba(33,27,18,.25);overflow:hidden"><div style="height:72px;background:#6E6455"></div><div style="padding:12px 14px;display:flex;flex-direction:column;gap:2px"><div style="font-weight:500">--fl-ink-2</div><div style="color:#6E6455;font-size:12px;font-family:ui-monospace,monospace">#6E6455</div><div style="font-size:12px;color:#6E6455">Sekundärt bläck · ärvd</div></div></div>
+    <div style="background:#FBF7EF;border-radius:12px;box-shadow:0 1px 2px rgba(33,27,18,.06),0 12px 32px -12px rgba(33,27,18,.25);overflow:hidden"><div style="height:72px;background:#85444F"></div><div style="padding:12px 14px;display:flex;flex-direction:column;gap:2px"><div style="font-weight:500">--fl-accent</div><div style="color:#6E6455;font-size:12px;font-family:ui-monospace,monospace">#85444F · oklch(.47 .09 10)</div><div style="font-size:12px;color:#6E6455">Vinröd · egen</div></div></div>
+    <div style="background:#FBF7EF;border-radius:12px;box-shadow:0 1px 2px rgba(33,27,18,.06),0 12px 32px -12px rgba(33,27,18,.25);overflow:hidden"><div style="height:72px;background:#6F303C"></div><div style="padding:12px 14px;display:flex;flex-direction:column;gap:2px"><div style="font-weight:500">--fl-accent-hover</div><div style="color:#6E6455;font-size:12px;font-family:ui-monospace,monospace">#6F303C · oklch(.40 .09 10)</div><div style="font-size:12px;color:#6E6455">Tryckt/hover</div></div></div>
+    <div style="background:#FBF7EF;border-radius:12px;box-shadow:0 1px 2px rgba(33,27,18,.06),0 12px 32px -12px rgba(33,27,18,.25);overflow:hidden"><div style="height:72px;background:#FBE0E3"></div><div style="padding:12px 14px;display:flex;flex-direction:column;gap:2px"><div style="font-weight:500">--fl-accent-tint</div><div style="color:#6E6455;font-size:12px;font-family:ui-monospace,monospace">#FBE0E3</div><div style="font-size:12px;color:#6E6455">Aktiv chip, markerad rad</div></div></div>
+    <div style="background:#FBF7EF;border-radius:12px;box-shadow:0 1px 2px rgba(33,27,18,.06),0 12px 32px -12px rgba(33,27,18,.25);overflow:hidden"><div style="height:72px;background:#2F6B3F"></div><div style="padding:12px 14px;display:flex;flex-direction:column;gap:2px"><div style="font-weight:500">--fl-ok</div><div style="color:#6E6455;font-size:12px;font-family:ui-monospace,monospace">#2F6B3F · tint #D8EFDC</div><div style="font-size:12px;color:#6E6455">Status Drick</div></div></div>
+    <div style="background:#FBF7EF;border-radius:12px;box-shadow:0 1px 2px rgba(33,27,18,.06),0 12px 32px -12px rgba(33,27,18,.25);overflow:hidden"><div style="height:72px;background:#875800"></div><div style="padding:12px 14px;display:flex;flex-direction:column;gap:2px"><div style="font-weight:500">--fl-soon</div><div style="color:#6E6455;font-size:12px;font-family:ui-monospace,monospace">#875800 · tint #FBE9C6</div><div style="font-size:12px;color:#6E6455">Status Snart</div></div></div>
+    <div style="background:#FBF7EF;border-radius:12px;box-shadow:0 1px 2px rgba(33,27,18,.06),0 12px 32px -12px rgba(33,27,18,.25);overflow:hidden"><div style="height:72px;background:#9A322A"></div><div style="padding:12px 14px;display:flex;flex-direction:column;gap:2px"><div style="font-weight:500">--fl-past</div><div style="color:#6E6455;font-size:12px;font-family:ui-monospace,monospace">#9A322A · tint #FFE0DB</div><div style="font-size:12px;color:#6E6455">Status Förbi</div></div></div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;max-width:1240px;align-items:start">
+    <div style="background:#FBF7EF;border-radius:12px;padding:24px;display:flex;flex-direction:column;gap:16px;box-shadow:0 1px 2px rgba(33,27,18,.06),0 12px 32px -12px rgba(33,27,18,.25)">
+      <div style="font-weight:600">Varför vinröd</div>
+      <p style="margin:0;color:#6E6455;text-wrap:pretty">Alla tre kandidater klarar AA med marginal (oliv 5,53:1, terrakotta 5,80:1, vinröd 5,87:1 mot bakgrunden). Valet avgörs av grannskapet: oliv ligger tolv nyanssteg från Drick-grönt och terrakotta ligger mellan Snart-gult och Förbi-rött. Vinröd (nyans 10) är den enda som skiljer sig tydligt både från bakgrundens varma gulton och från alla fyra pillerfärger, så en fylld knapp eller aktiv flik aldrig läses som status. Mot Förbi-rött hålls avståndet med regeln längre ner: accent förekommer aldrig i ett piller, status aldrig som knapp eller länk.</p>
+      <div style="font-weight:600;margin-top:8px">Kontrast, WCAG AA</div>
+      <div style="display:grid;grid-template-columns:auto auto 1fr;gap:6px 16px;font-size:13px;font-variant-numeric:lining-nums tabular-nums">
+        <div style="color:#6E6455">Bläck</div><div style="color:#6E6455">på bg / kort</div><div>14,01 · 15,98</div>
+        <div style="color:#6E6455">Sekundärt bläck</div><div style="color:#6E6455">på bg / kort</div><div>4,77 · 5,43</div>
+        <div style="color:#6E6455">Accent</div><div style="color:#6E6455">på bg / kort</div><div>5,87 · 6,69</div>
+        <div style="color:#6E6455">Kort på accent</div><div style="color:#6E6455">knapptext</div><div>6,69</div>
+        <div style="color:#6E6455">Accent på accent-tint</div><div style="color:#6E6455">aktiv chip</div><div>5,74</div>
+        <div style="color:#6E6455">Grön</div><div style="color:#6E6455">på tint / kort</div><div>5,25 · 5,96</div>
+        <div style="color:#6E6455">Gul</div><div style="color:#6E6455">på tint / kort</div><div>5,13 · 5,74</div>
+        <div style="color:#6E6455">Röd</div><div style="color:#6E6455">på tint / kort</div><div>5,91 · 6,86</div>
+        <div style="color:#6E6455">Grå (ink-2)</div><div style="color:#6E6455">på tint / kort</div><div>5,10 · 5,43</div>
+      </div>
+    </div>
+    <pre style="margin:0;background:#211B12;color:#EFE8DB;border-radius:12px;padding:20px 24px;font-size:12px;line-height:1.55;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;overflow:auto">:root {
+  /* färg */
+  --fl-bg: #EFE8DB;
+  --fl-surface: #FBF7EF;
+  --fl-ink: #211B12;
+  --fl-ink-2: #6E6455;
+  --fl-line: rgba(33,27,18,.14);
+  --fl-accent: #85444F;
+  --fl-accent-hover: #6F303C;
+  --fl-accent-tint: #FBE0E3;
+  --fl-ok: #2F6B3F;       --fl-ok-tint: #D8EFDC;
+  --fl-soon: #875800;     --fl-soon-tint: #FBE9C6;
+  --fl-past: #9A322A;     --fl-past-tint: #FFE0DB;
+  --fl-wait: #6E6455;     --fl-wait-tint: rgba(33,27,18,.06);
+
+  /* typ */
+  --fl-font-serif: 'Instrument Serif', Georgia, serif;
+  --fl-font-sans: 'Work Sans', system-ui, sans-serif;
+  --fl-display: 400 40px/1.05 var(--fl-font-serif);
+  --fl-title: 400 24px/1.15 var(--fl-font-serif);
+  --fl-name: 400 18px/1.2 var(--fl-font-serif);
+  --fl-body: 400 15px/1.5 var(--fl-font-sans);
+  --fl-label: 500 12px/1.2 var(--fl-font-sans);
+  --fl-amount: 500 15px/1.2 var(--fl-font-sans);
+  --fl-nums: lining-nums tabular-nums;
+
+  /* avstånd, radier, skugga */
+  --fl-s1: 4px; --fl-s2: 8px; --fl-s3: 12px; --fl-s4: 16px;
+  --fl-s5: 24px; --fl-s6: 32px; --fl-s7: 48px;
+  --fl-r-pill: 999px; --fl-r-sm: 8px; --fl-r-md: 12px; --fl-r-lg: 20px;
+  --fl-shadow: 0 1px 2px rgba(33,27,18,.06),
+               0 12px 32px -12px rgba(33,27,18,.25);
+  --fl-touch: 44px;
+}</pre>
+  </div>
+
+  <div style="background:#FBF7EF;border-radius:12px;padding:24px;max-width:1240px;display:grid;grid-template-columns:140px 1fr;gap:20px 32px;align-items:baseline;box-shadow:0 1px 2px rgba(33,27,18,.06),0 12px 32px -12px rgba(33,27,18,.25)">
+    <div style="font-size:12px;color:#6E6455;font-weight:500">display 40</div><div style="font-family:'Instrument Serif',serif;font-size:40px;line-height:1.05">Källaren</div>
+    <div style="font-size:12px;color:#6E6455;font-weight:500">title 24</div><div style="font-family:'Instrument Serif',serif;font-size:24px;line-height:1.15">Rött · 6 flaskor</div>
+    <div style="font-size:12px;color:#6E6455;font-weight:500">name 18 kursiv</div><div style="font-family:'Instrument Serif',serif;font-style:italic;font-size:18px">Châteauneuf-du-Pape 2024</div>
+    <div style="font-size:12px;color:#6E6455;font-weight:500">body 15</div><div style="font-size:15px">Smakade gött, köp mer. Passar till lammstek och kantareller.</div>
+    <div style="font-size:12px;color:#6E6455;font-weight:500">label 12</div><div style="font-size:12px;font-weight:500;letter-spacing:.02em">ÅRGÅNG · DRUVOR · URSPRUNG</div>
+    <div style="font-size:12px;color:#6E6455;font-weight:500">amount 15 tabular</div><div style="font-size:15px;font-weight:500;font-variant-numeric:lining-nums tabular-nums">1 125 kr &nbsp;·&nbsp; 12,5 % &nbsp;·&nbsp; 3 flaskor</div>
+  </div>
+</section>
+
+<!-- ═══ 2. Piller ═══ -->
+<section data-screen-label="2 Piller" style="display:flex;flex-direction:column;gap:24px">
+  <div style="display:flex;flex-direction:column;gap:6px"><div style="font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#6E6455;font-weight:500">2 · Komponent</div><h2 style="font-family:'Instrument Serif',serif;font-weight:400;font-size:36px;margin:0">Drickfönstrets piller</h2><p style="color:#6E6455;margin:0;max-width:640px">Fem tillstånd. Prick plus ord, aldrig bara färg. I listan: 24 px hög, 12 px text. I detaljvyn: 32 px hög, 14 px text, med årsintervallet inuti. Okänt är streckat och saknar prick.</p></div>
+  <div style="display:grid;grid-template-columns:auto 1fr 1fr;gap:16px 40px;align-items:center;background:#FBF7EF;border-radius:12px;padding:24px 32px;max-width:900px;box-shadow:0 1px 2px rgba(33,27,18,.06),0 12px 32px -12px rgba(33,27,18,.25)">
+    <div style="font-size:12px;color:#6E6455;font-weight:500"></div><div style="font-size:12px;color:#6E6455;font-weight:500">Lista</div><div style="font-size:12px;color:#6E6455;font-weight:500">Detalj</div>
+    <div style="font-size:13px">Före fönstret</div>
+    <div><span style="display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 10px;border-radius:999px;background:rgba(33,27,18,.06);color:#6E6455;font-size:12px;font-weight:500"><span style="width:6px;height:6px;border-radius:50%;background:#6E6455"></span>Vänta</span></div>
+    <div><span style="display:inline-flex;align-items:center;gap:8px;height:32px;padding:0 14px;border-radius:999px;background:rgba(33,27,18,.06);color:#6E6455;font-size:14px;font-weight:500;font-variant-numeric:lining-nums tabular-nums"><span style="width:8px;height:8px;border-radius:50%;background:#6E6455"></span>Vänta · 2027–2035</span></div>
+    <div style="font-size:13px">Inne i fönstret</div>
+    <div><span style="display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 10px;border-radius:999px;background:#D8EFDC;color:#2F6B3F;font-size:12px;font-weight:500"><span style="width:6px;height:6px;border-radius:50%;background:#2F6B3F"></span>Drick</span></div>
+    <div><span style="display:inline-flex;align-items:center;gap:8px;height:32px;padding:0 14px;border-radius:999px;background:#D8EFDC;color:#2F6B3F;font-size:14px;font-weight:500;font-variant-numeric:lining-nums tabular-nums"><span style="width:8px;height:8px;border-radius:50%;background:#2F6B3F"></span>Drick · 2025–2032</span></div>
+    <div style="font-size:13px">Sista tolv månaderna</div>
+    <div><span style="display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 10px;border-radius:999px;background:#FBE9C6;color:#875800;font-size:12px;font-weight:500"><span style="width:6px;height:6px;border-radius:50%;background:#875800"></span>Snart</span></div>
+    <div><span style="display:inline-flex;align-items:center;gap:8px;height:32px;padding:0 14px;border-radius:999px;background:#FBE9C6;color:#875800;font-size:14px;font-weight:500;font-variant-numeric:lining-nums tabular-nums"><span style="width:8px;height:8px;border-radius:50%;background:#875800"></span>Snart · 2022–2027</span></div>
+    <div style="font-size:13px">Efter fönstret</div>
+    <div><span style="display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 10px;border-radius:999px;background:#FFE0DB;color:#9A322A;font-size:12px;font-weight:500"><span style="width:6px;height:6px;border-radius:50%;background:#9A322A"></span>Förbi</span></div>
+    <div><span style="display:inline-flex;align-items:center;gap:8px;height:32px;padding:0 14px;border-radius:999px;background:#FFE0DB;color:#9A322A;font-size:14px;font-weight:500;font-variant-numeric:lining-nums tabular-nums"><span style="width:8px;height:8px;border-radius:50%;background:#9A322A"></span>Förbi · 2019–2024</span></div>
+    <div style="font-size:13px">Fönster saknas</div>
+    <div><span style="display:inline-flex;align-items:center;height:24px;padding:0 10px;border-radius:999px;border:1px dashed rgba(33,27,18,.4);color:#6E6455;font-size:12px;font-weight:500">Okänt</span></div>
+    <div><span style="display:inline-flex;align-items:center;height:32px;padding:0 14px;border-radius:999px;border:1px dashed rgba(33,27,18,.4);color:#6E6455;font-size:14px;font-weight:500">Okänt · ange fönster</span></div>
+  </div>
+  <pre style="margin:0;background:#211B12;color:#EFE8DB;border-radius:12px;padding:20px 24px;font-size:12px;line-height:1.55;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;max-width:900px;overflow:auto">&lt;span class="fl-pill" data-state="drick"&gt;&lt;i&gt;&lt;/i&gt;Drick&lt;/span&gt;
+
+.fl-pill { display:inline-flex; align-items:center; gap:6px; height:24px;
+  padding:0 10px; border-radius:var(--fl-r-pill); font:var(--fl-label);
+  font-variant-numeric:var(--fl-nums); }
+.fl-pill i { width:6px; height:6px; border-radius:50%; background:currentColor; }
+.fl-pill--lg { height:32px; padding:0 14px; font-size:14px; gap:8px; }
+.fl-pill--lg i { width:8px; height:8px; }
+[data-state="vanta"] { background:var(--fl-wait-tint); color:var(--fl-wait); }
+[data-state="drick"] { background:var(--fl-ok-tint);   color:var(--fl-ok); }
+[data-state="snart"] { background:var(--fl-soon-tint); color:var(--fl-soon); }
+[data-state="forbi"] { background:var(--fl-past-tint); color:var(--fl-past); }
+[data-state="okant"] { border:1px dashed rgba(33,27,18,.4); color:var(--fl-ink-2); }
+[data-state="okant"] i { display:none; }</pre>
+</section>
+
+<!-- ═══ 3. Artboards ═══ -->
+<section data-screen-label="3 Artboards" style="display:flex;flex-direction:column;gap:32px">
+  <div style="display:flex;flex-direction:column;gap:6px"><div style="font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#6E6455;font-weight:500">3 · Artboards</div><h2 style="font-family:'Instrument Serif',serif;font-weight:400;font-size:36px;margin:0">Vyerna</h2><p style="color:#6E6455;margin:0;max-width:640px">Flaskfoton är Systembolagets frilagda produktbilder (200 px, stående) och markeras här som platshållare.</p></div>
+
+  <!-- Källaren desktop -->
+  <div style="display:flex;flex-direction:column;gap:10px">
+    <div style="font-size:12px;color:#6E6455;font-weight:500">Källaren · desktop 1440×900</div>
+    <div data-screen-label="Källaren desktop" style="width:1440px;height:900px;background:#EFE8DB;display:grid;grid-template-columns:232px 1fr;overflow:hidden;box-shadow:0 1px 2px rgba(33,27,18,.06),0 12px 32px -12px rgba(33,27,18,.25)">
+      <nav style="border-right:1px solid rgba(33,27,18,.14);padding:32px 20px;display:flex;flex-direction:column;gap:32px">
+        <div style="display:flex;align-items:center;gap:10px;padding:0 12px"><svg width="28" height="28" viewBox="0 0 512 512"><rect width="512" height="512" rx="112" fill="#85444F"/><rect x="148" y="176" width="96" height="232" rx="24" fill="#FBF7EF"/><rect x="176.8" y="112" width="38.400000000000006" height="80" rx="9.6" fill="#FBF7EF"/><rect x="268" y="232" width="96" height="176" rx="24" fill="#FBF7EF"/><rect x="296.8" y="168" width="38.400000000000006" height="80" rx="9.6" fill="#FBF7EF"/></svg><span style="font-family:'Instrument Serif',serif;font-size:24px;line-height:1">Flaskor</span></div>
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <a style="display:flex;align-items:center;gap:12px;height:44px;padding:0 12px;border-radius:8px;background:#FBE0E3;color:#85444F;font-weight:500;text-decoration:none"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2h4v4l1.5 2.5V17a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1V8.5L8 6z"/><path d="M6.5 12h7"/></svg>Källaren</a>
+          <a style="display:flex;align-items:center;gap:12px;height:44px;padding:0 12px;border-radius:8px;color:#211B12;text-decoration:none"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h10v14l-5-3.5L5 17z"/></svg>Önskelistan</a>
+          <a style="display:flex;align-items:center;gap:12px;height:44px;padding:0 12px;border-radius:8px;color:#211B12;text-decoration:none"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h10l-1 14H6z"/><path d="M5.5 9h9"/></svg>Barskåpet</a>
+          <a style="display:flex;align-items:center;gap:12px;height:44px;padding:0 12px;border-radius:8px;color:#211B12;text-decoration:none"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7.5"/><path d="M10 6.5v7M6.5 10h7"/></svg>Lägg till</a>
+        </div>
+        <div style="margin-top:auto;padding:0 12px;font-size:12px;color:#6E6455">Patrik &amp; Julia · 23 flaskor</div>
+      </nav>
+      <main style="padding:40px 48px;display:flex;flex-direction:column;gap:24px;overflow:hidden">
+        <div style="display:flex;align-items:flex-end;justify-content:space-between">
+          <h1 style="font-family:'Instrument Serif',serif;font-weight:400;font-size:40px;line-height:1.05;margin:0">Källaren</h1>
+          <div style="display:flex;align-items:center;gap:8px;font-size:15px"><span style="display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 10px;border-radius:999px;background:#D8EFDC;color:#2F6B3F;font-size:12px;font-weight:500"><span style="width:6px;height:6px;border-radius:50%;background:#2F6B3F"></span>Drick</span><span>Dags att dricka: <strong style="font-weight:600;font-variant-numeric:lining-nums tabular-nums">4</strong></span></div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:center">
+          <div style="display:flex;align-items:center;gap:10px;height:44px;padding:0 14px;width:320px;background:#FBF7EF;border:1px solid rgba(33,27,18,.14);border-radius:8px;color:#6E6455"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="9" cy="9" r="5.5"/><path d="M13 13l4 4"/></svg>Sök vin, producent, druva</div>
+          <div style="display:flex;gap:8px">
+            <span style="height:36px;display:inline-flex;align-items:center;padding:0 14px;border-radius:999px;background:#85444F;color:#FBF7EF;font-weight:500;font-size:13px">Alla</span>
+            <span style="height:36px;display:inline-flex;align-items:center;padding:0 14px;border-radius:999px;border:1px solid rgba(33,27,18,.14);font-size:13px">Rött</span>
+            <span style="height:36px;display:inline-flex;align-items:center;padding:0 14px;border-radius:999px;border:1px solid rgba(33,27,18,.14);font-size:13px">Vitt</span>
+            <span style="height:36px;display:inline-flex;align-items:center;padding:0 14px;border-radius:999px;border:1px solid rgba(33,27,18,.14);font-size:13px">Mousserande</span>
+            <span style="width:1px;height:20px;background:rgba(33,27,18,.14);align-self:center"></span>
+            <span style="height:36px;display:inline-flex;align-items:center;padding:0 14px;border-radius:999px;border:1px solid rgba(33,27,18,.14);font-size:13px">Frankrike</span>
+            <span style="height:36px;display:inline-flex;align-items:center;padding:0 14px;border-radius:999px;border:1px solid rgba(33,27,18,.14);font-size:13px">Italien</span>
+            <span style="width:1px;height:20px;background:rgba(33,27,18,.14);align-self:center"></span>
+            <span style="height:36px;display:inline-flex;align-items:center;padding:0 14px;border-radius:999px;border:1px solid rgba(33,27,18,.14);font-size:13px">Drick nu</span>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:28px">
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div style="display:flex;align-items:baseline;gap:10px;padding:0 16px"><span style="font-family:'Instrument Serif',serif;font-size:24px">Rött</span><span style="color:#6E6455;font-size:13px;font-variant-numeric:lining-nums tabular-nums">3 viner · 5 flaskor</span></div>
+            <div style="background:#FBF7EF;border-radius:12px;box-shadow:0 1px 2px rgba(33,27,18,.06),0 12px 32px -12px rgba(33,27,18,.25);display:flex;flex-direction:column">
+              <div style="display:grid;grid-template-columns:36px 1fr 130px 120px 90px 110px;gap:20px;align-items:center;padding:12px 20px;border-bottom:1px solid rgba(33,27,18,.14)">
+                <div style="width:36px;height:56px;border-radius:4px;background:repeating-linear-gradient(135deg,rgba(33,27,18,.08) 0 3px,transparent 3px 8px);display:flex;align-items:center;justify-content:center;font-family:ui-monospace,monospace;font-size:9px;color:#6E6455">foto</div>
+                <div style="display:flex;flex-direction:column;gap:2px"><div style="font-family:'Instrument Serif',serif;font-style:italic;font-size:18px">Barolo 2021</div><div style="font-size:13px;color:#6E6455">Piemonte, Italien · Nebbiolo</div></div>
+                <div><span style="display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 10px;border-radius:999px;background:rgba(33,27,18,.06);color:#6E6455;font-size:12px;font-weight:500"><span style="width:6px;height:6px;border-radius:50%;background:#6E6455"></span>Vänta</span><span style="font-size:12px;color:#6E6455;margin-left:8px;font-variant-numeric:lining-nums tabular-nums">2027–2035</span></div>
+                <div style="font-weight:500;font-variant-numeric:lining-nums tabular-nums">499 kr</div>
+                <div style="font-variant-numeric:lining-nums tabular-nums">1 flaska</div>
+                <div style="display:flex;justify-content:flex-end"><div style="display:inline-flex;border:1px solid rgba(33,27,18,.14);border-radius:8px;overflow:hidden"><span title="Drack en" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-right:1px solid rgba(33,27,18,.14)"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#211B12" stroke-width="1.5" stroke-linecap="round"><path d="M5 10h10"/></svg></span><span title="Köpte fler" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#211B12" stroke-width="1.5" stroke-linecap="round"><path d="M10 5v10M5 10h10"/></svg></span></div></div>
+              </div>
+              <div style="display:grid;grid-template-columns:36px 1fr 130px 120px 90px 110px;gap:20px;align-items:center;padding:12px 20px;border-bottom:1px solid rgba(33,27,18,.14)">
+                <div style="width:36px;height:56px;border-radius:4px;background:repeating-linear-gradient(135deg,rgba(33,27,18,.08) 0 3px,transparent 3px 8px);display:flex;align-items:center;justify-content:center;font-family:ui-monospace,monospace;font-size:9px;color:#6E6455">foto</div>
+                <div style="display:flex;flex-direction:column;gap:2px"><div style="font-family:'Instrument Serif',serif;font-style:italic;font-size:18px">Châteauneuf-du-Pape 2024</div><div style="font-size:13px;color:#6E6455">Rhône, Frankrike · Grenache, Syrah</div></div>
+                <div><span style="display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 10px;border-radius:999px;background:#D8EFDC;color:#2F6B3F;font-size:12px;font-weight:500"><span style="width:6px;height:6px;border-radius:50%;background:#2F6B3F"></span>Drick</span><span style="font-size:12px;color:#6E6455;margin-left:8px;font-variant-numeric:lining-nums tabular-nums">2026–2034</span></div>
+                <div style="font-weight:500;font-variant-numeric:lining-nums tabular-nums">375 kr</div>
+                <div style="font-variant-numeric:lining-nums tabular-nums">3 flaskor</div>
+                <div style="display:flex;justify-content:flex-end"><div style="display:inline-flex;border:1px solid rgba(33,27,18,.14);border-radius:8px;overflow:hidden"><span title="Drack en" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-right:1px solid rgba(33,27,18,.14)"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#211B12" stroke-width="1.5" stroke-linecap="round"><path d="M5 10h10"/></svg></span><span title="Köpte fler" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#211B12" stroke-width="1.5" stroke-linecap="round"><path d="M10 5v10M5 10h10"/></svg></span></div></div>
+              </div>
+              <div style="display:grid;grid-template-columns:36px 1fr 130px 120px 90px 110px;gap:20px;align-items:center;padding:12px 20px">
+                <div style="width:36px;height:56px;border-radius:4px;background:repeating-linear-gradient(135deg,rgba(33,27,18,.08) 0 3px,transparent 3px 8px);display:flex;align-items:center;justify-content:center;font-family:ui-monospace,monospace;font-size:9px;color:#6E6455">foto</div>
+                <div style="display:flex;flex-direction:column;gap:2px"><div style="font-family:'Instrument Serif',serif;font-style:italic;font-size:18px">Chianti Classico Riserva 2021</div><div style="font-size:13px;color:#6E6455">Toscana, Italien · Sangiovese</div></div>
+                <div><span style="display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 10px;border-radius:999px;background:#FBE9C6;color:#875800;font-size:12px;font-weight:500"><span style="width:6px;height:6px;border-radius:50%;background:#875800"></span>Snart</span><span style="font-size:12px;color:#6E6455;margin-left:8px;font-variant-numeric:lining-nums tabular-nums">2022–2027</span></div>
+                <div style="font-weight:500;font-variant-numeric:lining-nums tabular-nums">260 kr</div>
+                <div style="font-variant-numeric:lining-nums tabular-nums">1 flaska</div>
+                <div style="display:flex;justify-content:flex-end"><div style="display:inline-flex;border:1px solid rgba(33,27,18,.14);border-radius:8px;overflow:hidden"><span title="Drack en" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-right:1px solid rgba(33,27,18,.14)"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#211B12" stroke-width="1.5" stroke-linecap="round"><path d="M5 10h10"/></svg></span><span title="Köpte fler" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#211B12" stroke-width="1.5" stroke-linecap="round"><path d="M10 5v10M5 10h10"/></svg></span></div></div>
+              </div>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div style="display:flex;align-items:baseline;gap:10px;padding:0 16px"><span style="font-family:'Instrument Serif',serif;font-size:24px">Vitt</span><span style="color:#6E6455;font-size:13px;font-variant-numeric:lining-nums tabular-nums">1 vin · 2 flaskor</span></div>
+            <div style="background:#FBF7EF;border-radius:12px;box-shadow:0 1px 2px rgba(33,27,18,.06),0 12px 32px -12px rgba(33,27,18,.25)">
+              <div style="display:grid;grid-template-columns:36px 1fr 130px 120px 90px 110px;gap:20px;align-items:center;padding:12px 20px">
+                <div style="width:36px;height:56px;border-radius:4px;background:repeating-linear-gradient(135deg,rgba(33,27,18,.08) 0 3px,transparent 3px 8px);display:flex;align-items:center;justify-content:center;font-family:ui-monospace,monospace;font-size:9px;color:#6E6455">foto</div>
+                <div style="display:flex;flex-direction:column;gap:2px"><div style="font-family:'Instrument Serif',serif;font-style:italic;font-size:18px">Chablis Premier Cru Les Montmains 2024</div><div style="font-size:13px;color:#6E6455">Bourgogne, Frankrike · Chardonnay</div></div>
+                <div><span style="display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 10px;border-radius:999px;background:#D8EFDC;color:#2F6B3F;font-size:12px;font-weight:500"><span style="width:6px;height:6px;border-radius:50%;background:#2F6B3F"></span>Drick</span><span style="font-size:12px;color:#6E6455;margin-left:8px;font-variant-numeric:lining-nums tabular-nums">2025–2032</span></div>
+                <div style="font-weight:500;font-variant-numeric:lining-nums tabular-nums">350 kr</div>
+                <div style="font-variant-numeric:lining-nums tabular-nums">2 flaskor</div>
+                <div style="display:flex;justify-content:flex-end"><div style="display:inline-flex;border:1px solid rgba(33,27,18,.14);border-radius:8px;overflow:hidden"><span title="Drack en" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-right:1px solid rgba(33,27,18,.14)"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#211B12" stroke-width="1.5" stroke-linecap="round"><path d="M5 10h10"/></svg></span><span title="Köpte fler" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#211B12" stroke-width="1.5" stroke-linecap="round"><path d="M10 5v10M5 10h10"/></svg></span></div></div>
+              </div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;padding:0 16px;color:#6E6455;font-size:13px"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8l4 4 4-4"/></svg>Slut · 2 viner med noll flaskor</div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Mobilrad -->
+  <div style="display:flex;gap:32px;flex-wrap:wrap;align-items:flex-start">
+
+    <!-- Källaren mobil -->
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="font-size:12px;color:#6E6455;font-weight:500">Källaren · mobil 390×844</div>
+      <div data-screen-label="Källaren mobil" style="width:390px;height:844px;background:#EFE8DB;display:flex;flex-direction:column;overflow:hidden;border-radius:20px;box-shadow:0 1px 2px rgba(33,27,18,.06),0 12px 32px -12px rgba(33,27,18,.25)">
+        <div style="padding:28px 20px 12px;display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;align-items:flex-end;justify-content:space-between"><h1 style="font-family:'Instrument Serif',serif;font-weight:400;font-size:34px;line-height:1;margin:0">Källaren</h1><span style="font-size:13px;color:#6E6455;font-variant-numeric:lining-nums tabular-nums">7 flaskor</span></div>
+          <div style="display:flex;align-items:center;gap:10px;height:44px;padding:0 14px;background:#FBF7EF;border:1px solid rgba(33,27,18,.14);border-radius:8px;color:#6E6455;font-size:15px"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="9" cy="9" r="5.5"/><path d="M13 13l4 4"/></svg>Sök</div>
+          <div style="display:flex;gap:8px;overflow:hidden">
+            <span style="height:36px;flex:none;display:inline-flex;align-items:center;padding:0 14px;border-radius:999px;background:#85444F;color:#FBF7EF;font-weight:500;font-size:13px">Alla</span>
+            <span style="height:36px;flex:none;display:inline-flex;align-items:center;padding:0 14px;border-radius:999px;border:1px solid rgba(33,27,18,.14);font-size:13px">Rött</span>
+            <span style="height:36px;flex:none;display:inline-flex;align-items:center;padding:0 14px;border-radius:999px;border:1px solid rgba(33,27,18,.14);font-size:13px">Vitt</span>
+            <span style="height:36px;flex:none;display:inline-flex;align-items:center;padding:0 14px;border-radius:999px;border:1px solid rgba(33,27,18,.14);font-size:13px">Mousserande</span>
+            <span style="height:36px;flex:none;display:inline-flex;align-items:center;padding:0 14px;border-radius:999px;border:1px solid rgba(33,27,18,.14);font-size:13px">Drick nu</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;font-size:15px"><span style="display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 10px;border-radius:999px;background:#D8EFDC;color:#2F6B3F;font-size:12px;font-weight:500"><span style="width:6px;height:6px;border-radius:50%;background:#2F6B3F"></span>Drick</span>Dags att dricka: <strong style="font-weight:600">4</strong></div>
+        </div>
+        <div style="flex:1;overflow:hidden;padding:4px 16px 0;display:flex;flex-direction:column;gap:20px">
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div style="display:flex;align-items:baseline;gap:8px;padding:0 4px"><span style="font-family:'Instrument Serif',serif;font-size:22px">Rött</span><span style="color:#6E6455;font-size:13px">5 flaskor</span></div>
+            <div style="background:#FBF7EF;border-radius:12px;box-shadow:0 1px 2px rgba(33,27,18,.06),0 12px 32px -12px rgba(33,27,18,.25)">
+              <div style="display:grid;grid-template-columns:32px 1fr auto;gap:12px;align-items:center;padding:12px 14px;border-bottom:1px solid rgba(33,27,18,.14);min-height:44px"><div style="width:32px;height:50px;border-radius:4px;background:repeating-linear-gradient(135deg,rgba(33,27,18,.08) 0 3px,transparent 3px 8px)"></div><div style="display:flex;flex-direction:column;gap:4px;min-width:0"><div style="font-family:'Instrument Serif',serif;font-style:italic;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Barolo 2021</div><div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#6E6455;font-variant-numeric:lining-nums tabular-nums"><span style="display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 10px;border-radius:999px;background:rgba(33,27,18,.06);color:#6E6455;font-weight:500"><span style="width:6px;height:6px;border-radius:50%;background:#6E6455"></span>Vänta</span>2027–2035</div></div><div style="text-align:right;font-variant-numeric:lining-nums tabular-nums;display:flex;flex-direction:column;gap:2px"><div style="font-weight:500">499 kr</div><div style="font-size:12px;color:#6E6455">1 fl</div></div></div>
+              <div style="display:grid;grid-template-columns:32px 1fr auto;gap:12px;align-items:center;padding:12px 14px;border-bottom:1px solid rgba(33,27,18,.14)"><div style="width:32px;height:50px;border-radius:4px;background:repeating-linear-gradient(135deg,rgba(33,27,18,.08) 0 3px,transparent 3px 8px)"></div><div style="display:flex;flex-direction:column;gap:4px;min-width:0"><div style="font-family:'Instrument Serif',serif;font-style:italic;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Châteauneuf-du-Pape 2024</div><div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#6E6455;font-variant-numeric:lining-nums tabular-nums"><span style="display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 10px;border-radius:999px;background:#D8EFDC;color:#2F6B3F;font-weight:500"><span style="width:6px;height:6px;border-radius:50%;background:#2F6B3F"></span>Drick</span>2026–2034</div></div><div style="text-align:right;font-variant-numeric:lining-nums tabular-nums;display:flex;flex-direction:column;gap:2px"><div style="font-weight:500">375 kr</div><div style="font-size:12px;color:#6E6455">3 fl</div></div></div>
+              <div style="display:grid;grid-template-columns:32px 1fr auto;gap:12px;align-items:center;padding:12px 14px"><div style="width:32px;height:50px;border-radius:4px;background:repeating-linear-gradient(135deg,rgba(33,27,18,.08) 0 3px,transparent 3px 8px)"></div><div style="display:flex;flex-direction:column;gap:4px;min-width:0"><div style="font-family:'Instrument Serif',serif;font-style:italic;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Chianti Classico Riserva 2021</div><div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#6E6455;font-variant-numeric:lining-nums tabular-nums"><span style="display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 10px;border-radius:999px;background:#FBE9C6;color:#875800;font-weight:500"><span style="width:6px;height:6px;border-radius:50%;background:#875800"></span>Snart</span>2022–2027</div></div><div style="text-align:right;font-variant-numeric:lining-nums tabular-nums;display:flex;flex-direction:column;gap:2px"><div style="font-weight:500">260 kr</div><div style="font-size:12px;color:#6E6455">1 fl</div></div></div>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div style="display:flex;align-items:baseline;gap:8px;padding:0 4px"><span style="font-family:'Instrument Serif',serif;font-size:22px">Vitt</span><span style="color:#6E6455;font-size:13px">2 flaskor</span></div>
+            <div style="background:#FBF7EF;border-radius:12px;box-shadow:0 1px 2px rgba(33,27,18,.06),0 12px 32px -12px rgba(33,27,18,.25)">
+              <div style="display:grid;grid-template-columns:32px 1fr auto;gap:12px;align-items:center;padding:12px 14px"><div style="width:32px;height:50px;border-radius:4px;background:repeating-linear-gradient(135deg,rgba(33,27,18,.08) 0 3px,transparent 3px 8px)"></div><div style="display:flex;flex-direction:column;gap:4px;min-width:0"><div style="font-family:'Instrument Serif',serif;font-style:italic;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Chablis Premier Cru Les Montmains 2024</div><div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#6E6455;font-variant-numeric:lining-nums tabular-nums"><span style="display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 10px;border-radius:999px;background:#D8EFDC;color:#2F6B3F;font-weight:500"><span style="width:6px;height:6px;border-radius:50%;background:#2F6B3F"></span>Drick</span>2025–2032</div></div><div style="text-align:right;font-variant-numeric:lining-nums tabular-nums;display:flex;flex-direction:column;gap:2px"><div style="font-weight:500">350 kr</div><div style="font-size:12px;color:#6E6455">2 fl</div></div></div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;padding:0 4px;color:#6E6455;font-size:13px;height:44px"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8l4 4 4-4"/></svg>Slut · 2 viner</div>
+        </div>
+        <nav style="display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid rgba(33,27,18,.14);background:#FBF7EF;padding:8px 0 20px">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;height:48px;justify-content:center;color:#85444F;font-size:11px;font-weight:500"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2h4v4l1.5 2.5V17a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1V8.5L8 6z"/><path d="M6.5 12h7"/></svg>Källaren</div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;height:48px;justify-content:center;color:#6E6455;font-size:11px;font-weight:500"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h10v14l-5-3.5L5 17z"/></svg>Önskelistan</div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;height:48px;justify-content:center;color:#6E6455;font-size:11px;font-weight:500"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h10l-1 14H6z"/><path d="M5.5 9h9"/></svg>Barskåpet</div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;height:48px;justify-content:center;color:#6E6455;font-size:11px;font-weight:500"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7.5"/><path d="M10 6.5v7M6.5 10h7"/></svg>Lägg till</div>
+        </nav>
+      </div>
+    </div>
+
+    <!-- Önskelistan mobil + Köpt overlay -->
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="font-size:12px;color:#6E6455;font-weight:500">Önskelistan · mobil, med Köpt-rutan</div>
+      <div data-screen-label="Önskelistan mobil" style="width:390px;height:844px;background:#EFE8DB;display:flex;flex-direction:column;overflow:hidden;border-radius:20px;position:relative;box-shadow:0 1px 2px rgba(33,27,18,.06),0 12px 32px -12px rgba(33,27,18,.25)">
+        <div style="padding:28px 20px 12px;display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;align-items:flex-end;justify-content:space-between"><h1 style="font-family:'Instrument Serif',serif;font-weight:400;font-size:34px;line-height:1;margin:0">Önskelistan</h1><span style="font-size:13px;color:#6E6455">4 varor</span></div>
+          <div style="display:flex;gap:8px"><span style="height:36px;display:inline-flex;align-items:center;padding:0 14px;border-radius:999px;background:#85444F;color:#FBF7EF;font-weight:500;font-size:13px">Alla</span><span style="height:36px;display:inline-flex;align-items:center;padding:0 14px;border-radius:999px;border:1px solid rgba(33,27,18,.14);font-size:13px">Vin</span><span style="height:36px;display:inline-flex;align-items:center;padding:0 14px;border-radius:999px;border:1px solid rgba(33,27,18,.14);font-size:13px">Sprit</span></div>
+        </div>
+        <div style="flex:1;padding:4px 16px;display:flex;flex-direction:column;gap:8px">
+          <div style="background:#FBF7EF;border-radius:12px;box-shadow:0 1px 2px rgba(33,27,18,.06),0 12px 32px -12px rgba(33,27,18,.25)">
+            <div style="display:grid;grid-template-columns:32px 1fr auto;gap:12px;align-items:center;padding:12px 14px;border-bottom:1px solid rgba(33,27,18,.14)"><div style="width:32px;height:50px;border-radius:4px;background:repeating-linear-gradient(135deg,rgba(33,27,18,.08) 0 3px,transparent 3px 8px)"></div><div style="display:flex;flex-direction:column;gap:4px;min-width:0"><div style="font-family:'Instrument Serif',serif;font-style:italic;font-size:17px">Hendrick's Gin</div><div style="font-size:12px;color:#6E6455;font-variant-numeric:lining-nums tabular-nums"><span style="font-weight:500;color:#211B12">480 kr</span> · Finns på Systembolaget · nr 22 34</div></div><span style="display:inline-flex;align-items:center;justify-content:center;height:44px;padding:0 14px;border-radius:8px;background:#85444F;color:#FBF7EF;font-weight:500;font-size:13px">Köpt</span></div>
+            <div style="display:grid;grid-template-columns:32px 1fr auto;gap:12px;align-items:center;padding:12px 14px;border-bottom:1px solid rgba(33,27,18,.14)"><div style="width:32px;height:50px;border-radius:4px;background:repeating-linear-gradient(135deg,rgba(33,27,18,.08) 0 3px,transparent 3px 8px)"></div><div style="display:flex;flex-direction:column;gap:4px;min-width:0"><div style="font-family:'Instrument Serif',serif;font-style:italic;font-size:17px">Barolo 2021</div><div style="font-size:12px;color:#6E6455;font-variant-numeric:lining-nums tabular-nums"><span style="font-weight:500;color:#211B12">499 kr</span> · Finns i butik</div></div><span style="display:inline-flex;align-items:center;justify-content:center;height:44px;padding:0 14px;border-radius:8px;background:#85444F;color:#FBF7EF;font-weight:500;font-size:13px">Köpt</span></div>
+            <div style="display:grid;grid-template-columns:32px 1fr auto;gap:12px;align-items:center;padding:12px 14px;border-bottom:1px solid rgba(33,27,18,.14)"><div style="width:32px;height:50px;border-radius:4px;background:repeating-linear-gradient(135deg,rgba(33,27,18,.08) 0 3px,transparent 3px 8px)"></div><div style="display:flex;flex-direction:column;gap:4px;min-width:0"><div style="font-family:'Instrument Serif',serif;font-style:italic;font-size:17px">Crémant d'Alsace Brut</div><div style="font-size:12px;color:#6E6455;font-variant-numeric:lining-nums tabular-nums"><span style="font-weight:500;color:#211B12">139 kr</span> · Beställningsvara</div></div><span style="display:inline-flex;align-items:center;justify-content:center;height:44px;padding:0 14px;border-radius:8px;background:#85444F;color:#FBF7EF;font-weight:500;font-size:13px">Köpt</span></div>
+            <div style="display:grid;grid-template-columns:32px 1fr auto;gap:12px;align-items:center;padding:12px 14px;color:#6E6455"><div style="width:32px;height:50px;border-radius:4px;background:repeating-linear-gradient(135deg,rgba(33,27,18,.08) 0 3px,transparent 3px 8px)"></div><div style="display:flex;flex-direction:column;gap:4px;min-width:0"><div style="font-family:'Instrument Serif',serif;font-style:italic;font-size:17px">Riesling Kabinett 2023</div><div style="font-size:12px;font-variant-numeric:lining-nums tabular-nums"><span style="font-weight:500">165 kr</span> · Slut på Systembolaget</div></div><span style="display:inline-flex;align-items:center;justify-content:center;height:44px;padding:0 14px;border-radius:8px;border:1px solid rgba(33,27,18,.14);font-weight:500;font-size:13px">Köpt</span></div>
+          </div>
+        </div>
+        <nav style="display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid rgba(33,27,18,.14);background:#FBF7EF;padding:8px 0 20px">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;height:48px;justify-content:center;color:#6E6455;font-size:11px;font-weight:500"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2h4v4l1.5 2.5V17a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1V8.5L8 6z"/><path d="M6.5 12h7"/></svg>Källaren</div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;height:48px;justify-content:center;color:#85444F;font-size:11px;font-weight:500"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h10v14l-5-3.5L5 17z"/></svg>Önskelistan</div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;height:48px;justify-content:center;color:#6E6455;font-size:11px;font-weight:500"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h10l-1 14H6z"/><path d="M5.5 9h9"/></svg>Barskåpet</div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;height:48px;justify-content:center;color:#6E6455;font-size:11px;font-weight:500"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7.5"/><path d="M10 6.5v7M6.5 10h7"/></svg>Lägg till</div>
+        </nav>
+        <!-- Köpt overlay -->
+        <div style="position:absolute;inset:0;background:rgba(33,27,18,.35);display:flex;align-items:flex-end">
+          <div style="width:100%;background:#FBF7EF;border-radius:20px 20px 0 0;padding:20px 20px 32px;display:flex;flex-direction:column;gap:20px;box-shadow:0 1px 2px rgba(33,27,18,.06),0 12px 32px -12px rgba(33,27,18,.25)">
+            <div style="display:flex;flex-direction:column;gap:4px"><div style="font-size:12px;color:#6E6455;font-weight:500">Köpt</div><div style="font-family:'Instrument Serif',serif;font-style:italic;font-size:22px">Hendrick's Gin</div><div style="font-size:13px;color:#6E6455">Flyttas till Barskåpet</div></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:12px;color:#6E6455;font-weight:500">Antal</span><div style="display:flex;align-items:center;height:48px;border:1px solid rgba(33,27,18,.14);border-radius:8px;background:#EFE8DB"><span style="width:48px;height:48px;display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#211B12" stroke-width="1.5" stroke-linecap="round"><path d="M5 10h10"/></svg></span><span style="flex:1;text-align:center;font-weight:500;font-size:17px;font-variant-numeric:lining-nums tabular-nums">1</span><span style="width:48px;height:48px;display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#211B12" stroke-width="1.5" stroke-linecap="round"><path d="M10 5v10M5 10h10"/></svg></span></div></div>
+              <div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:12px;color:#6E6455;font-weight:500">Pris per flaska</span><div style="display:flex;align-items:center;justify-content:space-between;height:48px;padding:0 14px;border:1px solid rgba(33,27,18,.14);border-radius:8px;background:#FBF7EF;font-size:17px;font-weight:500;font-variant-numeric:lining-nums tabular-nums">480<span style="color:#6E6455;font-weight:400;font-size:14px">kr</span></div></div>
+            </div>
+            <div style="display:flex;gap:12px"><span style="flex:1;height:48px;display:flex;align-items:center;justify-content:center;border-radius:8px;border:1px solid rgba(33,27,18,.14);font-weight:500">Avbryt</span><span style="flex:1;height:48px;display:flex;align-items:center;justify-content:center;border-radius:8px;background:#85444F;color:#FBF7EF;font-weight:500">Lägg i Barskåpet</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Barskåpet mobil -->
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="font-size:12px;color:#6E6455;font-weight:500">Barskåpet · mobil, fjärdedelsnivå</div>
+      <div data-screen-label="Barskåpet mobil" style="width:390px;height:844px;background:#EFE8DB;display:flex;flex-direction:column;overflow:hidden;border-radius:20px;box-shadow:0 1px 2px rgba(33,27,18,.06),0 12px 32px -12px rgba(33,27,18,.25)">
+        <div style="padding:28px 20px 12px;display:flex;align-items:flex-end;justify-content:space-between"><h1 style="font-family:'Instrument Serif',serif;font-weight:400;font-size:34px;line-height:1;margin:0">Barskåpet</h1><span style="font-size:13px;color:#6E6455">3 sorter</span></div>
+        <div style="flex:1;padding:8px 16px;display:flex;flex-direction:column;gap:12px">
+          <div style="background:#FBF7EF;border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:14px;box-shadow:0 1px 2px rgba(33,27,18,.06),0 12px 32px -12px rgba(33,27,18,.25)">
+            <div style="display:grid;grid-template-columns:32px 1fr;gap:12px;align-items:center"><div style="width:32px;height:50px;border-radius:4px;background:repeating-linear-gradient(135deg,rgba(33,27,18,.08) 0 3px,transparent 3px 8px)"></div><div style="display:flex;flex-direction:column;gap:2px"><div style="font-family:'Instrument Serif',serif;font-style:italic;font-size:17px">Talisker 10</div><div style="font-size:12px;color:#6E6455;font-variant-numeric:lining-nums tabular-nums">Single malt · 479 kr · 0 oöppnade</div></div></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+              <div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:12px;color:#6E6455;font-weight:500">Öppnad flaska</span><div style="display:flex;align-items:center;gap:8px"><div style="display:flex;gap:3px;height:10px"><span style="width:22px;border-radius:2px;background:#85444F"></span><span style="width:22px;border-radius:2px;background:#85444F"></span><span style="width:22px;border-radius:2px;border:1px solid rgba(33,27,18,.3);box-sizing:border-box"></span><span style="width:22px;border-radius:2px;border:1px solid rgba(33,27,18,.3);box-sizing:border-box"></span></div><span style="font-weight:500;font-size:15px">Halv</span></div></div>
+              <div style="display:flex;align-items:center;border:1px solid rgba(33,27,18,.14);border-radius:8px;overflow:hidden"><span style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border-right:1px solid rgba(33,27,18,.14)"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#211B12" stroke-width="1.5" stroke-linecap="round"><path d="M5 10h10"/></svg></span><span style="width:44px;height:44px;display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#211B12" stroke-width="1.5" stroke-linecap="round"><path d="M10 5v10M5 10h10"/></svg></span></div>
+            </div>
+          </div>
+          <div style="background:#FBF7EF;border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:14px;box-shadow:0 1px 2px rgba(33,27,18,.06),0 12px 32px -12px rgba(33,27,18,.25)">
+            <div style="display:grid;grid-template-columns:32px 1fr auto;gap:12px;align-items:center"><div style="width:32px;height:50px;border-radius:4px;background:repeating-linear-gradient(135deg,rgba(33,27,18,.08) 0 3px,transparent 3px 8px)"></div><div style="display:flex;flex-direction:column;gap:2px"><div style="font-family:'Instrument Serif',serif;font-style:italic;font-size:17px">Tanqueray No. Ten</div><div style="font-size:12px;color:#6E6455;font-variant-numeric:lining-nums tabular-nums">Gin · 429 kr · 2 oöppnade</div></div><span style="display:inline-flex;align-items:center;height:44px;padding:0 12px;border-radius:8px;border:1px solid rgba(33,27,18,.14);font-size:13px;font-weight:500">Öppna en</span></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+              <div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:12px;color:#6E6455;font-weight:500">Öppnad flaska</span><div style="display:flex;align-items:center;gap:8px"><div style="display:flex;gap:3px;height:10px"><span style="width:22px;border-radius:2px;background:#85444F"></span><span style="width:22px;border-radius:2px;background:#85444F"></span><span style="width:22px;border-radius:2px;background:#85444F"></span><span style="width:22px;border-radius:2px;background:#85444F"></span></div><span style="font-weight:500;font-size:15px">Full</span></div></div>
+              <div style="display:flex;align-items:center;border:1px solid rgba(33,27,18,.14);border-radius:8px;overflow:hidden"><span style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;border-right:1px solid rgba(33,27,18,.14)"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#211B12" stroke-width="1.5" stroke-linecap="round"><path d="M5 10h10"/></svg></span><span style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;color:#6E6455"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity=".4"><path d="M10 5v10M5 10h10"/></svg></span></div>
+            </div>
+          </div>
+          <div style="background:#FBF7EF;border-radius:12px;padding:14px;display:grid;grid-template-columns:32px 1fr auto;gap:12px;align-items:center;box-shadow:0 1px 2px rgba(33,27,18,.06),0 12px 32px -12px rgba(33,27,18,.25)"><div style="width:32px;height:50px;border-radius:4px;background:repeating-linear-gradient(135deg,rgba(33,27,18,.08) 0 3px,transparent 3px 8px)"></div><div style="display:flex;flex-direction:column;gap:2px"><div style="font-family:'Instrument Serif',serif;font-style:italic;font-size:17px">Cocchi Americano</div><div style="font-size:12px;color:#6E6455;font-variant-numeric:lining-nums tabular-nums">Aperitif · 189 kr · 1 oöppnad · ingen öppnad</div></div><span style="display:inline-flex;align-items:center;height:44px;padding:0 12px;border-radius:8px;border:1px solid rgba(33,27,18,.14);font-size:13px;font-weight:500">Öppna en</span></div>
+          <div style="display:flex;align-items:center;gap:8px;padding:0 4px;color:#6E6455;font-size:13px;height:44px"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8l4 4 4-4"/></svg>Slut · 1 sort</div>
+        </div>
+        <nav style="display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid rgba(33,27,18,.14);background:#FBF7EF;padding:8px 0 20px">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;height:48px;justify-content:center;color:#6E6455;font-size:11px;font-weight:500"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2h4v4l1.5 2.5V17a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1V8.5L8 6z"/><path d="M6.5 12h7"/></svg>Källaren</div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;height:48px;justify-content:center;color:#6E6455;font-size:11px;font-weight:500"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h10v14l-5-3.5L5 17z"/></svg>Önskelistan</div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;height:48px;justify-content:center;color:#85444F;font-size:11px;font-weight:500"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h10l-1 14H6z"/><path d="M5.5 9h9"/></svg>Barskåpet</div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;height:48px;justify-content:center;color:#6E6455;font-size:11px;font-weight:500"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7.5"/><path d="M10 6.5v7M6.5 10h7"/></svg>Lägg till</div>
+        </nav>
+      </div>
+    </div>
+
+    <!-- Lägg till mobil -->
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="font-size:12px;color:#6E6455;font-weight:500">Lägg till · mobil, efter hämtning</div>
+      <div data-screen-label="Lägg till mobil" style="width:390px;height:844px;background:#EFE8DB;display:flex;flex-direction:column;overflow:hidden;border-radius:20px;box-shadow:0 1px 2px rgba(33,27,18,.06),0 12px 32px -12px rgba(33,27,18,.25)">
+        <div style="padding:28px 20px 12px;display:flex;flex-direction:column;gap:14px">
+          <h1 style="font-family:'Instrument Serif',serif;font-weight:400;font-size:34px;line-height:1;margin:0">Lägg till</h1>
+          <div style="display:flex;align-items:center;justify-content:space-between;height:48px;padding:0 14px;background:#FBF7EF;border:1px solid rgba(33,27,18,.14);border-radius:8px;font-size:15px;font-variant-numeric:lining-nums tabular-nums"><span>systembolaget.se/produkt/vin/chablis-premier-cru-7562401</span></div>
+          <div style="font-size:12px;color:#6E6455">Artikelnummer eller produktlänk. Hämtat 5 sep 2026.</div>
+        </div>
+        <div style="flex:1;padding:8px 16px;display:flex;flex-direction:column;gap:12px">
+          <div style="background:#FBF7EF;border-radius:12px;padding:20px 16px;display:flex;flex-direction:column;gap:18px;box-shadow:0 1px 2px rgba(33,27,18,.06),0 12px 32px -12px rgba(33,27,18,.25)">
+            <div style="display:grid;grid-template-columns:56px 1fr;gap:16px;align-items:start"><div style="width:56px;height:88px;border-radius:4px;background:repeating-linear-gradient(135deg,rgba(33,27,18,.08) 0 3px,transparent 3px 8px);display:flex;align-items:center;justify-content:center;font-family:ui-monospace,monospace;font-size:9px;color:#6E6455">flaskfoto</div><div style="display:flex;flex-direction:column;gap:6px"><div style="font-family:'Instrument Serif',serif;font-style:italic;font-size:22px;line-height:1.15">Chablis Premier Cru Les Montmains 2024</div><div style="font-size:13px;color:#6E6455">Domaine Louis Moreau · Bourgogne, Frankrike</div><div style="font-size:13px;color:#6E6455">Chardonnay · Vitt · 75 cl · 13 %</div><div style="font-weight:500;font-size:17px;font-variant-numeric:lining-nums tabular-nums">350 kr</div></div></div>
+            <div style="height:1px;background:rgba(33,27,18,.14)"></div>
+            <div style="display:flex;flex-direction:column;gap:8px"><div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:12px;color:#6E6455;font-weight:500">Drickfönster · förifyllt</span><span style="font-size:12px;color:#85444F;font-weight:500">Ändra</span></div><div style="display:flex;align-items:center;gap:10px"><span style="display:inline-flex;align-items:center;gap:8px;height:32px;padding:0 14px;border-radius:999px;background:#D8EFDC;color:#2F6B3F;font-size:14px;font-weight:500;font-variant-numeric:lining-nums tabular-nums"><span style="width:8px;height:8px;border-radius:50%;background:#2F6B3F"></span>Drick · 2025–2032</span></div></div>
+            <div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:12px;color:#6E6455;font-weight:500">Smak enligt Systembolaget</span><p style="margin:0;font-size:14px;color:#211B12;text-wrap:pretty">Nyanserad, mycket frisk smak med mineralkaraktär, inslag av gula äpplen, citrus, örter och krita.</p></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px;margin-top:auto;padding-bottom:12px">
+            <span style="height:48px;display:flex;align-items:center;justify-content:center;border-radius:8px;background:#85444F;color:#FBF7EF;font-weight:500;font-size:15px">Lägg på önskelistan</span>
+            <span style="height:48px;display:flex;align-items:center;justify-content:center;border-radius:8px;border:1px solid rgba(33,27,18,.14);background:#FBF7EF;font-weight:500;font-size:15px">Direkt till källaren</span>
+          </div>
+        </div>
+        <nav style="display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid rgba(33,27,18,.14);background:#FBF7EF;padding:8px 0 20px">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;height:48px;justify-content:center;color:#6E6455;font-size:11px;font-weight:500"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2h4v4l1.5 2.5V17a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1V8.5L8 6z"/><path d="M6.5 12h7"/></svg>Källaren</div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;height:48px;justify-content:center;color:#6E6455;font-size:11px;font-weight:500"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h10v14l-5-3.5L5 17z"/></svg>Önskelistan</div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;height:48px;justify-content:center;color:#6E6455;font-size:11px;font-weight:500"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h10l-1 14H6z"/><path d="M5.5 9h9"/></svg>Barskåpet</div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;height:48px;justify-content:center;color:#85444F;font-size:11px;font-weight:500"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7.5"/><path d="M10 6.5v7M6.5 10h7"/></svg>Lägg till</div>
+        </nav>
+      </div>
+    </div>
+  </div>
+
+  <!-- Vindetalj desktop -->
+  <div style="display:flex;flex-direction:column;gap:10px">
+    <div style="font-size:12px;color:#6E6455;font-weight:500">Vindetalj · desktop 1440×900</div>
+    <div data-screen-label="Vindetalj desktop" style="width:1440px;height:900px;background:#EFE8DB;display:grid;grid-template-columns:232px 1fr;overflow:hidden;box-shadow:0 1px 2px rgba(33,27,18,.06),0 12px 32px -12px rgba(33,27,18,.25)">
+      <nav style="border-right:1px solid rgba(33,27,18,.14);padding:32px 20px;display:flex;flex-direction:column;gap:32px">
+        <div style="display:flex;align-items:center;gap:10px;padding:0 12px"><svg width="28" height="28" viewBox="0 0 512 512"><rect width="512" height="512" rx="112" fill="#85444F"/><rect x="148" y="176" width="96" height="232" rx="24" fill="#FBF7EF"/><rect x="176.8" y="112" width="38.400000000000006" height="80" rx="9.6" fill="#FBF7EF"/><rect x="268" y="232" width="96" height="176" rx="24" fill="#FBF7EF"/><rect x="296.8" y="168" width="38.400000000000006" height="80" rx="9.6" fill="#FBF7EF"/></svg><span style="font-family:'Instrument Serif',serif;font-size:24px;line-height:1">Flaskor</span></div>
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <a style="display:flex;align-items:center;gap:12px;height:44px;padding:0 12px;border-radius:8px;background:#FBE0E3;color:#85444F;font-weight:500;text-decoration:none"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2h4v4l1.5 2.5V17a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1V8.5L8 6z"/><path d="M6.5 12h7"/></svg>Källaren</a>
+          <a style="display:flex;align-items:center;gap:12px;height:44px;padding:0 12px;border-radius:8px;color:#211B12;text-decoration:none"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h10v14l-5-3.5L5 17z"/></svg>Önskelistan</a>
+          <a style="display:flex;align-items:center;gap:12px;height:44px;padding:0 12px;border-radius:8px;color:#211B12;text-decoration:none"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h10l-1 14H6z"/><path d="M5.5 9h9"/></svg>Barskåpet</a>
+          <a style="display:flex;align-items:center;gap:12px;height:44px;padding:0 12px;border-radius:8px;color:#211B12;text-decoration:none"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7.5"/><path d="M10 6.5v7M6.5 10h7"/></svg>Lägg till</a>
+        </div>
+      </nav>
+      <main style="padding:40px 48px;display:grid;grid-template-columns:260px 1fr 320px;gap:48px;overflow:hidden;align-content:start">
+        <div style="grid-column:1/-1;display:flex;align-items:center;gap:8px;font-size:13px;color:#6E6455"><a style="color:#85444F;text-decoration:none">Källaren</a><span>/</span><span>Vitt</span></div>
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div style="width:200px;height:560px;margin:0 auto;border-radius:8px;background:repeating-linear-gradient(135deg,rgba(33,27,18,.08) 0 4px,transparent 4px 12px);display:flex;align-items:center;justify-content:center;font-family:ui-monospace,monospace;font-size:11px;color:#6E6455;text-align:center">flaskfoto<br>Systembolaget<br>200 px, frilagd</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:28px;min-width:0">
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div style="font-size:13px;color:#6E6455">Domaine Louis Moreau</div>
+            <h1 style="font-family:'Instrument Serif',serif;font-weight:400;font-size:40px;line-height:1.05;margin:0;text-wrap:pretty">Chablis Premier Cru Les Montmains 2024</h1>
+            <div style="font-size:15px;color:#6E6455">Chablis, Bourgogne, Frankrike · Chardonnay 100 % · Vitt · 13 %</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <div style="display:flex;align-items:center;gap:12px"><span style="display:inline-flex;align-items:center;gap:8px;height:32px;padding:0 14px;border-radius:999px;background:#D8EFDC;color:#2F6B3F;font-size:14px;font-weight:500;font-variant-numeric:lining-nums tabular-nums"><span style="width:8px;height:8px;border-radius:50%;background:#2F6B3F"></span>Drick · 2025–2032</span><span style="font-size:13px;color:#6E6455">Andra året av åtta</span></div>
+            <div style="display:flex;flex-direction:column;gap:6px;font-variant-numeric:lining-nums tabular-nums">
+              <div style="position:relative;height:8px;border-radius:4px;background:rgba(33,27,18,.08)"><div style="position:absolute;left:10%;right:5%;top:0;bottom:0;border-radius:4px;background:#D8EFDC"></div><div style="position:absolute;left:10%;width:75%;top:0;bottom:0;border-radius:4px;background:#2F6B3F;opacity:.35"></div><div style="position:absolute;left:24%;top:-4px;width:2px;height:16px;background:#211B12;border-radius:1px"></div></div>
+              <div style="display:flex;justify-content:space-between;font-size:12px;color:#6E6455"><span>2024</span><span>2025</span><span style="color:#211B12;font-weight:500">idag</span><span>2029</span><span>2032</span><span>2033</span></div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;padding:20px 0;border-top:1px solid rgba(33,27,18,.14);border-bottom:1px solid rgba(33,27,18,.14)">
+            <div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:12px;color:#6E6455;font-weight:500">Servering</span><span style="font-size:15px;font-variant-numeric:lining-nums tabular-nums">10–12 °C</span></div>
+            <div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:12px;color:#6E6455;font-weight:500">Karaffering</span><span style="font-size:15px">Ingen</span></div>
+            <div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:12px;color:#6E6455;font-weight:500">Mat</span><span style="font-size:15px">Ostron, skaldjur, getost</span></div>
+            <div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:12px;color:#6E6455;font-weight:500">Alkohol</span><span style="font-size:15px;font-variant-numeric:lining-nums tabular-nums">12,5 %</span></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:12px;color:#6E6455;font-weight:500">Smak enligt Systembolaget</span><p style="margin:0;font-size:15px;max-width:560px;text-wrap:pretty">Nyanserad, mycket frisk smak med mineralkaraktär, inslag av gula äpplen, citrus, örter och krita. Lång, saltig eftersmak.</p></div>
+          <div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:12px;color:#6E6455;font-weight:500">Egen kommentar</span><p style="margin:0;font-family:'Instrument Serif',serif;font-style:italic;font-size:20px;max-width:560px">”Smakade gött, köp mer. Till ostronen på nyår.” <span style="font-family:'Work Sans',sans-serif;font-style:normal;font-size:13px;color:#6E6455">– Julia</span></p></div>
+        </div>
+        <aside style="display:flex;flex-direction:column;gap:12px">
+          <div style="background:#FBF7EF;border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:16px;box-shadow:0 1px 2px rgba(33,27,18,.06),0 12px 32px -12px rgba(33,27,18,.25)">
+            <div style="display:flex;align-items:baseline;justify-content:space-between"><span style="font-size:12px;color:#6E6455;font-weight:500">Antal hemma</span><span style="font-family:'Instrument Serif',serif;font-size:32px;font-variant-numeric:lining-nums tabular-nums">2</span></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid rgba(33,27,18,.14);border-radius:8px;overflow:hidden"><span style="height:44px;display:flex;align-items:center;justify-content:center;gap:8px;border-right:1px solid rgba(33,27,18,.14);font-size:13px;font-weight:500"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#211B12" stroke-width="1.5" stroke-linecap="round"><path d="M5 10h10"/></svg>Drack en</span><span style="height:44px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:13px;font-weight:500"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#211B12" stroke-width="1.5" stroke-linecap="round"><path d="M10 5v10M5 10h10"/></svg>Köpte fler</span></div>
+          </div>
+          <div style="background:#FBF7EF;border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:12px;font-variant-numeric:lining-nums tabular-nums;box-shadow:0 1px 2px rgba(33,27,18,.06),0 12px 32px -12px rgba(33,27,18,.25)">
+            <div style="display:flex;justify-content:space-between;font-size:14px"><span style="color:#6E6455">Inköpspris</span><span style="font-weight:500">350 kr</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:14px"><span style="color:#6E6455">Dagens pris</span><span style="font-weight:500">369 kr</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:14px"><span style="color:#6E6455">Köpt</span><span>14 mar 2025 · Patrik</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:14px"><span style="color:#6E6455">Artikelnummer</span><span>75624 01</span></div>
+            <div style="height:1px;background:rgba(33,27,18,.14)"></div>
+            <a style="display:flex;align-items:center;gap:8px;font-size:14px;color:#85444F;font-weight:500;text-decoration:none">Visa på Systembolaget<svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5h7v7M15 5l-9 9"/></svg></a>
+            <a style="display:flex;align-items:center;gap:8px;font-size:14px;color:#85444F;font-weight:500;text-decoration:none">Betyg på Vivino<svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5h7v7M15 5l-9 9"/></svg></a>
+          </div>
+        </aside>
+      </main>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ 4. Appikon ═══ -->
+<section data-screen-label="4 Appikon" style="display:flex;flex-direction:column;gap:24px">
+  <div style="display:flex;flex-direction:column;gap:6px"><div style="font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#6E6455;font-weight:500">4 · Appikon och ordmärke</div><h2 style="font-family:'Instrument Serif',serif;font-weight:400;font-size:36px;margin:0">Två flaskor</h2><p style="color:#6E6455;margin:0;max-width:640px">Två vinflaskor i olika höjd, byggda av rundade rektanglar: kropp och hals. Ett par, inte ett lager. Kräm på vinröd platta, inom 80 %-zonen (streckad ring). Vid 16 px blir de två staplar med hals, fortfarande läsbara.</p></div>
+  <div style="display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start">
+    <div style="background:#FBF7EF;border-radius:12px;padding:28px 32px;display:flex;flex-direction:column;gap:20px;box-shadow:0 1px 2px rgba(33,27,18,.06),0 12px 32px -12px rgba(33,27,18,.25)">
+      <div style="display:flex;gap:28px;align-items:flex-end">
+        <div style="display:flex;flex-direction:column;gap:10px;align-items:center"><svg width="192" height="192" viewBox="0 0 512 512"><rect width="512" height="512" rx="112" fill="#85444F"/><rect x="148" y="176" width="96" height="232" rx="24" fill="#FBF7EF"/><rect x="176.8" y="112" width="38.400000000000006" height="80" rx="9.6" fill="#FBF7EF"/><rect x="268" y="232" width="96" height="176" rx="24" fill="#FBF7EF"/><rect x="296.8" y="168" width="38.400000000000006" height="80" rx="9.6" fill="#FBF7EF"/><circle cx="256" cy="256" r="204.8" fill="none" stroke="#FBF7EF" stroke-width="1" stroke-dasharray="6 6" opacity=".5"/></svg><span style="font-size:12px;color:#6E6455">512</span></div>
+        <div style="display:flex;flex-direction:column;gap:10px;align-items:center"><svg width="64" height="64" viewBox="0 0 512 512"><rect width="512" height="512" rx="112" fill="#85444F"/><rect x="148" y="176" width="96" height="232" rx="24" fill="#FBF7EF"/><rect x="176.8" y="112" width="38.400000000000006" height="80" rx="9.6" fill="#FBF7EF"/><rect x="268" y="232" width="96" height="176" rx="24" fill="#FBF7EF"/><rect x="296.8" y="168" width="38.400000000000006" height="80" rx="9.6" fill="#FBF7EF"/></svg><span style="font-size:12px;color:#6E6455">64</span></div>
+        <div style="display:flex;flex-direction:column;gap:10px;align-items:center"><svg width="32" height="32" viewBox="0 0 512 512"><rect width="512" height="512" rx="112" fill="#85444F"/><rect x="148" y="176" width="96" height="232" rx="24" fill="#FBF7EF"/><rect x="176.8" y="112" width="38.400000000000006" height="80" rx="9.6" fill="#FBF7EF"/><rect x="268" y="232" width="96" height="176" rx="24" fill="#FBF7EF"/><rect x="296.8" y="168" width="38.400000000000006" height="80" rx="9.6" fill="#FBF7EF"/></svg><span style="font-size:12px;color:#6E6455">32</span></div>
+        <div style="display:flex;flex-direction:column;gap:10px;align-items:center"><svg width="16" height="16" viewBox="0 0 16 16"><rect width="16" height="16" rx="3.5" fill="#85444F"/><rect x="3" y="6" width="4" height="7.5" rx="1" fill="#FBF7EF"/><rect x="4.25" y="2.5" width="1.5" height="4" rx=".5" fill="#FBF7EF"/><rect x="8.5" y="8" width="4.5" height="5.5" rx="1" fill="#FBF7EF"/><rect x="9.75" y="5.5" width="2" height="3" rx=".5" fill="#FBF7EF"/></svg><span style="font-size:12px;color:#6E6455">16 favicon</span></div>
+        <div style="display:flex;flex-direction:column;gap:10px;align-items:center"><svg width="64" height="64" viewBox="0 0 512 512"><circle cx="256" cy="256" r="256" fill="#85444F"/><rect x="148" y="176" width="96" height="232" rx="24" fill="#FBF7EF"/><rect x="176.8" y="112" width="38.400000000000006" height="80" rx="9.6" fill="#FBF7EF"/><rect x="268" y="232" width="96" height="176" rx="24" fill="#FBF7EF"/><rect x="296.8" y="168" width="38.400000000000006" height="80" rx="9.6" fill="#FBF7EF"/></svg><span style="font-size:12px;color:#6E6455">maskable</span></div>
+      </div>
+    </div>
+    <div style="background:#FBF7EF;border-radius:12px;padding:28px 32px;display:flex;flex-direction:column;gap:20px;box-shadow:0 1px 2px rgba(33,27,18,.06),0 12px 32px -12px rgba(33,27,18,.25)">
+      <div style="display:flex;align-items:center;gap:14px"><svg width="40" height="40" viewBox="0 0 512 512"><rect width="512" height="512" rx="112" fill="#85444F"/><rect x="148" y="176" width="96" height="232" rx="24" fill="#FBF7EF"/><rect x="176.8" y="112" width="38.400000000000006" height="80" rx="9.6" fill="#FBF7EF"/><rect x="268" y="232" width="96" height="176" rx="24" fill="#FBF7EF"/><rect x="296.8" y="168" width="38.400000000000006" height="80" rx="9.6" fill="#FBF7EF"/></svg><span style="font-family:'Instrument Serif',serif;font-size:40px;line-height:1">Flaskor</span></div>
+      <div style="display:flex;align-items:center;gap:10px"><svg width="24" height="24" viewBox="0 0 512 512"><rect width="512" height="512" rx="112" fill="#85444F"/><rect x="148" y="176" width="96" height="232" rx="24" fill="#FBF7EF"/><rect x="176.8" y="112" width="38.400000000000006" height="80" rx="9.6" fill="#FBF7EF"/><rect x="268" y="232" width="96" height="176" rx="24" fill="#FBF7EF"/><rect x="296.8" y="168" width="38.400000000000006" height="80" rx="9.6" fill="#FBF7EF"/></svg><span style="font-family:'Instrument Serif',serif;font-size:24px;line-height:1">Flaskor</span></div>
+      <div style="font-size:12px;color:#6E6455">Ordmärke: Instrument Serif 400, spärrning 0. Märke och ord i lika höjd, avstånd 0,35 × höjd.</div>
+    </div>
+  </div>
+  <pre style="margin:0;background:#211B12;color:#EFE8DB;border-radius:12px;padding:20px 24px;font-size:12px;line-height:1.55;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;max-width:900px;overflow:auto">&lt;!-- appikon 512, maskable-säker: allt inom r=205 --&gt;
+&lt;svg viewBox="0 0 512 512"&gt;
+  &lt;rect width="512" height="512" rx="112" fill="#85444F"/&gt;
+  &lt;rect x="148" y="176" width="96" height="232" rx="24" fill="#FBF7EF"/&gt;
+  &lt;rect x="176.8" y="112" width="38.400000000000006" height="80" rx="9.6" fill="#FBF7EF"/&gt;
+  &lt;rect x="268" y="232" width="96" height="176" rx="24" fill="#FBF7EF"/&gt;
+  &lt;rect x="296.8" y="168" width="38.400000000000006" height="80" rx="9.6" fill="#FBF7EF"/&gt;
+&lt;/svg&gt;
+
+&lt;!-- favicon 16 --&gt;
+&lt;svg viewBox="0 0 16 16"&gt;
+  &lt;rect width="16" height="16" rx="3.5" fill="#85444F"/&gt;
+  &lt;rect x="3" y="6" width="4" height="7.5" rx="1" fill="#FBF7EF"/&gt;
+  &lt;rect x="4.25" y="2.5" width="1.5" height="4" rx=".5" fill="#FBF7EF"/&gt;
+  &lt;rect x="8.5" y="8" width="4.5" height="5.5" rx="1" fill="#FBF7EF"/&gt;
+  &lt;rect x="9.75" y="5.5" width="2" height="3" rx=".5" fill="#FBF7EF"/&gt;
+&lt;/svg&gt;
+
+&lt;!-- ikoner, 20 px-rutnät, stroke 1.5, round caps --&gt;
+&lt;svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"&gt;
+  &lt;!-- källaren --&gt;   &lt;path d="M8 2h4v4l1.5 2.5V17a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1V8.5L8 6z"/&gt;&lt;path d="M6.5 12h7"/&gt;
+  &lt;!-- önskelistan --&gt; &lt;path d="M5 3h10v14l-5-3.5L5 17z"/&gt;
+  &lt;!-- barskåpet --&gt;  &lt;path d="M5 3h10l-1 14H6z"/&gt;&lt;path d="M5.5 9h9"/&gt;
+  &lt;!-- lägg till --&gt;  &lt;circle cx="10" cy="10" r="7.5"/&gt;&lt;path d="M10 6.5v7M6.5 10h7"/&gt;
+  &lt;!-- sök --&gt;        &lt;circle cx="9" cy="9" r="5.5"/&gt;&lt;path d="M13 13l4 4"/&gt;
+  &lt;!-- plus/minus --&gt; &lt;path d="M10 5v10M5 10h10"/&gt; · &lt;path d="M5 10h10"/&gt;
+  &lt;!-- extern --&gt;     &lt;path d="M8 5h7v7M15 5l-9 9"/&gt;
+  &lt;!-- fäll ut --&gt;    &lt;path d="M6 8l4 4 4-4"/&gt;
+&lt;/svg&gt;</pre>
+</section>
+
+<!-- ═══ 5. Gör inte ═══ -->
+<section data-screen-label="5 Gör inte" style="display:flex;flex-direction:column;gap:24px">
+  <div style="display:flex;flex-direction:column;gap:6px"><div style="font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#6E6455;font-weight:500">5 · Regler</div><h2 style="font-family:'Instrument Serif',serif;font-weight:400;font-size:36px;margin:0">Fem gör inte</h2></div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;max-width:1240px">
+    <div style="background:#FBF7EF;border-radius:12px;padding:20px 22px;display:flex;flex-direction:column;gap:8px;box-shadow:0 1px 2px rgba(33,27,18,.06),0 12px 32px -12px rgba(33,27,18,.25)"><div style="font-family:'Instrument Serif',serif;font-size:24px">1. Accent i piller, status i knapp</div><p style="margin:0;color:#6E6455;text-wrap:pretty">Vinrött betyder "tryck här". Grönt, gult, rött och grått betyder "så här mår vinet". Blanda aldrig: ingen röd knapp, inget vinrött piller.</p></div>
+    <div style="background:#FBF7EF;border-radius:12px;padding:20px 22px;display:flex;flex-direction:column;gap:8px;box-shadow:0 1px 2px rgba(33,27,18,.06),0 12px 32px -12px rgba(33,27,18,.25)"><div style="font-family:'Instrument Serif',serif;font-size:24px">2. Färg utan ord</div><p style="margin:0;color:#6E6455;text-wrap:pretty">Pillret bär alltid prick och ord. Ingen ensam prick, ingen färgad rad, ingen tonad flaskbild som enda signal.</p></div>
+    <div style="background:#FBF7EF;border-radius:12px;padding:20px 22px;display:flex;flex-direction:column;gap:8px;box-shadow:0 1px 2px rgba(33,27,18,.06),0 12px 32px -12px rgba(33,27,18,.25)"><div style="font-family:'Instrument Serif',serif;font-size:24px">3. Ruta för "Drack en"</div><p style="margin:0;color:#6E6455;text-wrap:pretty">Minus i listan minskar antalet direkt, plus ökar. Ingen bekräftelse, ingen betygsdialog, ingen fråga om vem som drack. Bara "Köpt" från önskelistan får en ruta, för att pris måste in.</p></div>
+    <div style="background:#FBF7EF;border-radius:12px;padding:20px 22px;display:flex;flex-direction:column;gap:8px;box-shadow:0 1px 2px rgba(33,27,18,.06),0 12px 32px -12px rgba(33,27,18,.25)"><div style="font-family:'Instrument Serif',serif;font-size:24px">4. Samlarens fält</div><p style="margin:0;color:#6E6455;text-wrap:pretty">Ingen källarplats, ingen värdeutveckling, inga poäng, ingen delning. Tomma sektioner för sådant får inte läggas till "för framtiden".</p></div>
+    <div style="background:#FBF7EF;border-radius:12px;padding:20px 22px;display:flex;flex-direction:column;gap:8px;box-shadow:0 1px 2px rgba(33,27,18,.06),0 12px 32px -12px rgba(33,27,18,.25)"><div style="font-family:'Instrument Serif',serif;font-size:24px">5. Serif på fel ställe</div><p style="margin:0;color:#6E6455;text-wrap:pretty">Instrument Serif bara för vinnamn och rubriker. Belopp, antal, etiketter, knappar och piller i Work Sans med tabular-nums, alltid "1 125 kr" och "12,5 %".</p></div>
+  </div>
+</section>
+
+</div>
+</x-dc>
+</body>
+</html>
