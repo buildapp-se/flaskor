@@ -1,0 +1,243 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    body { margin: 0; background: #EFE8DB; color: #211B12; font-family: 'Work Sans', system-ui, -apple-system, 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.45; -webkit-font-smoothing: antialiased; }
+    a { color: #872F3D; text-decoration: none; } a:hover { color: #6C2331; }
+    .num { font-variant-numeric: lining-nums tabular-nums; }
+  </style>
+</helmet>
+<div style="width: 1440px; height: 900px; display: flex; background: #EFE8DB; overflow: hidden;">
+
+  <!-- Sidnavigering -->
+  <nav style="width: 232px; flex-shrink: 0; display: flex; flex-direction: column; padding: 36px 24px 28px 32px; border-right: 1px solid rgba(33,27,18,0.14); box-sizing: border-box;">
+    <div style="font-family: 'Instrument Serif', Georgia, serif; font-size: 34px; line-height: 1; color: #211B12; letter-spacing: -0.01em;">Flaskor</div>
+    <div style="font-size: 12px; color: #6E6455; margin-top: 6px;">Hemma hos Patrik och Julia</div>
+
+    <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 40px;">
+      <div style="display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 12px; border-radius: 10px; background: #FBF7EF; color: #211B12; font-weight: 500; box-shadow: 0 1px 2px rgba(33,27,18,0.06);">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="{{accent}}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3h4v3.5c0 1.2.4 2 1 2.8 1 1.2 1.5 2.4 1.5 4V20a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1v-6.7c0-1.6.5-2.8 1.5-4 .6-.8 1-1.6 1-2.8V3z"></path><path d="M8.5 14h7"></path></svg>
+        <span>Källaren</span>
+        <span class="num" style="margin-left: auto; font-size: 12px; color: #6E6455;">13</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 12px; border-radius: 10px; color: #211B12;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6E6455" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"></path></svg>
+        <span>Önskelistan</span>
+        <span class="num" style="margin-left: auto; font-size: 12px; color: #6E6455;">7</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 12px; border-radius: 10px; color: #211B12;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6E6455" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h14l-6 8v6h3v2H8v-2h3v-6L5 4z"></path><path d="M7 7h10"></path></svg>
+        <span>Barskåpet</span>
+        <span class="num" style="margin-left: auto; font-size: 12px; color: #6E6455;">9</span>
+      </div>
+    </div>
+
+    <div style="margin-top: auto; display: flex; align-items: center; justify-content: center; gap: 8px; height: 44px; border-radius: 10px; background: {{accent}}; color: #FBF7EF; font-weight: 500;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FBF7EF" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>
+      <span>Lägg till flaska</span>
+    </div>
+  </nav>
+
+  <!-- Innehåll -->
+  <main style="flex: 1; display: flex; flex-direction: column; padding: 36px 48px 0 48px; box-sizing: border-box; min-width: 0;">
+
+    <div style="display: flex; align-items: flex-end; justify-content: space-between;">
+      <div>
+        <h1 style="font-family: 'Instrument Serif', Georgia, serif; font-weight: 400; font-size: 44px; line-height: 1; margin: 0; letter-spacing: -0.01em;">Källaren</h1>
+        <div class="num" style="color: #6E6455; margin-top: 10px; font-size: 14px;">13 flaskor · 4 640 kr · 8 viner</div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 12px; background: #FBF7EF; border: 1px solid rgba(33,27,18,0.14);">
+        <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #B8860B;"></span>
+        <span style="font-weight: 500;">Dags att dricka</span>
+        <span class="num" style="color: #6E6455;">1 vin går ut i år</span>
+      </div>
+    </div>
+
+    <!-- Sök och chips -->
+    <div style="display: flex; align-items: center; gap: 24px; margin-top: 28px;">
+      <div style="display: flex; align-items: center; gap: 10px; width: 300px; height: 40px; padding: 0 14px; border-radius: 10px; background: #FBF7EF; border: 1px solid rgba(33,27,18,0.14); box-sizing: border-box;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6E6455" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
+        <span style="color: #6E6455;">Sök namn, producent, land</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="height: 32px; padding: 0 14px; display: inline-flex; align-items: center; border-radius: 999px; background: #211B12; color: #FBF7EF; font-size: 13px; font-weight: 500;">Alla</span>
+        <span style="height: 32px; padding: 0 14px; display: inline-flex; align-items: center; border-radius: 999px; border: 1px solid rgba(33,27,18,0.2); color: #211B12; font-size: 13px;">Rött</span>
+        <span style="height: 32px; padding: 0 14px; display: inline-flex; align-items: center; border-radius: 999px; border: 1px solid rgba(33,27,18,0.2); color: #211B12; font-size: 13px;">Vitt</span>
+        <span style="height: 32px; padding: 0 14px; display: inline-flex; align-items: center; border-radius: 999px; border: 1px solid rgba(33,27,18,0.2); color: #211B12; font-size: 13px;">Mousserande</span>
+        <span style="width: 1px; height: 20px; background: rgba(33,27,18,0.14); margin: 0 4px;"></span>
+        <span style="height: 32px; padding: 0 14px; display: inline-flex; align-items: center; gap: 8px; border-radius: 999px; border: 1px solid rgba(33,27,18,0.2); color: #211B12; font-size: 13px;"><span style="width: 8px; height: 8px; border-radius: 50%; background: #2F6B3F;"></span>Drick</span>
+        <span style="height: 32px; padding: 0 14px; display: inline-flex; align-items: center; gap: 8px; border-radius: 999px; border: 1px solid rgba(33,27,18,0.2); color: #211B12; font-size: 13px;"><span style="width: 8px; height: 8px; border-radius: 50%; background: #B8860B;"></span>Snart</span>
+        <span style="height: 32px; padding: 0 14px; display: inline-flex; align-items: center; gap: 8px; border-radius: 999px; border: 1px solid rgba(33,27,18,0.2); color: #211B12; font-size: 13px;"><span style="width: 8px; height: 8px; border-radius: 50%; background: #A03B2E;"></span>Förbi</span>
+      </div>
+      <div style="margin-left: auto; display: flex; align-items: center; gap: 6px; color: #6E6455; font-size: 13px;">
+        <span>Sortera:</span><span style="color: #211B12; font-weight: 500;">Pris</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#211B12" stroke-width="2" stroke-linecap="round"><path d="M6 9l6 6 6-6"></path></svg>
+      </div>
+    </div>
+
+    <!-- Listan -->
+    <div style="margin-top: 28px; display: flex; flex-direction: column; gap: 28px; overflow: hidden;">
+
+      <section>
+        <div style="display: flex; align-items: baseline; gap: 12px; padding-bottom: 10px; border-bottom: 1px solid rgba(33,27,18,0.14);">
+          <h2 style="font-family: 'Instrument Serif', Georgia, serif; font-weight: 400; font-size: 24px; margin: 0;">Rött vin</h2>
+          <span class="num" style="color: #6E6455; font-size: 13px;">10 flaskor</span>
+        </div>
+
+        <div style="display: flex; flex-direction: column;">
+
+          <div style="display: grid; grid-template-columns: 72px 1fr 150px 120px 110px 96px; align-items: center; gap: 20px; padding: 12px 0; border-bottom: 1px solid rgba(33,27,18,0.08);">
+            <div style="height: 88px; display: flex; align-items: flex-end; justify-content: center;"><img src="sb-24490529.webp" alt="" style="height: 88px; width: auto;"></div>
+            <div style="min-width: 0;">
+              <div style="font-family: 'Instrument Serif', Georgia, serif; font-size: 21px; line-height: 1.15;">Chianti Classico</div>
+              <div style="color: #6E6455; font-size: 13px; margin-top: 3px;">Valiano · 2023 · Toscana, Italien</div>
+              <div style="color: #6E6455; font-size: 13px; margin-top: 2px;">Grillat mörkt kött · 16–18 °C</div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 6px; align-items: flex-start;">
+              <span style="display: inline-flex; align-items: center; gap: 7px; height: 26px; padding: 0 11px; border-radius: 999px; background: rgba(184,134,11,0.14); color: #7A5A0A; font-size: 12px; font-weight: 500;"><span style="width: 7px; height: 7px; border-radius: 50%; background: #B8860B;"></span>Snart</span>
+              <span class="num" style="font-size: 12px; color: #6E6455;">Drickes 2023–2026</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 4px;">
+              <span style="width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; border: 1px solid rgba(33,27,18,0.2); color: #211B12; font-size: 18px;">−</span>
+              <span class="num" style="width: 32px; text-align: center; font-size: 18px; font-weight: 500;">2</span>
+              <span style="width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; border: 1px solid rgba(33,27,18,0.2); color: #211B12; font-size: 18px;">+</span>
+            </div>
+            <div class="num" style="text-align: right;"><div style="font-weight: 500;">166 kr</div><div style="font-size: 12px; color: #6E6455;">332 kr totalt</div></div>
+            <div style="text-align: right; font-size: 12px; color: #6E6455;">Systembolaget</div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 72px 1fr 150px 120px 110px 96px; align-items: center; gap: 20px; padding: 12px 0; border-bottom: 1px solid rgba(33,27,18,0.08);">
+            <div style="height: 88px; display: flex; align-items: flex-end; justify-content: center;"><img src="sb-60583148.webp" alt="" style="height: 88px; width: auto;"></div>
+            <div style="min-width: 0;">
+              <div style="font-family: 'Instrument Serif', Georgia, serif; font-size: 21px; line-height: 1.15;">Chianti Classico Riserva Le Bonille di Sopra</div>
+              <div style="color: #6E6455; font-size: 13px; margin-top: 3px;">Terreno · 2021 · Toscana, Italien</div>
+              <div style="color: #6E6455; font-size: 13px; margin-top: 2px;">Lammgryta, vild fågel · 18 °C · karaff 1 h</div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 6px; align-items: flex-start;">
+              <span style="display: inline-flex; align-items: center; gap: 7px; height: 26px; padding: 0 11px; border-radius: 999px; background: rgba(47,107,63,0.13); color: #24522F; font-size: 12px; font-weight: 500;"><span style="width: 7px; height: 7px; border-radius: 50%; background: #2F6B3F;"></span>Drick</span>
+              <span class="num" style="font-size: 12px; color: #6E6455;">Drickes 2022–2027</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 4px;">
+              <span style="width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; border: 1px solid rgba(33,27,18,0.2); color: #211B12; font-size: 18px;">−</span>
+              <span class="num" style="width: 32px; text-align: center; font-size: 18px; font-weight: 500;">1</span>
+              <span style="width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; border: 1px solid rgba(33,27,18,0.2); color: #211B12; font-size: 18px;">+</span>
+            </div>
+            <div class="num" style="text-align: right;"><div style="font-weight: 500;">260 kr</div><div style="font-size: 12px; color: #6E6455;">260 kr totalt</div></div>
+            <div style="text-align: right; font-size: 12px; color: #6E6455;">Systembolaget</div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 72px 1fr 150px 120px 110px 96px; align-items: center; gap: 20px; padding: 12px 0; border-bottom: 1px solid rgba(33,27,18,0.08);">
+            <div style="height: 88px; display: flex; align-items: flex-end; justify-content: center;"><img src="sb-64088056.webp" alt="" style="height: 88px; width: auto;"></div>
+            <div style="min-width: 0;">
+              <div style="font-family: 'Instrument Serif', Georgia, serif; font-size: 21px; line-height: 1.15;">Régnié</div>
+              <div style="color: #6E6455; font-size: 13px; margin-top: 3px;">Domaine de Vernus · 2023 · Beaujolais, Frankrike</div>
+              <div style="color: #6E6455; font-size: 13px; margin-top: 2px;">Charkbricka, grillad kyckling · 14 °C</div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 6px; align-items: flex-start;">
+              <span style="display: inline-flex; align-items: center; gap: 7px; height: 26px; padding: 0 11px; border-radius: 999px; background: rgba(47,107,63,0.13); color: #24522F; font-size: 12px; font-weight: 500;"><span style="width: 7px; height: 7px; border-radius: 50%; background: #2F6B3F;"></span>Drick</span>
+              <span class="num" style="font-size: 12px; color: #6E6455;">Drickes 2024–2029</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 4px;">
+              <span style="width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; border: 1px solid rgba(33,27,18,0.2); color: #211B12; font-size: 18px;">−</span>
+              <span class="num" style="width: 32px; text-align: center; font-size: 18px; font-weight: 500;">1</span>
+              <span style="width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; border: 1px solid rgba(33,27,18,0.2); color: #211B12; font-size: 18px;">+</span>
+            </div>
+            <div class="num" style="text-align: right;"><div style="font-weight: 500;">300 kr</div><div style="font-size: 12px; color: #6E6455;">300 kr totalt</div></div>
+            <div style="text-align: right; font-size: 12px; color: #6E6455;">Systembolaget</div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 72px 1fr 150px 120px 110px 96px; align-items: center; gap: 20px; padding: 12px 0; border-bottom: 1px solid rgba(33,27,18,0.08);">
+            <div style="height: 88px; display: flex; align-items: flex-end; justify-content: center;"><img src="sb-24393488.webp" alt="" style="height: 88px; width: auto;"></div>
+            <div style="min-width: 0;">
+              <div style="font-family: 'Instrument Serif', Georgia, serif; font-size: 21px; line-height: 1.15;">Châteauneuf-du-Pape</div>
+              <div style="color: #6E6455; font-size: 13px; margin-top: 3px;">Bosquet des Papes · 2024 · Rhônedalen, Frankrike</div>
+              <div style="color: #6E6455; font-size: 13px; margin-top: 2px;">Rosastekt lamm · 18 °C · karaff 1 h</div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 6px; align-items: flex-start;">
+              <span style="display: inline-flex; align-items: center; gap: 7px; height: 26px; padding: 0 11px; border-radius: 999px; background: rgba(47,107,63,0.13); color: #24522F; font-size: 12px; font-weight: 500;"><span style="width: 7px; height: 7px; border-radius: 50%; background: #2F6B3F;"></span>Drick</span>
+              <span class="num" style="font-size: 12px; color: #6E6455;">Drickes 2026–2034</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 4px;">
+              <span style="width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; border: 1px solid rgba(33,27,18,0.2); color: #211B12; font-size: 18px;">−</span>
+              <span class="num" style="width: 32px; text-align: center; font-size: 18px; font-weight: 500;">3</span>
+              <span style="width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; border: 1px solid rgba(33,27,18,0.2); color: #211B12; font-size: 18px;">+</span>
+            </div>
+            <div class="num" style="text-align: right;"><div style="font-weight: 500;">375 kr</div><div style="font-size: 12px; color: #6E6455;">1 125 kr totalt</div></div>
+            <div style="text-align: right; font-size: 12px; color: #6E6455;">Systembolaget</div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 72px 1fr 150px 120px 110px 96px; align-items: center; gap: 20px; padding: 12px 0; border-bottom: 1px solid rgba(33,27,18,0.08);">
+            <div style="height: 88px; display: flex; align-items: flex-end; justify-content: center;"><img src="sb-64084481.webp" alt="" style="height: 88px; width: auto;"></div>
+            <div style="min-width: 0;">
+              <div style="font-family: 'Instrument Serif', Georgia, serif; font-size: 21px; line-height: 1.15;">Barolo Bussia Dardi Le Rose</div>
+              <div style="color: #6E6455; font-size: 13px; margin-top: 3px;">Poderi Colla · 2021 · Piemonte, Italien</div>
+              <div style="color: #6E6455; font-size: 13px; margin-top: 2px;">Vilt, svamp, anka · 16 °C · karaff 2 h</div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 6px; align-items: flex-start;">
+              <span style="display: inline-flex; align-items: center; gap: 7px; height: 26px; padding: 0 11px; border-radius: 999px; background: rgba(33,27,18,0.08); color: #6E6455; font-size: 12px; font-weight: 500;"><span style="width: 7px; height: 7px; border-radius: 50%; background: #9A8F7E;"></span>Vänta</span>
+              <span class="num" style="font-size: 12px; color: #6E6455;">Drickes 2027–2035</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 4px;">
+              <span style="width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; border: 1px solid rgba(33,27,18,0.2); color: #211B12; font-size: 18px;">−</span>
+              <span class="num" style="width: 32px; text-align: center; font-size: 18px; font-weight: 500;">2</span>
+              <span style="width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; border: 1px solid rgba(33,27,18,0.2); color: #211B12; font-size: 18px;">+</span>
+            </div>
+            <div class="num" style="text-align: right;"><div style="font-weight: 500;">499 kr</div><div style="font-size: 12px; color: #6E6455;">998 kr totalt</div></div>
+            <div style="text-align: right; font-size: 12px; color: #6E6455;">Systembolaget</div>
+          </div>
+
+        </div>
+      </section>
+
+      <section>
+        <div style="display: flex; align-items: baseline; gap: 12px; padding-bottom: 10px; border-bottom: 1px solid rgba(33,27,18,0.14);">
+          <h2 style="font-family: 'Instrument Serif', Georgia, serif; font-weight: 400; font-size: 24px; margin: 0;">Vitt vin</h2>
+          <span class="num" style="color: #6E6455; font-size: 13px;">3 flaskor</span>
+        </div>
+        <div style="display: flex; flex-direction: column;">
+          <div style="display: grid; grid-template-columns: 72px 1fr 150px 120px 110px 96px; align-items: center; gap: 20px; padding: 12px 0; border-bottom: 1px solid rgba(33,27,18,0.08);">
+            <div style="height: 88px; display: flex; align-items: flex-end; justify-content: center;"><img src="sb-24386671.webp" alt="" style="height: 88px; width: auto;"></div>
+            <div style="min-width: 0;">
+              <div style="font-family: 'Instrument Serif', Georgia, serif; font-size: 21px; line-height: 1.15;">Chablis Premier Cru Les Montmains</div>
+              <div style="color: #6E6455; font-size: 13px; margin-top: 3px;">Domaine Laroche · 2024 · Bourgogne, Frankrike</div>
+              <div style="color: #6E6455; font-size: 13px; margin-top: 2px;">Ostron, skaldjur, piggvar · 10 °C</div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 6px; align-items: flex-start;">
+              <span style="display: inline-flex; align-items: center; gap: 7px; height: 26px; padding: 0 11px; border-radius: 999px; background: rgba(47,107,63,0.13); color: #24522F; font-size: 12px; font-weight: 500;"><span style="width: 7px; height: 7px; border-radius: 50%; background: #2F6B3F;"></span>Drick</span>
+              <span class="num" style="font-size: 12px; color: #6E6455;">Drickes 2025–2032</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 4px;">
+              <span style="width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; border: 1px solid rgba(33,27,18,0.2); color: #211B12; font-size: 18px;">−</span>
+              <span class="num" style="width: 32px; text-align: center; font-size: 18px; font-weight: 500;">2</span>
+              <span style="width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; border: 1px solid rgba(33,27,18,0.2); color: #211B12; font-size: 18px;">+</span>
+            </div>
+            <div class="num" style="text-align: right;"><div style="font-weight: 500;">350 kr</div><div style="font-size: 12px; color: #6E6455;">700 kr totalt</div></div>
+            <div style="text-align: right; font-size: 12px; color: #6E6455;">Systembolaget</div>
+          </div>
+        </div>
+      </section>
+
+      <div style="display: flex; align-items: center; gap: 10px; color: #6E6455; font-size: 13px; padding-top: 4px;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6E6455" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"></path></svg>
+        <span>Slut</span><span class="num">4 viner utan flaskor kvar · lägg på önskelistan igen med ett klick</span>
+      </div>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script data-dc-script data-props='{"accent":{"editor":"color","default":"#872F3D","options":["#872F3D","#5E6B2F","#A0522D","#2F6B3F"],"section":"Färg"},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { accent: this.props.accent ?? '#872F3D' };
+  }
+}
+</script>
+</body>
+</html>

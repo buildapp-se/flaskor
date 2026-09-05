@@ -11,6 +11,10 @@ Utgångsläge: Patriks vin-Excel (21 rader, 25 flaskor, 8 345 kr) plus sparade l
 
 **Systembolaget, sök på namn: osäkert.** Den officiella API-portalen ger bara butiker och leverantörer sedan 2021. Det inofficiella `api-extern.systembolaget.se/sb-api-ecommerce/v1/productsearch` med nyckeln ur webbplatsens JS svarade 404 på den gamla sökvägen 2026-09-05; nyckeln och vägen måste grävas ur nuvarande JS-bundle om namnsökning behövs. Alternativ: [C4illin/systembolaget-data](https://github.com/C4illin/systembolaget-data) hostar hela sortimentet som JSON (73 MB, uppdaterad 03:00 varje natt) på `susbolaget.emrik.org/v1/products`; en tredjepartsdump, kan försvinna.
 
+**Bilder:** `https://product-cdn.systembolaget.se/productimages/<productId>/<productId>_200.webp` (ca 15 kB, frilagd flaska med transparent bakgrund) och `_400.png` (ca 120 kB) svarar 200; adressen utan suffix ger 404. Verifierat 2026-09-05.
+
+**[AlexGustafsson/systembolaget-api](https://github.com/AlexGustafsson/systembolaget-api):** Go-verktyg för Systembolagets öppna och stängda API:er, med systerrepot `systembolaget-api-data` som håller aktuell data. Patrik pekade på det 2026-09-05; alternativ till C4illin-dumpen om den försvinner.
+
 **Systembolagets sparade listor: ingen export.** "Dryckeslistan" finns under Mina sidor och kan delas som länk eller skrivas ut. Inget API, inloggningsskyddat. Väg in: kopiera artikelnummer eller dela-länken för hand.
 
 **Caviste (caviste.se): WooCommerce.** Produktsidorna svarar 200 på curl, `wp-json` finns. Store API-sökningen `wc/store/v1/products?search=marcoux` gav tom lista, så en produktsida får läsas som HTML (titel, og-taggar, pris) om Caviste-import ska stödjas. Patriks nuvarande 21 rader är alla Caviste-paket (CAV-nummer).
