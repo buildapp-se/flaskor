@@ -18,7 +18,7 @@
     }
   ],
   "vars": {
-    "FRONTEND_ORIGINS": "https://buildapp.se,https://www.buildapp.se,http://localhost:5173,http://127.0.0.1:5173"
+    "FRONTEND_ORIGINS": "https://buildapp.se,https://www.buildapp.se,http://localhost:5173,http://localhost:5180,http://127.0.0.1:5173,http://127.0.0.1:5180"
   },
   // Nattlig uppdatering från Systembolaget 04:00 svensk sommartid, 03:00 vintertid (cron är UTC), beslut 23
   "triggers": { "crons": ["0 2 * * *"] },

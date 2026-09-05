@@ -384,3 +384,139 @@ p {
     display: initial;
   }
 }
+
+/* ── Flaskfoto ────────────────────────────────────────── */
+.fl-bottle {
+  border-radius: 4px;
+  object-fit: contain;
+  flex: none;
+  display: block;
+}
+.fl-bottle--empty {
+  background: repeating-linear-gradient(135deg, rgba(33, 27, 18, 0.08) 0 3px, transparent 3px 8px);
+}
+.fl-bottle--sm {
+  width: 32px;
+  height: 50px;
+}
+.fl-bottle--md {
+  width: 36px;
+  height: 56px;
+}
+.fl-bottle--lg {
+  width: 56px;
+  height: 88px;
+}
+.fl-bottle--xl {
+  width: 200px;
+  height: 560px;
+  border-radius: var(--fl-r-sm);
+  margin: 0 auto;
+}
+.fl-bottle--xl.fl-bottle--empty {
+  background: repeating-linear-gradient(135deg, rgba(33, 27, 18, 0.08) 0 4px, transparent 4px 12px);
+}
+
+/* ── Små byggstenar som vyerna delar ──────────────────── */
+.fl-rule {
+  height: 1px;
+  background: var(--fl-line);
+}
+.fl-stack-8 {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fl-s2);
+}
+.fl-row-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fl-s3);
+}
+.fl-textbtn {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--fl-accent);
+  min-height: 24px;
+}
+.fl-textbtn:hover {
+  color: var(--fl-accent-hover);
+}
+.fl-years {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--fl-s3);
+}
+.fl-years label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* ── Lägg till (design §3) ────────────────────────────── */
+.fl-add {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 560px;
+  flex: 1;
+}
+.fl-add__form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.fl-add__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fl-s3);
+  flex: 1;
+}
+.fl-add__card {
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.fl-add__top {
+  display: grid;
+  grid-template-columns: 56px 1fr;
+  gap: var(--fl-s4);
+  align-items: start;
+}
+.fl-add__facts {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.fl-add__name {
+  font-family: var(--fl-font-serif);
+  font-style: italic;
+  font-size: 22px;
+  line-height: 1.15;
+}
+.fl-add__price {
+  font-weight: 500;
+  font-size: 17px;
+  font-variant-numeric: var(--fl-nums);
+}
+.fl-add__taste {
+  font-size: 14px;
+  text-wrap: pretty;
+}
+.fl-add__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: auto;
+  padding-bottom: var(--fl-s3);
+}
+@media (max-width: 899px) {
+  .fl-add {
+    max-width: none;
+  }
+  .fl-add__form {
+    padding: 0 4px;
+  }
+}
