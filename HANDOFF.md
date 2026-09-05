@@ -2,7 +2,7 @@
 schemaVersion: 1
 status: active
 currentGoal: Flaskor grillad och beslutad 2026-09-05 (30 beslut i GRILL-STATUS.md), repot skapat, designbrief och startdata på plats, ingen kod än. Arbetsflödet är grill, skiss, överlämning till Claude Design, sedan bygge i Claude Code.
-nextAction: Kör prompten under §Prompt för byggsessionen i en ny terminal i C:\dev\flaskor. Valfritt före det: kör docs/DESIGN-BRIEF.md i claude.ai/design och lägg resultatet i design/ (tokens.css). Bygget klarar sig utan det: Sipdecks tokens med vinröd accent som tillfällig accent.
+nextAction: Patrik kör docs/DESIGN-BRIEF.md i claude.ai/design och lägger resultatet i design/ (tokens.css med prefixet --fl-, artboards som HTML, ikon). Därefter prompten under §Prompt för byggsessionen i en ny terminal i C:\dev\flaskor.
 blockers: []
 reviewedAt: 2026-09-05
 ---
