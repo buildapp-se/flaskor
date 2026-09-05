@@ -1,52 +1,74 @@
 ---
 schemaVersion: 1
 status: active
-currentGoal: Flaskor grillad och beslutad 2026-09-05 (30 beslut i GRILL-STATUS.md), repot skapat, designbrief och startdata på plats, ingen kod än. Arbetsflödet är grill, skiss, överlämning till Claude Design, sedan bygge i Claude Code.
-nextAction: Claude Design har levererat 2026-09-05. Patrik kör prompten under §Prompt för byggsessionen i en ny terminal i C:\dev\flaskor.
+currentGoal: v1 byggd och verifierad lokalt 2026-09-05 (alla P0 och P1 i BACKLOG.md). Inget i molnet än, Patrik skapar D1, secret och Pages.
+nextAction: Patrik kör kommandona under §Nästa steg i ordning (D1, secret, migrering, Worker-deploy, Pages, seed), sedan verifieras live.
 blockers: []
 reviewedAt: 2026-09-05
 ---
 
 # Handoff: Flaskor
 
-Senast uppdaterad: 2026-09-05 kl. 20:35, Claude Designs leverans i repot.
+Senast uppdaterad: 2026-09-05 kl. 21:20, v1 byggd.
 
 ## Läge
 
-Fyra grillomgångar 2026-09-05 gav 30 beslut, alla i [GRILL-STATUS.md](GRILL-STATUS.md). Modell, flöden och arkitektur i [CONTEXT.md](CONTEXT.md). Research i [docs/RESEARCH.md](docs/RESEARCH.md). Designbrief i [docs/DESIGN-BRIEF.md](docs/DESIGN-BRIEF.md); Claude Designs leverans (2026-09-05 kl. 20:25, accent vinröd `#85444F`, tokens `--fl-*`, alla vyer) i `design/Flaskor.dc.html`. En äldre skiss av mig i `design/artboards/Main.dc.html`, underordnad leveransen. Startdata från Excel i `seed/vinlista.tsv` (21 rader, 25 flaskor). Ingen kod finns.
+Hela v1 finns i `main` (commits `ca195ed` till `1359ed6` plus dokumentcommit), en commit per backlogpunkt. Verifierat lokalt: `tsc -b`, 23 enhetstester (piller, tumregel, format, Systembolaget-parsern mot två sparade produktsidor i `worker/test/fixtures/`), 11 Worker-tester i riktig workerd med lokal D1, `wrangler deploy --dry-run`, `vite build`, och alla fem vyer i Chromium på 1 280 och 390 px mot `vite dev` (port 5180) och `wrangler dev` (8787). Startdatan (21 Caviste-rader, alla med bild) ligger i den lokala D1:n via `npm run seed`.
+
+Molnet: D1 finns inte, secreten finns inte, Workern är inte deployad, GitHub Pages är inte aktiverat. CI-körningarna på `main` faller på steget `configure-pages` av just det skälet; test, dry-run och build är gröna i CI.
+
+Layout: `src/` (React, en CSS-fil `app.css` ovanpå `tokens.css`), `shared/` (typer, fel, piller- och tumregellogik, delas av klient och Worker), `worker/` (routes i `src/index.ts`, D1 i `src/db.ts`, Systembolaget i `src/systembolaget.ts`, migreringar, tester, fixturer), `scripts/seed.ts`, `design/` (facit).
 
 ## Nästa steg
 
-1. Byggsessionen lyfter tokens, ikon och regler ur `design/Flaskor.dc.html` (steg 0 i prompten).
-2. Bygg v1 P0 enligt prompten nedan, i chunk-läge, en commit per punkt.
-3. P1: vindetalj, startdata, cron, PWA, cockpit.
+Kör i `C:\dev\flaskor`, i ordning. Steg 1, 2 och 5 är dina enligt stoppreglerna (skapa databas, skapa secret, publicera).
+
+1. **D1 i molnet:** `npx wrangler d1 create flaskor`. Klistra in `database_id` ur svaret i `wrangler.jsonc` (raden med nollor) och committa.
+2. **Grindkoden:** `npx wrangler secret put GATE_CODE` (skriv koden när den frågar; den hamnar aldrig i repot). Lokalt läser `wrangler dev` `.dev.vars`, kopierad från `.dev.vars.example`.
+3. **Schemat:** `npm run db:migrate:remote`.
+4. **Workern:** `npm run worker:deploy`. Routen `flaskor-api.buildapp.se` står som `custom_domain` i `wrangler.jsonc`, så wrangler skapar DNS-posten i Cloudflare-zonen `buildapp.se` själv, som för Beefcake. Kolla: `curl https://flaskor-api.buildapp.se/health` ska ge `{"ok":true}`.
+5. **GitHub Pages:** `gh api -X POST repos/buildapp-se/flaskor/pages -f build_type=workflow`, sedan `gh workflow run deploy.yml --repo buildapp-se/flaskor`. Live på https://buildapp.se/flaskor efter körningen (user-site-tricket, som Sipdeck).
+6. **Startdata:** `npm run seed -- --remote` (hämtar Caviste-bilderna på nytt, tar ~10 s).
+7. **Verifiera live:** öppna https://buildapp.se/flaskor, skriv koden, se 21 viner i Källaren. Morgonen efter: `npx wrangler tail flaskor-api` runt 04:00 eller kolla `price_checked_at` i detaljvyn för ett Systembolagsvin.
+
+Sedan: punkterna under "Efter första molndeployen" i `BACKLOG.md`, främst Caviste-bilden.
 
 ## Val tagna åt Patrik
 
-Repot fick namnet `flaskor` utan uttryckligt ja (rekommenderat framför `bottles`, inte motsagt); `gh repo rename` rättar. Referensskissen använder riktiga Systembolagsviner i Patriks stil, inte Caviste-raderna, för att bilderna skulle finnas.
+Chunk-läge 2026-09-05. Säg till om något ska ändras.
 
-## Prompt för byggsessionen
+**Designleveransen saknade:**
+- Grindvyn: ett kort med tokens ur §1 (ordmärke, etikett, fält, knapp), `src/views/Gate.tsx`.
+- Desktop för Önskelistan, Barskåpet och Lägg till: samma innehåll som mobilen i en kolumn (720 respektive 560 px) bredvid sidnavigeringen.
+- Vindetalj på mobil: samma block i en kolumn, fotot 120 px högt, faktarutan i två kolumner. Under 1 400 px får fotokolumnen 200 px i stället för 260 så texten får plats.
+- Redigering (beslut 17): "Ändra" uppe till höger byter mittkolumnen mot ett formulär med alla fält, Spara/Avbryt.
+- Bytbar sortering (beslut 28): en `select` i chip-form sist i chip-raden, Pris (fallande), Årgång, Fönsterslut.
+- Slut-sektionen utfälld: grå rader med "Lägg på önskelistan igen" plus stegaren, i Barskåpet grå kort med samma knapp.
+- "Hämta"-knappen i Lägg till visas bara när fältet har text och inget hämtats; Enter fungerar alltid.
 
-Kopiera allt nedanför linjen till en ny Claude Code-terminal i `C:\dev\flaskor`.
+**Logik:**
+- "Dags att dricka: N" räknar viner (rader), inte flaskor, med piller Drick eller Snart. Chippet "Drick nu" filtrerar på samma två.
+- Kategoriordning i Källaren: Rött, Vitt, Rosé, Mousserande, sedan övriga i bokstavsordning.
+- Kolumnen `taste` tillagd i `drink` (designen visar "Smak enligt Systembolaget", byggprompten listar fältet). Enda tillägget till modellen i CONTEXT.md.
+- Nattlig uppdatering och uppdatera-knappen rör årgången bara på önskelisterader; ägda flaskor behåller sin årgång (Systembolaget säljer den nya, källaren har den gamla). 404 från Systembolaget sätter `availability = discontinued`; nätfel lämnar raden orörd.
+- "Direkt till källaren" sparar antal 1 och inköpspris = dagens pris; ändras i detaljvyn.
+- Tillgänglighetstext i Önskelistan: "Finns på Systembolaget · nr 75624 01", "Tillfälligt slut på Systembolaget", "Utgått hos Systembolaget" (grå rad, tom Köpt-knapp), "Caviste" för Caviste-rader, inget för manuella.
+- "Öppna en" i Barskåpet visas så länge oöppnade finns, även med en öppnad flaska; den sätter nivån till Full. Under en fjärdedel blir öppnad flaska `null`.
+- Systembolagets `usage` delas: temperaturen ("16-18") till `serve_temp`, texten efter "till" till `food`, annars hela texten till `food`.
+- Ingen route för att ta bort en rad; ligger i backlog.
 
----
+**Teknik:**
+- Hash-routing (`#/onskelistan`, `#/flaska/12`) i 30 egna rader i stället för ett routerbibliotek: GitHub Pages kan inte skriva om djupa sökvägar till `index.html`.
+- Listan cachas i `localStorage` och hämtas om vid start och varje gång fliken får fokus (två användare delar den). Service workern cachar skalet, typsnitten och flaskbilderna, inte API-svaren.
+- PWA `registerType: 'autoUpdate'` utan omladdningsbanner (inget pågående arbete att förlora, till skillnad från Beefcakes pass).
+- `compatibility_date` 2026-08-08: vitest-poolens workerd stödjer inte senare.
+- Lokal utvecklingsport 5180 (5173 och 5174 hålls av Familjehubbens vite från en annan terminal). Båda 5173 och 5180 står i `FRONTEND_ORIGINS`.
+- Seed-skriptet raderar alla `caviste`-rader före omkörning, så det går att köra om utan dubbletter. WordPress tumnagelsuffix (`-100x100`) tas bort från bildlänken.
+- Fixturer: 7562401 (Domaine Georges d'Ibry, ordervara utan druvor och usage) och 1101 (Vanlig Vodka, sprit med usage och taste). Testsviten släpper ingen trafik ut; Systembolaget svarar ur fixturerna via `outboundService`.
+- `.gitattributes` med `eol=lf` så Windows-checkouten slutar varna om CRLF.
 
-Bygg v1 av Flaskor i chunk-läge (kör hela batchen, en commit per punkt, push efter varje verifierad punkt; repot har inga externa användare).
+## Fällor
 
-Steg 0, före allt annat: Claude Designs leverans ligger redan i repot som `design/Flaskor.dc.html` (en fil, alla sektioner: tokens, piller, artboards för alla vyer, ikon, regler; `data-screen-label` på varje sektion). Läs hela filen. Lyft ut alla `--fl-*` custom properties ordagrant till `src/tokens.css`, ikonen och ordmärket till `public/`, och de fem "gör inte" till `design/README.md`. Ändra inga värden. Committa som första commit: `design: tokens, ikon och regler ur Claude Designs leverans`.
-
-Läs sedan, helt: `CONTEXT.md`, `GRILL-STATUS.md`, `BACKLOG.md`, `HANDOFF.md`, `docs/RESEARCH.md`, `docs/DESIGN-BRIEF.md`, `seed/vinlista.tsv`. Modellen, flödena, pillerlogiken och tumregeltabellen i CONTEXT.md är beslutade och ändras inte utan att jag säger till.
-
-Bygg BACKLOG.md §v1 P0 uppifrån och ner, sedan P1 i ordning. Ramar:
-
-- Stack enligt beslut 10 och 21: React + Vite + TypeScript `strict`, handskriven CSS, ingen Tailwind, ingen komponentbibliotek. Kopiera Vite-, tsconfig- och Pages-workflow-mönstret från `C:\dev\beefcake` (workflow bygger på push till `main` och deployar `dist/` till GitHub Pages, `base: '/flaskor/'`). Worker i `worker/` med wrangler, D1-bindning, route `flaskor-api.buildapp.se`, cron `0 2 * * *` (04:00 Stockholm sommartid). Vitest för ren logik (piller, tumregel, Systembolaget-parsern) och `@cloudflare/vitest-pool-workers` för Workern som i `C:\dev\schema`.
-- Grindkoden (beslut 2): Workern jämför `Authorization: Bearer` mot secret `GATE_CODE`. Att skapa secreten är mitt jobb: skriv kommandot i sammanfattningen, kör det inte. Lokalt går `.dev.vars`.
-- Design: `design/Flaskor.dc.html` är facit, ordagrant: tokens, typskala, pillrens fem tillstånd, varje vys layout, mått, radier och avstånd, ikonen som favicon och PWA-ikoner. Bygg komponenterna så att de matchar sektionerna pixel för pixel; avvik bara där React kräver det och skriv då varför i en kommentar. Saknas något i leveransen, stanna och fråga. `design/artboards/Main.dc.html` är en äldre skiss av mig, underordnad leveransen. Mobil: bottennavigering med fyra val, tryckytor minst 44 px.
-- Alla strängar i `src/strings.ts` (beslut 18), bara svenska. Belopp med mellanslag som tusentalsavgränsare, `tabular-nums`.
-- Systembolaget-hämtningen: `GET https://www.systembolaget.se/produkt/vin/x-<artikelnummer>/` med en vanlig webbläsar-User-Agent, läs `<script id="__NEXT_DATA__">`, hitta objektet med `productNumber` och `productNameBold`. Fält att ta: `productId`, `productNumber`, `productNameBold`, `productNameThin`, `producerName`, `vintage`, `country`, `originLevel1`, `originLevel2`, `categoryLevel1..3`, `grapes`, `priceInclVat`, `volume`, `alcoholPercentage`, `usage`, `taste`, `isTemporaryOutOfStock`, `isCompletelyOutOfStock`, `isDiscontinued`. Bild: `https://product-cdn.systembolaget.se/productimages/<productId>/<productId>_200.webp`. `kind` = `spirit` när `categoryLevel1` är `Sprit`, annars `wine`. Länkar in tolkas med regexen `-(\d{5,7})/?$` på sökvägen. Tumregeln fyller `drink_from`/`drink_to` från `vintage` och `priceInclVat`; sprit och saknad årgång ger null. Skriv ett Vitest-test mot en sparad kopia av en riktig produktsida (hämta en med curl till `worker/test/fixtures/`).
-- Startdata: `seed/vinlista.tsv` läses av ett skript `npm run seed` som skriver till D1 via Workern (eller `wrangler d1 execute`). `typ` "Torrt vitt vin" blir kategori `Vitt vin`, `drickes` "2021-2026" blir `drink_from`/`drink_to`, `temp` behålls som text, rader med `antal_kvar` 0 blir `owned = 1, count = 0` (Slut-sektionen), `source_kind = caviste`, `source_id` = `cav_nr`. Bild från Caviste-sidans första `wp-content/uploads/...CAV<nr>...jpg` om den finns, annars ingen bild.
-- Funktionskontrakt enligt `C:\dev\CLAUDE.md`: succeed or throw, `get*` kastar `NotFoundError`, `find*` returnerar `T | null`.
-- Verifiera varje punkt med den billigaste kontrollen som kan fallera: `tsc`, sedan Vitest, sedan `vite build`, sedan Chromium via Playwright på 1 280 och 390 px mot `vite dev` plus `wrangler dev` (obs: wrangler 4.114 lägger lokala servern bakom Cloudflare Access under Claude Code, lösningen står i vaultnoten `Browser Automation`).
-- Stopp som gäller trots chunk-läge: skapa secret, skapa D1-databasen i molnet (`wrangler d1 create`, skriv kommandot till mig), allt som kostar pengar. Allt annat: bestäm, bokför i HANDOFF §Val tagna åt Patrik.
-
-Avsluta med: `BACKLOG.md` bockad för det som är verifierat, `HANDOFF.md` med läge, nästa steg, valen du tog och kommandona jag ska köra (secret, D1, DNS för `flaskor-api.buildapp.se`, GitHub Pages-inställningen), `reviewedAt` satt, daily note i `C:\devbrain\01 - Daily Notes\` med egen sessionssektion. En sammanfattning: byggt, valt åt mig, öppet.
+- **`wrangler dev` under Claude Code svarar 401 på allt.** Starta med agentvariablerna avstängda, metoden står i vaultnoten `Browser Automation`.
+- **Caviste-bilden är en liggande banner**, inte en flaska (första `CAV<nr>`-bilden på sidan). Ser konstig ut i 32×50-rutan. Backlog P2.
+- **Skärmbilder av utvecklingsservern visar cachad lista** tills sidan laddas om; `location.hash`-byten hämtar inte om.
