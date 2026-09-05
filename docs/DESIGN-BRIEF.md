@@ -87,8 +87,10 @@ bakgrund, 200 px bred, stående. Inga illustrationer.
 1. Tokens: färg (ljust läge; mörkt läge valfritt, säg om du stryker det), typ-skala
    (display, rubrik, brödtext, etikett, belopp), avstånd, radier, skuggor.
 2. Pillerkomponenten: de fem tillstånden, i lista och i detaljvy.
-3. Fyra artboards: Källaren på desktop (1440×900), Önskelistan på mobil (390×844),
-   Vindetalj (desktop), Lägg till på mobil (390×844, efter att vinet hämtats).
+3. Artboards för alla vyer: Källaren på desktop (1440×900) och mobil (390×844),
+   Önskelistan på mobil, Barskåpet på mobil (med fjärdedelsnivån), Vindetalj på
+   desktop, Lägg till på mobil (efter att vinet hämtats), samt Köpt-rutan som
+   overlay på Önskelistan.
 4. Appikon plus ordmärke.
 5. Regler att inte bryta: fem "gör inte", specifika för Flaskor.
 

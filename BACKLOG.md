@@ -8,7 +8,8 @@ Inget än. Repot skapades 2026-09-05 efter grillen.
 
 ## Designrunda (före kod)
 
-- [ ] `[P0]` Designbrief och Claude Design-canvas med fyra artboards: Källaren desktop, Önskelistan mobil, Vindetalj, Lägg till på mobil (beslut 19, 26). Tokens fryses i `design/` som i Sipdeck.
+- [x] `[P0]` Designbrief skriven: `docs/DESIGN-BRIEF.md` (beslut 19, 26).
+- [ ] `[P0]` Patrik kör briefen i claude.ai/design; resultatet (tokens, piller, artboards, ikon, regler) fryses i `design/` som i Sipdeck.
 
 ## v1
 

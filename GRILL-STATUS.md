@@ -24,7 +24,7 @@ Status per 2026-09-05, före första kodraden. **beslutad** betyder att beslutet
 | 16 | "Drack en" | Bara minska antalet, ingen ruta, inget betyg. Drucken-logg med betyg i backlog som påminnelse | beslutad |
 | 17 | Fälten från Excel | Källa (Systembolaget- eller CAV-nummer med länk), temp, karaffering, mat, inköpspris behålls. Blad 2 stryks | beslutad |
 | 18 | Språk | Svenska nu, engelska senare; alla strängar i en ordbok från dag ett | beslutad |
-| 19 | Designrundan | Fyra artboards: Källaren desktop, Önskelistan mobil, Vindetalj, Lägg till på mobil | beslutad |
+| 19 | Designrundan | Alla vyer skissas i Claude Design från `docs/DESIGN-BRIEF.md`: Källaren desktop och mobil, Önskelistan, Barskåpet, Vindetalj, Lägg till, Köpt-rutan. Ändrat från fyra artboards 2026-09-05 på Patriks ord "skissa på allt" | beslutad |
 | 20 | Ramverk, omtag | Se 10. Påståendet att Rotello är det snyggaste projektet saknade belägg och drogs tillbaka; Sipdeck är referensen, och dess snygghet kom ur designprocessen, inte ramverket | beslutad |
 | 21 | Adress och hosting | Som Sipdeck: publikt repo, GitHub Pages på `buildapp.se/flaskor`, Worker `flaskor-api.buildapp.se` med D1 | beslutad |
 | 22 | Hushåll från dag ett | `household_id` på all data, ett hushåll nu | beslutad |
