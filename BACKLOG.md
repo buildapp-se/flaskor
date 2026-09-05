@@ -9,7 +9,7 @@ Inget än. Repot skapades 2026-09-05 efter grillen.
 ## Designrunda (före kod)
 
 - [x] `[P0]` Designbrief skriven: `docs/DESIGN-BRIEF.md` (beslut 19, 26).
-- [ ] `[P0]` Patrik kör briefen i claude.ai/design; resultatet (tokens, piller, artboards, ikon, regler) fryses i `design/` som i Sipdeck.
+- [x] `[P0]` Claude Design körd 2026-09-05, leveransen ligger i `design/Flaskor.dc.html`.
 
 ## v1
 
