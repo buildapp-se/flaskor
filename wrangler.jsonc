@@ -12,8 +12,8 @@
     {
       "binding": "DB",
       "database_name": "flaskor",
-      // Skapas av Patrik med `wrangler d1 create flaskor`; klistra in id:t här. Lokalt spelar värdet ingen roll.
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      // Skapad 2026-09-05 med `wrangler d1 create flaskor`, region EEUR.
+      "database_id": "5de22007-de02-4160-80c2-662b1eeca130",
       "migrations_dir": "worker/migrations"
     }
   ],
