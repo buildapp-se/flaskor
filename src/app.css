@@ -1039,3 +1039,241 @@ p {
     grid-template-columns: 36px 1fr 130px 120px 90px auto;
   }
 }
+
+/* ── Vindetalj (design §3) ────────────────────────────── */
+.fl-detail {
+  display: grid;
+  grid-template-columns: 260px 1fr 320px;
+  gap: var(--fl-s7);
+  align-content: start;
+}
+.fl-crumbs {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fl-s2);
+  font-size: 13px;
+  color: var(--fl-ink-2);
+}
+.fl-crumbs a {
+  text-decoration: none;
+}
+.fl-crumbs__sep {
+  margin: 0 var(--fl-s2);
+}
+.fl-detail__photo {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.fl-detail__main {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  min-width: 0;
+}
+.fl-detail__title {
+  font: var(--fl-display);
+  text-wrap: pretty;
+}
+.fl-detail__meta {
+  font-size: 15px;
+  color: var(--fl-ink-2);
+}
+.fl-detail__window {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fl-s3);
+}
+.fl-detail__pillrow {
+  display: flex;
+  align-items: center;
+  gap: var(--fl-s3);
+}
+.fl-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-variant-numeric: var(--fl-nums);
+}
+.fl-timeline__bar {
+  position: relative;
+  height: 8px;
+  border-radius: 4px;
+  background: rgba(33, 27, 18, 0.08);
+}
+.fl-timeline__window,
+.fl-timeline__past {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-radius: 4px;
+}
+.fl-timeline__window {
+  background: var(--fl-ok-tint);
+}
+.fl-timeline__past {
+  background: var(--fl-ok);
+  opacity: 0.35;
+}
+.fl-timeline__today {
+  position: absolute;
+  top: -4px;
+  width: 2px;
+  height: 16px;
+  margin-left: -1px;
+  background: var(--fl-ink);
+  border-radius: 1px;
+}
+.fl-timeline__labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--fl-ink-2);
+}
+.fl-timeline__now {
+  color: var(--fl-ink);
+  font-weight: 500;
+}
+.fl-facts {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--fl-s4);
+  padding: 20px 0;
+  border-top: 1px solid var(--fl-line);
+  border-bottom: 1px solid var(--fl-line);
+}
+.fl-fact {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fl-s1);
+}
+.fl-fact__value {
+  font-size: 15px;
+  font-variant-numeric: var(--fl-nums);
+}
+.fl-detail__taste {
+  font-size: 15px;
+  max-width: 560px;
+  text-wrap: pretty;
+}
+.fl-detail__note {
+  font-family: var(--fl-font-serif);
+  font-style: italic;
+  font-size: 20px;
+  max-width: 560px;
+}
+.fl-detail__aside {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fl-s3);
+}
+.fl-detail__count {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--fl-s4);
+}
+.fl-detail__count .fl-spirit {
+  box-shadow: none;
+  padding: 0;
+}
+.fl-detail__big {
+  font-family: var(--fl-font-serif);
+  font-size: 32px;
+  font-variant-numeric: var(--fl-nums);
+}
+.fl-detail__pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border: 1px solid var(--fl-line);
+  border-radius: var(--fl-r-sm);
+  overflow: hidden;
+}
+.fl-detail__act {
+  height: var(--fl-touch);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--fl-s2);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--fl-ink);
+}
+.fl-detail__act + .fl-detail__act {
+  border-left: 1px solid var(--fl-line);
+}
+.fl-detail__act:hover {
+  background: var(--fl-wait-tint);
+}
+.fl-detail__act:disabled {
+  color: var(--fl-ink-2);
+  opacity: 0.5;
+  cursor: default;
+}
+.fl-detail__prices {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--fl-s3);
+  font-variant-numeric: var(--fl-nums);
+}
+.fl-line {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--fl-s3);
+  font-size: 14px;
+}
+.fl-line__strong {
+  font-weight: 500;
+}
+.fl-detail__refresh {
+  min-height: var(--fl-touch);
+  text-align: left;
+}
+.fl-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+.fl-edit__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--fl-s3);
+}
+.fl-edit__wide {
+  grid-column: 1 / -1;
+}
+.fl-edit__area {
+  height: auto;
+  padding: 12px 14px;
+  resize: vertical;
+  font-family: inherit;
+}
+@media (max-width: 899px) {
+  .fl-detail {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 0 4px;
+  }
+  .fl-detail .fl-bottle--xl {
+    width: 120px;
+    height: 200px;
+  }
+  .fl-detail__title {
+    font-size: 30px;
+  }
+  .fl-facts {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+@media (min-width: 900px) and (max-width: 1399px) {
+  /* Designen är ritad för 1 440. Under det får fotot sina 200 px utan marginal, så texten får plats. */
+  .fl-detail {
+    grid-template-columns: 200px 1fr 300px;
+    gap: var(--fl-s6);
+  }
+}
