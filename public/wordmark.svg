@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 190 40" width="190" height="40">
+  <svg viewBox="0 0 512 512" width="40" height="40" x="0" y="0">
+    <rect width="512" height="512" rx="112" fill="#85444F"/>
+    <rect x="148" y="176" width="96" height="232" rx="24" fill="#FBF7EF"/>
+    <rect x="176.8" y="112" width="38.400000000000006" height="80" rx="9.6" fill="#FBF7EF"/>
+    <rect x="268" y="232" width="96" height="176" rx="24" fill="#FBF7EF"/>
+    <rect x="296.8" y="168" width="38.400000000000006" height="80" rx="9.6" fill="#FBF7EF"/>
+  </svg>
+  <text x="54" y="34" font-family="'Instrument Serif', Georgia, serif" font-weight="400" font-size="40" letter-spacing="0" fill="#211B12">Flaskor</text>
+</svg>

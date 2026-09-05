@@ -1,0 +1,34 @@
+    <pre style="margin:0;background:#211B12;color:#EFE8DB;border-radius:12px;padding:20px 24px;font-size:12px;line-height:1.55;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;overflow:auto">:root {
+  /* färg */
+  --fl-bg: #EFE8DB;
+  --fl-surface: #FBF7EF;
+  --fl-ink: #211B12;
+  --fl-ink-2: #6E6455;
+  --fl-line: rgba(33,27,18,.14);
+  --fl-accent: #85444F;
+  --fl-accent-hover: #6F303C;
+  --fl-accent-tint: #FBE0E3;
+  --fl-ok: #2F6B3F;       --fl-ok-tint: #D8EFDC;
+  --fl-soon: #875800;     --fl-soon-tint: #FBE9C6;
+  --fl-past: #9A322A;     --fl-past-tint: #FFE0DB;
+  --fl-wait: #6E6455;     --fl-wait-tint: rgba(33,27,18,.06);
+
+  /* typ */
+  --fl-font-serif: 'Instrument Serif', Georgia, serif;
+  --fl-font-sans: 'Work Sans', system-ui, sans-serif;
+  --fl-display: 400 40px/1.05 var(--fl-font-serif);
+  --fl-title: 400 24px/1.15 var(--fl-font-serif);
+  --fl-name: 400 18px/1.2 var(--fl-font-serif);
+  --fl-body: 400 15px/1.5 var(--fl-font-sans);
+  --fl-label: 500 12px/1.2 var(--fl-font-sans);
+  --fl-amount: 500 15px/1.2 var(--fl-font-sans);
+  --fl-nums: lining-nums tabular-nums;
+
+  /* avstånd, radier, skugga */
+  --fl-s1: 4px; --fl-s2: 8px; --fl-s3: 12px; --fl-s4: 16px;
+  --fl-s5: 24px; --fl-s6: 32px; --fl-s7: 48px;
+  --fl-r-pill: 999px; --fl-r-sm: 8px; --fl-r-md: 12px; --fl-r-lg: 20px;
+  --fl-shadow: 0 1px 2px rgba(33,27,18,.06),
+               0 12px 32px -12px rgba(33,27,18,.25);
+  --fl-touch: 44px;
+}</pre>
