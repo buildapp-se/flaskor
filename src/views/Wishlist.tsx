@@ -61,7 +61,7 @@ export function Wishlist() {
 function WishRow({ drink, onBuy }: { drink: Drink; onBuy: () => void }) {
   const gone = drink.availability === 'discontinued'
   const price = drink.price_current ?? drink.price_paid
-  const source = drink.source_kind === 'systembolaget' ? S.wishlist.availability[drink.availability] : S.wishlist.availability.unknown
+  const source = drink.source_kind === 'systembolaget' ? S.wishlist.availability[drink.availability] : drink.source_kind === 'caviste' ? S.wishlist.availability.unknown : null
   const number = drink.source_kind === 'systembolaget' && drink.source_id && drink.availability === 'in_stock' ? `${S.wishlist.number} ${articleNo(drink.source_id)}` : null
   const name = drink.vintage ? `${drink.name} ${drink.vintage}` : drink.name
   return (
