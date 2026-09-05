@@ -60,8 +60,16 @@ export function StoreProvider({ onLocked, children }: { onLocked: () => void; ch
     }
   }, [keep, fail])
 
+  // Hämta om vid start och varje gång fliken får fokus igen: två användare delar listan (beslut 2, 11).
   useEffect(() => {
     void reload()
+    const onVisible = () => document.visibilityState === 'visible' && void reload()
+    document.addEventListener('visibilitychange', onVisible)
+    window.addEventListener('focus', onVisible)
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible)
+      window.removeEventListener('focus', onVisible)
+    }
   }, [reload])
 
   const replace = useCallback(
