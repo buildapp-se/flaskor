@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react'
-import type { Drink, WindowState } from '../../shared/types.ts'
+import type { Drink, DrinkPatch, WindowState } from '../../shared/types.ts'
 import { windowState } from '../../shared/window.ts'
 import { DrinkRow } from '../components/DrinkRow.tsx'
 import { Pill } from '../components/Pill.tsx'
-import { IconSearch } from '../icons.tsx'
+import { IconChevron, IconMinus, IconPlus, IconSearch } from '../icons.tsx'
 import { useStore } from '../store.tsx'
 import { S } from '../strings.ts'
 
@@ -32,15 +32,17 @@ const SORTERS: Record<Sort, (a: Drink, b: Drink) => number> = {
 const DUE: ReadonlyArray<WindowState> = ['drink', 'soon']
 
 export function Cellar() {
-  const { drinks } = useStore()
+  const { drinks, patch } = useStore()
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState<string | null>(null)
   const [country, setCountry] = useState<string | null>(null)
   const [dueOnly, setDueOnly] = useState(false)
   const [sort, setSort] = useState<Sort>('price')
+  const [showDepleted, setShowDepleted] = useState(false)
 
   const wines = useMemo(() => (drinks ?? []).filter((d) => d.kind === 'wine' && d.owned), [drinks])
   const inStock = wines.filter((d) => d.count > 0)
+  const depleted = wines.filter((d) => d.count === 0).sort(SORTERS.price)
   const categories = [...new Set(inStock.map((d) => d.category ?? ''))].sort((a, b) => categoryRank(a) - categoryRank(b) || a.localeCompare(b, 'sv'))
   const countries = [...new Set(inStock.map((d) => d.country).filter((c): c is string => c !== null))].sort((a, b) => a.localeCompare(b, 'sv'))
   // "Dags att dricka" räknar viner (rader) inne i fönstret eller i dess sista år, inte flaskor.
@@ -112,7 +114,7 @@ export function Cellar() {
 
       <div className="fl-groups">
         {wines.length === 0 && <p className="fl-muted">{S.cellar.empty}</p>}
-        {wines.length > 0 && groups.length === 0 && <p className="fl-muted">{S.cellar.noMatch}</p>}
+        {wines.length > 0 && groups.length === 0 && depleted.length < wines.length && <p className="fl-muted">{S.cellar.noMatch}</p>}
         {groups.map(({ category: c, rows }) => (
           <section key={c} className="fl-group">
             <div className="fl-group__head">
@@ -124,12 +126,58 @@ export function Cellar() {
             </div>
             <div className="fl-card fl-list">
               {rows.map((d) => (
-                <DrinkRow key={d.id} drink={d} />
+                <DrinkRow key={d.id} drink={d} actions={<CountStepper drink={d} onPatch={(p) => patch(d.id, p)} />} />
               ))}
             </div>
           </section>
         ))}
+        {depleted.length > 0 && (
+          <section className="fl-group">
+            <button className="fl-slut" aria-expanded={showDepleted} onClick={() => setShowDepleted((v) => !v)}>
+              <IconChevron />
+              <span className="fl-desktop-only">
+                {S.cellar.depleted} · {S.cellar.winesZero(depleted.length)}
+              </span>
+              <span className="fl-mobile-only">
+                {S.cellar.depleted} · {S.cellar.wines(depleted.length)}
+              </span>
+            </button>
+            {showDepleted && (
+              <div className="fl-card fl-list">
+                {depleted.map((d) => (
+                  <DrinkRow key={d.id} drink={d} muted actions={<Rewish drink={d} onPatch={(p) => patch(d.id, p)} />} />
+                ))}
+              </div>
+            )}
+          </section>
+        )}
       </div>
     </>
+  )
+}
+
+/** Drack en, Köpte fler (design §5 regel 3): minus minskar direkt, plus ökar. Ingen ruta. */
+export function CountStepper({ drink, onPatch, touch = false }: { drink: Drink; onPatch: (p: DrinkPatch) => void; touch?: boolean }) {
+  return (
+    <div className={touch ? 'fl-stepper fl-stepper--touch' : 'fl-stepper'}>
+      <button type="button" title={S.cellar.drankOne} aria-label={S.cellar.drankOne} disabled={drink.count === 0} onClick={() => onPatch({ count: drink.count - 1 })}>
+        <IconMinus />
+      </button>
+      <button type="button" title={S.cellar.boughtMore} aria-label={S.cellar.boughtMore} onClick={() => onPatch({ count: drink.count + 1 })}>
+        <IconPlus />
+      </button>
+    </div>
+  )
+}
+
+/** Slut (beslut 30): raden stannar grå, ett tryck lägger den på önskelistan igen, eller plus om fler köpts. */
+export function Rewish({ drink, onPatch }: { drink: Drink; onPatch: (p: DrinkPatch) => void }) {
+  return (
+    <div className="fl-rewish">
+      <button type="button" className="fl-textbtn" onClick={() => onPatch({ owned: false, count: 0, open_level: null })}>
+        {S.cellar.rewish}
+      </button>
+      <CountStepper drink={drink} onPatch={onPatch} />
+    </div>
   )
 }

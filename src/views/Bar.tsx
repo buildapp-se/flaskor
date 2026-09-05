@@ -1,7 +1,8 @@
-import type { Drink, OpenLevel } from '../../shared/types.ts'
+import { useState } from 'react'
+import type { Drink, DrinkPatch, OpenLevel } from '../../shared/types.ts'
 import { kr } from '../format.ts'
 import { detailPath, navigate } from '../hash.ts'
-import { IconMinus, IconPlus } from '../icons.tsx'
+import { IconChevron, IconMinus, IconPlus } from '../icons.tsx'
 import { useStore } from '../store.tsx'
 import { S } from '../strings.ts'
 import { Bottle } from './Add.tsx'
@@ -10,9 +11,11 @@ import { Bottle } from './Add.tsx'
 // Desktop saknar artboard: samma kort i en kolumn på 720 px.
 export function Bar() {
   const { drinks, patch } = useStore()
+  const [showDepleted, setShowDepleted] = useState(false)
   if (drinks === null) return <div className="fl-muted">{S.loading}</div>
   const spirits = drinks.filter((d) => d.kind === 'spirit' && d.owned).sort((a, b) => a.name.localeCompare(b.name, 'sv'))
   const inStock = spirits.filter((d) => d.count > 0 || d.open_level !== null)
+  const depleted = spirits.filter((d) => d.count === 0 && d.open_level === null)
 
   return (
     <div className="fl-bar">
@@ -25,12 +28,21 @@ export function Bar() {
         {inStock.map((d) => (
           <SpiritCard key={d.id} drink={d} onPatch={(p) => patch(d.id, p)} />
         ))}
+        {depleted.length > 0 && (
+          <>
+            <button className="fl-slut" aria-expanded={showDepleted} onClick={() => setShowDepleted((v) => !v)}>
+              <IconChevron />
+              {S.bar.depleted} · {S.bar.kinds(depleted.length)}
+            </button>
+            {showDepleted && depleted.map((d) => <SpiritCard key={d.id} drink={d} muted onPatch={(p) => patch(d.id, p)} />)}
+          </>
+        )}
       </div>
     </div>
   )
 }
 
-export function SpiritCard({ drink, onPatch, muted = false }: { drink: Drink; onPatch: (p: { count?: number; open_level?: OpenLevel | null }) => void; muted?: boolean }) {
+export function SpiritCard({ drink, onPatch, muted = false }: { drink: Drink; onPatch: (p: DrinkPatch) => void; muted?: boolean }) {
   const level = drink.open_level
   const line = [drink.style ?? drink.category, drink.price_paid !== null ? kr(drink.price_paid) : null, S.bar.unopened(drink.count), level === null && !muted ? S.bar.noneOpen : null].filter(Boolean).join(' · ')
 
@@ -55,6 +67,11 @@ export function SpiritCard({ drink, onPatch, muted = false }: { drink: Drink; on
         {drink.count > 0 && (
           <button className="fl-btn fl-btn--sm fl-btn--secondary" onClick={openOne}>
             {S.bar.openOne}
+          </button>
+        )}
+        {muted && (
+          <button className="fl-textbtn" onClick={() => onPatch({ owned: false, count: 0, open_level: null })}>
+            {S.cellar.rewish}
           </button>
         )}
       </div>
