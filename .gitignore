@@ -4,3 +4,4 @@ dist/
 .dev.vars
 .env*
 design/artboards/img/
+seed/seed.sql
