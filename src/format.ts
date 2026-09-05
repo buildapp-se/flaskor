@@ -35,3 +35,8 @@ export function dateShort(iso: string): string {
 export function volume(ml: number): string {
   return `${String(ml / 10).replace('.', ',')}${NBSP}${S.units.cl}`
 }
+
+/** Artikelnummer som Systembolaget skriver det: "75624 01". Korta nummer lämnas. */
+export function articleNo(number: string): string {
+  return number.length > 4 ? `${number.slice(0, -2)}${NBSP}${number.slice(-2)}` : number
+}
