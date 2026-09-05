@@ -88,7 +88,7 @@ Startsidan är Källaren: grupperad på kategori, sorterad på pris (bytbar till
 
 Verifierat 2026-09-05, detaljer i [docs/RESEARCH.md](docs/RESEARCH.md):
 
-- Systembolagets produktsida är serverrenderad, JSON i `__NEXT_DATA__`, ingen nyckel. Saknar drickfönster, karaffering och EAN.
+- Systembolagets produktsida är serverrenderad, JSON i `__NEXT_DATA__`, ingen nyckel. Saknar drickfönster, karaffering och EAN. Flaskfoto: `product-cdn.systembolaget.se/productimages/<productId>/<productId>_200.webp` (transparent bakgrund).
 - Namnsökning hos Systembolaget är osäker (inofficiellt API svarade 404). Reserv: tredjepartsdump av hela sortimentet.
 - Systembolagets sparade listor kan inte exporteras.
 - Caviste är WooCommerce; produktsidan läses som HTML för bild och pris.
