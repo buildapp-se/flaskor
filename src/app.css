@@ -753,3 +753,169 @@ p {
     padding-top: 2px;
   }
 }
+
+/* ── Önskelistan och Köpt-rutan (design §3) ───────────── */
+.fl-wishlist {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fl-s5);
+  max-width: 720px;
+}
+.fl-wish {
+  display: grid;
+  grid-template-columns: 32px 1fr auto;
+  gap: var(--fl-s3);
+  align-items: center;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--fl-line);
+}
+.fl-wish:last-child {
+  border-bottom: 0;
+}
+.fl-wish--gone {
+  color: var(--fl-ink-2);
+}
+.fl-wish__main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fl-s1);
+  min-width: 0;
+  cursor: pointer;
+}
+.fl-wish__name {
+  font-family: var(--fl-font-serif);
+  font-style: italic;
+  font-size: 17px;
+}
+.fl-wish__line {
+  font-size: 12px;
+  color: var(--fl-ink-2);
+  font-variant-numeric: var(--fl-nums);
+}
+.fl-wish__price {
+  font-weight: 500;
+  color: var(--fl-ink);
+}
+.fl-wish--gone .fl-wish__price {
+  color: inherit;
+}
+.fl-sheet {
+  border: 0;
+  padding: 0;
+  margin: auto;
+  width: min(480px, calc(100% - 48px));
+  background: var(--fl-surface);
+  border-radius: var(--fl-r-lg);
+  box-shadow: var(--fl-shadow);
+  color: var(--fl-ink);
+}
+.fl-sheet::backdrop {
+  background: rgba(33, 27, 18, 0.35);
+}
+.fl-sheet__body {
+  padding: 20px 20px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.fl-stack-4 {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fl-s1);
+}
+.fl-sheet__name {
+  font-family: var(--fl-font-serif);
+  font-style: italic;
+  font-size: 22px;
+}
+.fl-sheet__fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--fl-s3);
+}
+.fl-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.fl-counter {
+  display: flex;
+  align-items: center;
+  height: 48px;
+  border: 1px solid var(--fl-line);
+  border-radius: var(--fl-r-sm);
+  background: var(--fl-bg);
+}
+.fl-counter button {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--fl-ink);
+}
+.fl-counter span {
+  flex: 1;
+  text-align: center;
+  font-weight: 500;
+  font-size: 17px;
+  font-variant-numeric: var(--fl-nums);
+}
+.fl-money {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 48px;
+  padding: 0 14px;
+  border: 1px solid var(--fl-line);
+  border-radius: var(--fl-r-sm);
+  background: var(--fl-surface);
+  font-size: 17px;
+  font-weight: 500;
+  font-variant-numeric: var(--fl-nums);
+}
+.fl-money:focus-within {
+  outline: 2px solid var(--fl-accent);
+  outline-offset: -1px;
+}
+.fl-money input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: none;
+  outline: none;
+  font-size: 17px;
+  font-weight: 500;
+  font-variant-numeric: var(--fl-nums);
+}
+.fl-money span {
+  color: var(--fl-ink-2);
+  font-weight: 400;
+  font-size: 14px;
+}
+.fl-sheet__actions {
+  display: flex;
+  gap: var(--fl-s3);
+}
+.fl-sheet__actions .fl-btn {
+  flex: 1;
+}
+@media (max-width: 899px) {
+  .fl-wishlist {
+    max-width: none;
+    gap: 14px;
+  }
+  .fl-wishlist__chips {
+    padding: 0 4px;
+  }
+  .fl-wishlist .fl-list {
+    margin-top: -2px;
+  }
+  /* Rutan som bottenark, kant i kant med skärmen */
+  .fl-sheet {
+    width: 100%;
+    max-width: 100%;
+    margin: auto 0 0;
+    border-radius: var(--fl-r-lg) var(--fl-r-lg) 0 0;
+  }
+}
