@@ -26,11 +26,11 @@ Status per 2026-09-05 kl. 21:20, efter v1-bygget. **beslutad** betyder att beslu
 | 18 | Språk | Svenska nu, engelska senare; alla strängar i en ordbok från dag ett | byggd |
 | 19 | Designrundan | Alla vyer skissas i Claude Design från `docs/DESIGN-BRIEF.md`: Källaren desktop och mobil, Önskelistan, Barskåpet, Vindetalj, Lägg till, Köpt-rutan. Ändrat från fyra artboards 2026-09-05 på Patriks ord "skissa på allt" | byggd |
 | 20 | Ramverk, omtag | Se 10. Påståendet att Rotello är det snyggaste projektet saknade belägg och drogs tillbaka; Sipdeck är referensen, och dess snygghet kom ur designprocessen, inte ramverket | byggd |
-| 21 | Adress och hosting | Som Sipdeck: publikt repo, GitHub Pages på `buildapp.se/flaskor`, Worker `flaskor-api.buildapp.se` med D1 | byggd, ej deployad |
+| 21 | Adress och hosting | Som Sipdeck: publikt repo, GitHub Pages på `buildapp.se/flaskor`, Worker `flaskor-api.buildapp.se` med D1 | byggd, live 2026-09-05 |
 | 22 | Hushåll från dag ett | `household_id` på all data, ett hushåll nu | byggd |
 | 23 | Uppdatering från Systembolaget | Nattligt cron plus knapp per rad. Dedupe per artikelnummer över hushåll och ett tak; vid många användare byts sidläsning mot sortimentsdumpen | byggd, cron overifierat i molnet |
 | 24 | Startsida | Källaren med pillerfilter och "Dags att dricka: N"; mobil har Önskelistan ett tryck bort | byggd |
-| 25 | Startdata | 21 Excel-rader läses in från den inklistrade texten, bilder från Caviste-sidornas og:image | byggd, seedat lokalt |
+| 25 | Startdata | 21 Excel-rader läses in från den inklistrade texten, bilder från Caviste-sidornas og:image | byggd, seedat i molnet |
 | 26 | Designbriefens grund | Syskon till Sipdeck i typografi och bakgrund, egen accent, inga illustrationer; Claude Design avgör detaljerna | byggd |
 | 27 | PWA | Installerbar, cachar skalet och senaste listan | byggd, installation overifierad |
 | 28 | Källarens ordning | Grupperad på kategori, sorterad på pris, bytbar sortering, sök och chips | byggd |
