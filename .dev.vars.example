@@ -1,0 +1,2 @@
+# Kopiera till .dev.vars (gitignorerad). I molnet: wrangler secret put GATE_CODE
+GATE_CODE=lokal-kod
