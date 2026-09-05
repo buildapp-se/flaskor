@@ -1,3 +1,386 @@
-/* Handskriven CSS ovanpå tokens.css (beslut 10). Facit: design/Flaskor.dc.html. */
-body { margin: 0; background: var(--fl-bg); color: var(--fl-ink); font: var(--fl-body); -webkit-font-smoothing: antialiased; }
-.fl-display { font: var(--fl-display); margin: 0; }
+/* Handskriven CSS ovanpå tokens.css (beslut 10). Facit: design/Flaskor.dc.html, mått och avstånd därifrån. */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: var(--fl-bg);
+  color: var(--fl-ink);
+  font: var(--fl-body);
+  -webkit-font-smoothing: antialiased;
+}
+a {
+  color: var(--fl-accent);
+}
+a:hover {
+  color: var(--fl-accent-hover);
+}
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+button {
+  cursor: pointer;
+  background: none;
+  border: 0;
+  padding: 0;
+}
+h1,
+h2,
+p {
+  margin: 0;
+}
+
+/* ── Typskala ─────────────────────────────────────────── */
+.fl-display {
+  font: var(--fl-display);
+}
+.fl-title {
+  font: var(--fl-title);
+}
+.fl-name {
+  font: var(--fl-name);
+  font-style: italic;
+}
+.fl-label {
+  font: var(--fl-label);
+  color: var(--fl-ink-2);
+}
+.fl-muted {
+  color: var(--fl-ink-2);
+}
+.fl-nums {
+  font-variant-numeric: var(--fl-nums);
+}
+.fl-amount {
+  font: var(--fl-amount);
+  font-variant-numeric: var(--fl-nums);
+}
+.fl-small {
+  font-size: 13px;
+}
+.fl-error {
+  color: var(--fl-past);
+  font-size: 13px;
+}
+.fl-error--bar {
+  padding: var(--fl-s3) 20px 0;
+}
+
+/* ── Byggstenar ───────────────────────────────────────── */
+.fl-card {
+  background: var(--fl-surface);
+  border-radius: var(--fl-r-md);
+  box-shadow: var(--fl-shadow);
+}
+.fl-input {
+  height: 48px;
+  width: 100%;
+  padding: 0 14px;
+  background: var(--fl-surface);
+  border: 1px solid var(--fl-line);
+  border-radius: var(--fl-r-sm);
+  font-size: 15px;
+  font-variant-numeric: var(--fl-nums);
+}
+.fl-input:focus {
+  outline: 2px solid var(--fl-accent);
+  outline-offset: -1px;
+}
+.fl-input::placeholder {
+  color: var(--fl-ink-2);
+}
+.fl-btn {
+  height: 48px;
+  padding: 0 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--fl-s2);
+  border-radius: var(--fl-r-sm);
+  font-weight: 500;
+  font-size: 15px;
+  white-space: nowrap;
+}
+.fl-btn--primary {
+  background: var(--fl-accent);
+  color: var(--fl-surface);
+}
+.fl-btn--primary:hover {
+  background: var(--fl-accent-hover);
+}
+.fl-btn--secondary {
+  background: var(--fl-surface);
+  border: 1px solid var(--fl-line);
+}
+.fl-btn--sm {
+  height: var(--fl-touch);
+  font-size: 13px;
+  padding: 0 12px;
+}
+.fl-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.fl-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--fl-s2);
+  color: var(--fl-accent);
+  font-weight: 500;
+  text-decoration: none;
+}
+.fl-chip {
+  height: 36px;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 14px;
+  border-radius: var(--fl-r-pill);
+  border: 1px solid var(--fl-line);
+  font-size: 13px;
+  background: none;
+}
+.fl-chip[aria-pressed='true'] {
+  background: var(--fl-accent);
+  border-color: var(--fl-accent);
+  color: var(--fl-surface);
+  font-weight: 500;
+}
+.fl-chips {
+  display: flex;
+  gap: var(--fl-s2);
+  align-items: center;
+}
+.fl-chips__sep {
+  width: 1px;
+  height: 20px;
+  background: var(--fl-line);
+  flex: none;
+}
+
+/* ── Piller (design §2) ───────────────────────────────── */
+.fl-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: var(--fl-r-pill);
+  font: var(--fl-label);
+  font-variant-numeric: var(--fl-nums);
+  white-space: nowrap;
+}
+.fl-pill i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.fl-pill--lg {
+  height: 32px;
+  padding: 0 14px;
+  font-size: 14px;
+  gap: 8px;
+}
+.fl-pill--lg i {
+  width: 8px;
+  height: 8px;
+}
+.fl-pill[data-state='wait'] {
+  background: var(--fl-wait-tint);
+  color: var(--fl-wait);
+}
+.fl-pill[data-state='drink'] {
+  background: var(--fl-ok-tint);
+  color: var(--fl-ok);
+}
+.fl-pill[data-state='soon'] {
+  background: var(--fl-soon-tint);
+  color: var(--fl-soon);
+}
+.fl-pill[data-state='past'] {
+  background: var(--fl-past-tint);
+  color: var(--fl-past);
+}
+.fl-pill[data-state='unknown'] {
+  border: 1px dashed rgba(33, 27, 18, 0.4);
+  color: var(--fl-ink-2);
+}
+.fl-pill[data-state='unknown'] i {
+  display: none;
+}
+
+/* ── Ordmärke ─────────────────────────────────────────── */
+.fl-wordmark {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-family: var(--fl-font-serif);
+  font-size: 40px;
+  line-height: 1;
+}
+.fl-wordmark--side {
+  gap: 10px;
+  font-size: 24px;
+  padding: 0 12px;
+}
+
+/* ── Grind ────────────────────────────────────────────── */
+.fl-gate {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: var(--fl-s5);
+}
+.fl-gate__card {
+  width: min(400px, 100%);
+  padding: var(--fl-s6);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  background: var(--fl-surface);
+  border-radius: var(--fl-r-lg);
+  box-shadow: var(--fl-shadow);
+}
+
+/* ── Skal: sidnav på desktop, bottennav på mobil ──────── */
+.fl-app {
+  min-height: 100dvh;
+  display: grid;
+  grid-template-columns: 232px 1fr;
+}
+.fl-side {
+  border-right: 1px solid var(--fl-line);
+  padding: var(--fl-s6) 20px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--fl-s6);
+  position: sticky;
+  top: 0;
+  height: 100dvh;
+}
+.fl-side__links {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fl-s1);
+}
+.fl-side__link {
+  display: flex;
+  align-items: center;
+  gap: var(--fl-s3);
+  height: var(--fl-touch);
+  padding: 0 12px;
+  border-radius: var(--fl-r-sm);
+  color: var(--fl-ink);
+  text-decoration: none;
+}
+.fl-side__link:hover {
+  color: var(--fl-ink);
+  background: var(--fl-wait-tint);
+}
+.fl-side__link[aria-current='page'] {
+  background: var(--fl-accent-tint);
+  color: var(--fl-accent);
+  font-weight: 500;
+}
+.fl-side__foot {
+  margin-top: auto;
+  padding: 0 12px;
+  font-size: 12px;
+  color: var(--fl-ink-2);
+}
+.fl-main {
+  padding: 40px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--fl-s5);
+  min-width: 0;
+}
+.fl-bottom {
+  display: none;
+}
+
+/* Vyernas huvud: desktop rubrik 40 med rad till höger, mobil 34 */
+.fl-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--fl-s4);
+}
+.fl-head h1 {
+  font: var(--fl-display);
+}
+.fl-head__aside {
+  display: flex;
+  align-items: center;
+  gap: var(--fl-s2);
+  font-size: 15px;
+}
+.fl-head__count {
+  font-size: 13px;
+  color: var(--fl-ink-2);
+  font-variant-numeric: var(--fl-nums);
+}
+.fl-mobile-only {
+  display: none;
+}
+
+@media (max-width: 899px) {
+  .fl-app {
+    display: flex;
+    flex-direction: column;
+  }
+  .fl-side {
+    display: none;
+  }
+  .fl-main {
+    flex: 1;
+    padding: 28px 16px 24px;
+    gap: 14px;
+  }
+  .fl-head h1 {
+    font-size: 34px;
+    line-height: 1;
+  }
+  .fl-head,
+  .fl-error--bar {
+    padding: 0 4px;
+  }
+  .fl-bottom {
+    position: sticky;
+    bottom: 0;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    border-top: 1px solid var(--fl-line);
+    background: var(--fl-surface);
+    padding: 8px 0 max(20px, env(safe-area-inset-bottom));
+  }
+  .fl-bottom__link {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--fl-s1);
+    height: 48px;
+    color: var(--fl-ink-2);
+    font-size: 11px;
+    font-weight: 500;
+    text-decoration: none;
+  }
+  .fl-bottom__link[aria-current='page'] {
+    color: var(--fl-accent);
+  }
+  .fl-desktop-only {
+    display: none !important;
+  }
+  .fl-mobile-only {
+    display: initial;
+  }
+}
