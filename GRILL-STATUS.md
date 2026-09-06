@@ -49,4 +49,7 @@ Begärda av Patrik i klartext 2026-09-06, inte grillade. Numren fortsätter seri
 | 34 | Sök på mat | Sökningen träffar mat, kommentar och smak; träffen visas markerad under vinet | byggd |
 | 35 | Vivino-betyg | Hämtas ur Vivinos söksida vid tillägg, via uppdatera-knappen och nattligt (30 dagar, tak 20). Första träffen om namnet stämmer till hälften. Länk till vinets sida | byggd, live |
 | 36 | Barskåpet från Sipdeck | Skafferiet i Sipdecks D1 (`users.state.pantry`) seedas som sprit: spirits, liqueurs och bitters, antal 1 oöppnad. Patrik dumpade D1 själv och pekade ut sitt konto (id 1) | byggd, 18 rader i molnet |
+| 38 | Lägg till från Vivino-länk | Vinsidan läses i Workern (`/api/vivino?q=`), samma förhandsvisning som Systembolaget, källa `manual` med Vivino-länken sparad. Pris hoppas över, fönster fylls i för hand | byggd |
+| 39 | Skriv in själv | Knapp i Lägg till öppnar Ändra-formuläret för vin eller sprit; resultatet visas som förhandsvisning med de vanliga sparknapparna | byggd |
+| 40 | Ta bort en flaska | Knapp längst ner i detaljvyn, två tryck i stället för dialogruta, `DELETE /api/drinks/:id` | byggd |
 | 37 | Streckkod och etikett | Uppskjutet: Systembolagets data saknar EAN, etikett kräver AI (beslut 15). Lager per butik kräver frontendnyckeln, backlog P3 | uppskjuten |

@@ -39,6 +39,9 @@ Patriks önskelista 2026-09-06 (GRILL-STATUS 31 till 35) byggd i chunk-läge, co
 - [x] `[P1]` Sök på mat, kommentar och smak med markerad träff; Bubbel-chip (34).
 - [x] `[P1]` Vivino-betyg och länkat artikelnummer på önskelistan (35).
 - [x] `[P1]` Barskåpet från Sipdecks skafferi (36): 18 sorter seedade i molnet 2026-09-06 med `npm run seed:bar` (`seed/barskap.tsv`, skript mot API:t, hoppar över namn som redan finns).
+- [x] `[P1]` Lägg till från Vivino-länk (38): producent, namn, typ, region, land, druvor, alkohol, bild, betyg och mat ur vinsidan, årgång ur `?year=`.
+- [x] `[P1]` Skriv in själv (39): formuläret från Ändra i Lägg till, vin eller sprit, sedan samma förhandsvisning och sparknappar.
+- [ ] `[P1]` Bulkimport via egen AI (40, föreslagen 2026-09-06, väntar på ja): en prompt att kopiera in i valfri AI tillsammans med texten från en Systembolagslista, AI:n svarar med JSON, JSON klistras i Flaskor, en granskningstabell före import, allt hamnar på önskelistan, i källaren eller i barskåpet. Ångra en stund efteråt. Plus kryssrutor i tabellvyn för att ta bort eller flytta många på en gång.
 - [ ] `[P3]` Streckkod eller etikett för att lägga till (37): Systembolagets data saknar EAN, så en streckkod kan inte bli ett artikelnummer; etikettfoto kräver AI-anrop (beslut 15). Öppnas igen om en EAN-källa dyker upp.
 - [ ] `[P3]` Lager i vald butik direkt i Flaskor: `stockbalance/store/{butik}/{produkt}/` hos `api-extern.systembolaget.se` med frontendnyckeln ur Systembolagets JS-bundle (metoden i `AlexGustafsson/systembolaget-api`, `credentials.go`). Nyckeln utvinns inte av Claude Code (klassificeraren stoppar det); Patrik kör i så fall skriptet själv. Tills dess: artikelnumret länkar till produktsidan där Systembolaget minns vald butik.
 
@@ -47,7 +50,7 @@ Patriks önskelista 2026-09-06 (GRILL-STATUS 31 till 35) byggd i chunk-läge, co
 - [ ] `[P1]` Verifiera live som användare: logga in på https://buildapp.se/flaskor, lägg till ett Systembolagsvin, cron-körningen morgonen efter, PWA-installation på Patriks och Julias telefoner. (D1, Worker, secret, Pages och seed gjorda 2026-09-05; grinden ger 401 på fel kod.)
 - [ ] `[P2]` Caviste-bilden: sidans första `CAV<nr>`-bild är paketets liggande banner, inte en flaska (upptäckt vid seed 2026-09-05). Antingen `object-fit: cover`, en annan bild från sidan, eller ingen bild för Caviste-rader.
 - [ ] `[P2]` Grindkoden ligger i localStorage i klartext på delad dator; räcker tills Firebase Auth (beslut 2).
-- [ ] `[P2]` Ta bort en rad (finns inte i v1: en felinlagd rad kan bara flyttas mellan önskelista och källare).
+- [x] `[P2]` Ta bort en rad: knapp längst ner i detaljvyn, två tryck utan dialogruta (2026-09-06, Patrik saknade den efter en felinläggning).
 
 ## Senare, beslutat uppskjutet
 
