@@ -41,7 +41,9 @@ Patriks önskelista 2026-09-06 (GRILL-STATUS 31 till 35) byggd i chunk-läge, co
 - [x] `[P1]` Barskåpet från Sipdecks skafferi (36): 18 sorter seedade i molnet 2026-09-06 med `npm run seed:bar` (`seed/barskap.tsv`, skript mot API:t, hoppar över namn som redan finns).
 - [x] `[P1]` Lägg till från Vivino-länk (38): producent, namn, typ, region, land, druvor, alkohol, bild, betyg och mat ur vinsidan, årgång ur `?year=`.
 - [x] `[P1]` Skriv in själv (39): formuläret från Ändra i Lägg till, vin eller sprit, sedan samma förhandsvisning och sparknappar.
-- [ ] `[P1]` Bulkimport via egen AI (40, föreslagen 2026-09-06, väntar på ja): en prompt att kopiera in i valfri AI tillsammans med texten från en Systembolagslista, AI:n svarar med JSON, JSON klistras i Flaskor, en granskningstabell före import, allt hamnar på önskelistan, i källaren eller i barskåpet. Ångra en stund efteråt. Plus kryssrutor i tabellvyn för att ta bort eller flytta många på en gång.
+- [x] `[P1]` Bulkimport via egen AI (40): "Importera lista" under Lägg till, prompt att kopiera, JSON klistras in, artikelnummer slås upp hos Systembolaget, granskningstabell med mål och antal per rad, ångra i tio minuter. Kryssrutor i tabellvyn med Ta bort och Lägg på önskelistan igen, båda med ångra.
+- [x] `[P1]` Tabellen döljer viner med noll flaskor tills "Visa slut" trycks (42), så en sökning på "skaldjur" bara ger det som finns hemma.
+- [x] `[P2]` Sorteringen flyttad bredvid sökrutan, Lista/Tabell längst till höger på samma rad (43).
 - [ ] `[P3]` Streckkod eller etikett för att lägga till (37): Systembolagets data saknar EAN, så en streckkod kan inte bli ett artikelnummer; etikettfoto kräver AI-anrop (beslut 15). Öppnas igen om en EAN-källa dyker upp.
 - [ ] `[P3]` Lager i vald butik direkt i Flaskor: `stockbalance/store/{butik}/{produkt}/` hos `api-extern.systembolaget.se` med frontendnyckeln ur Systembolagets JS-bundle (metoden i `AlexGustafsson/systembolaget-api`, `credentials.go`). Nyckeln utvinns inte av Claude Code (klassificeraren stoppar det); Patrik kör i så fall skriptet själv. Tills dess: artikelnumret länkar till produktsidan där Systembolaget minns vald butik.
 

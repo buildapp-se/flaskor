@@ -51,5 +51,8 @@ Begärda av Patrik i klartext 2026-09-06, inte grillade. Numren fortsätter seri
 | 36 | Barskåpet från Sipdeck | Skafferiet i Sipdecks D1 (`users.state.pantry`) seedas som sprit: spirits, liqueurs och bitters, antal 1 oöppnad. Patrik dumpade D1 själv och pekade ut sitt konto (id 1) | byggd, 18 rader i molnet |
 | 38 | Lägg till från Vivino-länk | Vinsidan läses i Workern (`/api/vivino?q=`), samma förhandsvisning som Systembolaget, källa `manual` med Vivino-länken sparad. Pris hoppas över, fönster fylls i för hand | byggd |
 | 39 | Skriv in själv | Knapp i Lägg till öppnar Ändra-formuläret för vin eller sprit; resultatet visas som förhandsvisning med de vanliga sparknapparna | byggd |
-| 40 | Ta bort en flaska | Knapp längst ner i detaljvyn, två tryck i stället för dialogruta, `DELETE /api/drinks/:id` | byggd |
+| 41 | Ta bort en flaska | Knapp längst ner i detaljvyn, två tryck i stället för dialogruta, `DELETE /api/drinks/:id` | byggd |
+| 40 | Bulkimport via egen AI | Grammat-modellen: prompt att kopiera, JSON tillbaka, uppslag hos Systembolaget, granskningstabell, ångra i tio minuter (bara i minnet). Kryssrutor och massåtgärder i tabellvyn med samma ångra | byggd |
+| 42 | Tabellen utan slut | Viner med noll flaskor döljs i tabellen tills "Visa slut" trycks; valet sparas | byggd |
+| 43 | Sorteringen bredvid sök | Sortera-select och riktningspil direkt efter sökrutan, Lista/Tabell längst till höger, chipsen på raden under | byggd |
 | 37 | Streckkod och etikett | Uppskjutet: Systembolagets data saknar EAN, etikett kräver AI (beslut 15). Lager per butik kräver frontendnyckeln, backlog P3 | uppskjuten |

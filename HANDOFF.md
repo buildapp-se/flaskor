@@ -1,15 +1,15 @@
 ---
 schemaVersion: 1
 status: active
-currentGoal: Önskelistan 2026-09-06 byggd och live (filter, totalpris, tabellvy, sök på mat, Vivino-betyg, barskåpet från Sipdeck, ta bort, Vivino-länk, skriv in själv). Bulkimport via egen AI (40) föreslagen, väntar på ja.
-nextAction: Patrik säger ja eller nej på bulkimporten (BACKLOG 40), provar ta bort, Vivino-länk och Skriv in själv live, och säger ja eller nej på §Val tagna åt Patrik.
+currentGoal: Allt Patrik bad om 2026-09-06 är byggt och live, senast bulkimport via egen AI med ångra, massåtgärder i tabellen, tabellen utan slut, sorteringen bredvid sök.
+nextAction: Patrik provar importen med en riktig Systembolagslista (Lägg till, "Importera en hel lista via din AI"), massåtgärderna i tabellen, och säger ja eller nej på §Val tagna åt Patrik.
 blockers: []
 reviewedAt: 2026-09-06
 ---
 
 # Handoff: Flaskor
 
-Senast uppdaterad: 2026-09-06 kl. 09:15, ta bort, Vivino-länk och skriv in själv live (Worker `86214a11`, commit `79ca403`).
+Senast uppdaterad: 2026-09-06 kl. 13:05, bulkimport, massåtgärder, visa slut och sorteringens plats live (Worker `bfc28ed5`, commit `00e2531`). Verifierat: tsc, 40 enhetstester, 17 Worker-tester, Chromium 1 280 och 390 px (import av två rader, ångra, massborttagning av två rader och ångra som gav dem tillbaka med betyg och antal).
 
 ## Läge
 
@@ -45,6 +45,10 @@ Chunk-läge 2026-09-06 (önskelistan). Säg till om något ska ändras.
 - **Ta bort** är två tryck på samma knapp ("Säkert? Tryck igen"), ingen dialogruta: webbläsarens `confirm()` blockerar allt annat och ser olika ut per telefon. Knappen ligger längst ner i detaljvyn, grå, röd vid hover. Ingen ångra: raden är borta när servern svarat.
 - **Vivino-länken** ger källa `manual` (inte en ny `source_kind`, det hade krävt en ny CHECK-constraint och tabellbygge i SQLite) med Vivino-länken i betygsfältet. Vivinos matförslag kommer på svenska tack vare `accept-language`. Landsnamn översätts för de 17 vanliga, resten behåller Vivinos engelska. Namnet blir producent plus vinnamn ("Colombera & Garella Cascina Cottignano Bramaterra"), längre än Excel-namnet.
 - **Skriv in själv** återanvänder Ändra-formuläret (nu exporterat ur `Detail.tsx`) och matar den vanliga förhandsvisningen, så sparknapparna är desamma. Namn är obligatoriskt (webbläsarens `required`). Kategori förifylls "Rött vin" för vin.
+- **Bulkimporten** slår upp artikelnummer i klienten via `GET /api/systembolaget` fyra åt gången, ingen ny Worker-route. Raderna sparas en och en med vanliga `POST /api/drinks`, så varje vin får Vivino-betyg på vägen (cirka en sekund per rad). Rader utan nummer blir källa `manual` med kategori "Rött vin" för vin. Prompten ligger i `strings.ts` och ber om `nr, namn, argang, pris, antal, typ`; läsaren `importParse.ts` tål kodstaket, text runt om och tal som strängar.
+- **Ångra** lever i minnet i tio minuter (`store.setUndo`), inte i databasen: en omladdning tar bort raden. Ångrad borttagning återskapar raderna som nya id:n med samma innehåll. Vald hellre än en papperskorg i databasen (mer schema, mer kod) för ett hushåll med två användare.
+- **Massåtgärderna** i tabellen är Ta bort och Lägg på önskelistan igen, inte Drack en eller Köpte fler (de är ett tryck per rad ändå). Markeringen nollställs när vyn byts.
+- **Tabellen utan slut** är standard (`showZero: false`), motsatt listvyn som har Slut-sektionen ihopfälld. Knappen "Visa slut (N)" står först i kolumnraden.
 - **Barskåpsseeden** går via API:t med grindkoden ur `.dev.vars` (`scripts/seed-bar.ts`), inte via wrangler, och hoppar över sprit som redan finns med samma namn. Kategorierna (Whisky, Rom, Gin, Likör, Bitterlikör, Bitter) är satta för hand i `seed/barskap.tsv`, Sipdeck har bara grupperna spirits, liqueurs och pantry.
 
 ## Fällor
