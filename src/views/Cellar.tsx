@@ -7,7 +7,7 @@ import { kr } from '../format.ts'
 import { IconArrow, IconChevron, IconMinus, IconPlus, IconSearch } from '../icons.tsx'
 import { usePersisted } from '../persist.ts'
 import { compare, DEFAULT_DIR, valueOf, type SortDir, type SortKey } from '../sort.ts'
-import { useStore } from '../store.tsx'
+import { useBulkActions, useStore } from '../store.tsx'
 import { S } from '../strings.ts'
 import { CellarTable } from './CellarTable.tsx'
 
@@ -46,7 +46,8 @@ interface CellarState {
 const INITIAL: CellarState = { query: '', category: null, country: null, dueOnly: false, sort: 'price', dir: 'desc', view: 'list', showZero: false }
 
 export function Cellar() {
-  const { drinks, patch, remove, add, setUndo } = useStore()
+  const { drinks, patch } = useStore()
+  const { removeMany, rewishMany } = useBulkActions()
   const [state, set] = usePersisted<CellarState>('flaskor.cellar', INITIAL)
   const { query, category, country, dueOnly, sort, dir, view, showZero } = state
   const [showDepleted, setShowDepleted] = useState(false)
@@ -73,19 +74,6 @@ export function Cellar() {
 
   function pickSort(key: SortKey) {
     set({ sort: key, dir: DEFAULT_DIR[key] ?? 'asc' })
-  }
-  /** Massåtgärder ur tabellen (BACKLOG 40), båda med ångra i tio minuter. Borttagna rader kommer tillbaka som nya rader. */
-  async function removeMany(rows: Drink[]) {
-    for (const d of rows) await remove(d.id)
-    setUndo(S.undo.removed(rows.length), async () => {
-      for (const { id: _id, household_id: _h, created_at: _c, updated_at: _u, ...input } of rows) await add(input)
-    })
-  }
-  async function rewishMany(rows: Drink[]) {
-    for (const d of rows) await patch(d.id, { owned: false, count: 0, open_level: null })
-    setUndo(S.undo.rewished(rows.length), async () => {
-      for (const d of rows) await patch(d.id, { owned: true, count: d.count, open_level: d.open_level })
-    })
   }
   /** Kolumnrubrik: samma nyckel igen vänder riktningen, som i Excel. */
   function headerSort(key: SortKey) {

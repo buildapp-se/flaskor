@@ -14,7 +14,7 @@ import { S } from '../strings.ts'
 // Tabellvyn: Excel-arket som det såg ut, en rad per vin, kolumnrubriker som sorterar upp och ner vid klick,
 // sidscroll när den inte får plats. Kolumner bockas i och ur i chipraden ovanför och valet sparas.
 
-type ColumnKey = SortKey | 'note' | 'source'
+export type ColumnKey = SortKey | 'note' | 'source'
 
 interface Column {
   key: ColumnKey
@@ -48,6 +48,7 @@ const COLUMNS: ReadonlyArray<Column> = [
   { key: 'decant', numeric: true, render: (d) => d.decant_hours ?? '' },
   { key: 'vivino', numeric: true, render: (d) => <Rating drink={d} count /> },
   { key: 'food', wide: true, render: (d, q) => text(d.food, q) },
+  { key: 'open_level', render: (d) => (d.open_level === null ? '' : S.bar.level[d.open_level]) },
   { key: 'note', wide: true, render: (d, q) => text(d.note, q) },
   {
     key: 'source',
@@ -62,13 +63,47 @@ const COLUMNS: ReadonlyArray<Column> = [
   },
 ]
 
-const SORTABLE = new Set<ColumnKey>(['name', 'vintage', 'category', 'country', 'region', 'grapes', 'count', 'price', 'total', 'windowEnd', 'serve_temp', 'decant', 'vivino', 'food'])
+const SORTABLE = new Set<ColumnKey>(['name', 'vintage', 'category', 'country', 'region', 'grapes', 'count', 'price', 'total', 'windowEnd', 'serve_temp', 'decant', 'vivino', 'food', 'open_level'])
 
 /** Kolumner dolda från start: de som sällan avgör något vid en blick. */
 const HIDDEN_AT_START: ColumnKey[] = ['region', 'grapes', 'decant', 'note', 'source']
 
-export function CellarTable({ rows, query, sort, dir, onSort, showZero, zeroHidden, onShowZero, onRemove, onRewish }: { rows: Drink[]; query: string; sort: SortKey; dir: SortDir; onSort: (key: SortKey) => void; showZero: boolean; zeroHidden: number; onShowZero: (v: boolean) => void; onRemove: (rows: Drink[]) => void; onRewish: (rows: Drink[]) => void }) {
-  const [{ hidden }, set] = usePersisted<{ hidden: ColumnKey[] }>('flaskor.columns', { hidden: HIDDEN_AT_START })
+/** Källarens kolumner, oförändrat: alla utom open_level (sprit-fältet). */
+const WINE_COLUMNS: ColumnKey[] = COLUMNS.map((c) => c.key).filter((k) => k !== 'open_level')
+
+export function CellarTable({
+  rows,
+  query,
+  sort,
+  dir,
+  onSort,
+  showZero,
+  zeroHidden,
+  onShowZero,
+  onRemove,
+  onRewish,
+  columns = WINE_COLUMNS,
+  hiddenAtStart = HIDDEN_AT_START,
+  persistKey = 'flaskor.columns',
+  itemLabel = S.cellar.wines,
+}: {
+  rows: Drink[]
+  query: string
+  sort: SortKey
+  dir: SortDir
+  onSort: (key: SortKey) => void
+  showZero: boolean
+  zeroHidden: number
+  onShowZero: (v: boolean) => void
+  onRemove: (rows: Drink[]) => void
+  onRewish: (rows: Drink[]) => void
+  columns?: ColumnKey[]
+  hiddenAtStart?: ColumnKey[]
+  persistKey?: string
+  itemLabel?: (n: number) => string
+}) {
+  const available = COLUMNS.filter((c) => columns.includes(c.key))
+  const [{ hidden }, set] = usePersisted<{ hidden: ColumnKey[] }>(persistKey, { hidden: hiddenAtStart })
   // Kryssrutor för massåtgärder (BACKLOG 40): markeringen lever bara tills vyn byts.
   const [selected, setSelected] = useState<Set<number>>(new Set())
   const chosen = rows.filter((d) => selected.has(d.id))
@@ -85,7 +120,7 @@ export function CellarTable({ rows, query, sort, dir, onSort, showZero, zeroHidd
     fn(chosen)
     setSelected(new Set())
   }
-  const shown = COLUMNS.filter((c) => !hidden.includes(c.key))
+  const shown = available.filter((c) => !hidden.includes(c.key))
   const bottles = rows.reduce((sum, d) => sum + d.count, 0)
   const value = rows.reduce((sum, d) => sum + valueOf(d), 0)
 
@@ -97,7 +132,7 @@ export function CellarTable({ rows, query, sort, dir, onSort, showZero, zeroHidd
         </button>
         <span className="fl-chips__sep" />
         <span className="fl-chips__label">{S.cellar.columns}</span>
-        {COLUMNS.map((c) => (
+        {available.map((c) => (
           <button key={c.key} className="fl-chip fl-chip--xs" aria-pressed={!hidden.includes(c.key)} onClick={() => set({ hidden: hidden.includes(c.key) ? hidden.filter((k) => k !== c.key) : [...hidden, c.key] })}>
             {S.column[c.key]}
           </button>
@@ -140,7 +175,7 @@ export function CellarTable({ rows, query, sort, dir, onSort, showZero, zeroHidd
           </thead>
           <tbody>
             {rows.map((d) => (
-              <tr key={d.id} className={d.count === 0 ? 'fl-table__row fl-table__row--muted' : 'fl-table__row'} onClick={(e) => !(e.target as HTMLElement).closest('a, input') && navigate(detailPath(d.id))}>
+              <tr key={d.id} className={d.count === 0 && d.open_level === null ? 'fl-table__row fl-table__row--muted' : 'fl-table__row'} onClick={(e) => !(e.target as HTMLElement).closest('a, input') && navigate(detailPath(d.id))}>
                 <td className="fl-table__check">
                   <input type="checkbox" checked={selected.has(d.id)} onChange={() => toggle(d.id)} />
                 </td>
@@ -157,7 +192,7 @@ export function CellarTable({ rows, query, sort, dir, onSort, showZero, zeroHidd
               <td />
               {shown.map((c) => (
                 <td key={c.key} className={c.numeric ? 'fl-table__num' : undefined}>
-                  {c.key === 'name' ? S.cellar.wines(rows.length) : c.key === 'count' ? bottles : c.key === 'total' ? kr(value) : ''}
+                  {c.key === 'name' ? itemLabel(rows.length) : c.key === 'count' ? bottles : c.key === 'total' ? kr(value) : ''}
                 </td>
               ))}
             </tr>
