@@ -1,29 +1,30 @@
 ---
 schemaVersion: 1
 status: active
-currentGoal: v1 byggd 2026-09-05 och live på buildapp.se/flaskor med Worker och seedad D1. Bara grindkodens secret saknas.
-nextAction: Patrik kör `npx wrangler secret put GATE_CODE` i C:\dev\flaskor, öppnar https://buildapp.se/flaskor, skriver koden och ser 21 viner. Sedan ja eller nej på §Val tagna åt Patrik.
-blockers: [GATE_CODE saknas i molnet, alla API-anrop ger 500 "GATE_CODE is not configured" tills den finns]
+currentGoal: v1 byggd 2026-09-05 och live på buildapp.se/flaskor med Worker, secret och seedad D1.
+nextAction: Patrik öppnar https://buildapp.se/flaskor, skriver grindkoden, ser 21 viner, lägger till ett Systembolagsvin och installerar appen på telefonen. Sedan ja eller nej på §Val tagna åt Patrik.
+blockers: []
 reviewedAt: 2026-09-05
 ---
 
 # Handoff: Flaskor
 
-Senast uppdaterad: 2026-09-05 kl. 21:27, v1 i molnet utom secreten.
+Senast uppdaterad: 2026-09-05 kl. 21:40, v1 helt i molnet.
 
 ## Läge
 
 Hela v1 finns i `main` (commits `ca195ed` till `c1de427`), en commit per backlogpunkt. Verifierat lokalt: `tsc -b`, 23 enhetstester (piller, tumregel, format, Systembolaget-parsern mot två sparade produktsidor i `worker/test/fixtures/`), 11 Worker-tester i riktig workerd med lokal D1, `wrangler deploy --dry-run`, `vite build`, och alla fem vyer i Chromium på 1 280 och 390 px mot `vite dev` (port 5180) och `wrangler dev` (8787).
 
-Molnet, 2026-09-05 kl. 21:25: D1 `flaskor` skapad (region EEUR, id i `wrangler.jsonc`), migrering 0001 körd, Workern deployad som version `b251db85` med routen `flaskor-api.buildapp.se` (DNS skapad av wrangler, `/health` svarar 200) och cron `0 2 * * *`, GitHub Pages aktiverat med Actions och workflowkörningen grön, https://buildapp.se/flaskor svarar 200 och bundeln bär API-adressen, `npm run seed -- --remote` la 21 rader med bild i molnets D1. **Secreten `GATE_CODE` finns inte**: Workern svarar 500 på `/api/*` tills den sätts, så appen går inte att låsa upp än.
+Molnet, 2026-09-05 kl. 21:25: D1 `flaskor` skapad (region EEUR, id i `wrangler.jsonc`), migrering 0001 körd, Workern deployad som version `b251db85` med routen `flaskor-api.buildapp.se` (DNS skapad av wrangler, `/health` svarar 200) och cron `0 2 * * *`, GitHub Pages aktiverat med Actions och workflowkörningen grön, https://buildapp.se/flaskor svarar 200 och bundeln bär API-adressen, `npm run seed -- --remote` la 21 rader med bild i molnets D1. Secreten `GATE_CODE` satt kl. 21:38 med `wrangler secret bulk .dev.vars`; grinden svarar 401 på fel och saknad kod. Inloggning i appen är inte kontrollerad av mig, koden finns bara hos Patrik.
 
 Layout: `src/` (React, en CSS-fil `app.css` ovanpå `tokens.css`), `shared/` (typer, fel, piller- och tumregellogik, delas av klient och Worker), `worker/` (routes i `src/index.ts`, D1 i `src/db.ts`, Systembolaget i `src/systembolaget.ts`, migreringar, tester, fixturer), `scripts/seed.ts`, `design/` (facit).
 
 ## Nästa steg
 
-1. **Grindkoden, ditt steg:** i `C:\dev\flaskor`: `npx wrangler secret put GATE_CODE`, skriv koden när den frågar. Den hamnar aldrig i repot eller i en chatt. Lokalt läser `wrangler dev` `.dev.vars`, kopierad från `.dev.vars.example`. (D1, migrering, Worker-deploy, Pages och seed kördes 2026-09-05 kl. 21:25 på Patriks "kör dom".)
-2. **Verifiera live:** öppna https://buildapp.se/flaskor, skriv koden, se 21 viner i Källaren. Lägg till ett Systembolagsvin via nummer. Installera som app på telefonen (Dela, Lägg till på hemskärmen).
-3. **Cron:** morgonen efter, `npx wrangler tail flaskor-api` runt 04:00 eller kolla "Kollat" i detaljvyn för ett Systembolagsvin.
+1. **Verifiera live:** öppna https://buildapp.se/flaskor, skriv grindkoden (samma som i `.dev.vars`), se 21 viner i Källaren. Lägg till ett Systembolagsvin via nummer. Installera som app på telefonen (Dela, Lägg till på hemskärmen). Ge Julia koden.
+2. **Cron:** morgonen efter, `npx wrangler tail flaskor-api` runt 04:00 eller kolla "Kollat" i detaljvyn för ett Systembolagsvin.
+
+Byta grindkod: ändra raden i `.dev.vars` och kör `npx wrangler secret bulk .dev.vars` själv i terminalen. Inte `secret put` via Claude Codes `!`-prefix: den läser tom stdin och sparar en tom sträng (hände 2026-09-05).
 
 Sedan: punkterna under "Efter första molndeployen" i `BACKLOG.md`, främst Caviste-bilden, och ja eller nej på §Val tagna åt Patrik.
 
