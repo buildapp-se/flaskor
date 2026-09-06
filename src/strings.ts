@@ -66,6 +66,7 @@ export const S = {
   bar: {
     title: 'Barskåpet',
     kinds: (n: number) => (n === 1 ? '1 sort' : `${n} sorter`),
+    kindsZero: (n: number) => (n === 1 ? '1 sort med noll flaskor' : `${n} sorter med noll flaskor`),
     unopened: (n: number) => (n === 1 ? '1 oöppnad' : `${n} oöppnade`),
     noneOpen: 'ingen öppnad',
     openOne: 'Öppna en',
@@ -73,6 +74,12 @@ export const S = {
     level: { 4: 'Full', 3: 'Trekvart', 2: 'Halv', 1: 'Kvart' },
     empty: 'Inget i barskåpet.',
     depleted: 'Slut',
+    search: 'Sök sprit, producent',
+    all: 'Alla',
+    show: 'Visa',
+    sort: { name: 'Namn', category: 'Sort', count: 'Antal', price: 'Pris', open_level: 'Öppnad' },
+    sortLabel: 'Sortera',
+    noMatch: 'Inget matchar.',
   },
   add: {
     title: 'Lägg till',
@@ -212,6 +219,7 @@ Ingen förklaring, ingen text före eller efter listan, inga kodstaket. Här är
     vivino: 'Vivino',
     note: 'Kommentar',
     source: 'Källa',
+    open_level: 'Öppnad',
   },
   error: { generic: 'Något gick fel.', offline: 'Ingen kontakt med servern.' },
   loading: 'Laddar …',

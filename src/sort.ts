@@ -1,7 +1,7 @@
 import type { Drink } from '../shared/types.ts'
 
 // En sorteringsmekanism för listan och tabellen: nyckel plus riktning, tomma värden alltid sist (beslut 28).
-export type SortKey = 'name' | 'vintage' | 'category' | 'country' | 'region' | 'grapes' | 'count' | 'price' | 'total' | 'windowEnd' | 'serve_temp' | 'decant' | 'food' | 'vivino'
+export type SortKey = 'name' | 'vintage' | 'category' | 'country' | 'region' | 'grapes' | 'count' | 'price' | 'total' | 'windowEnd' | 'serve_temp' | 'decant' | 'food' | 'vivino' | 'open_level'
 export type SortDir = 'asc' | 'desc'
 
 /** Priset en rad räknas på: inköpspris, annars dagspris. */
@@ -29,6 +29,7 @@ export const SORT_VALUE: Record<SortKey, (d: Drink) => number | string | null> =
   decant: (d) => d.decant_hours,
   food: (d) => d.food,
   vivino: (d) => d.vivino_rating,
+  open_level: (d) => d.open_level,
 }
 
 /** Riktningen man vill ha först när nyckeln väljs: dyrast, flest, bäst betyg; annars stigande. */

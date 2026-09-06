@@ -173,3 +173,21 @@ export function useStore(): Store {
   if (!store) throw new Error('useStore outside StoreProvider')
   return store
 }
+
+/** Massåtgärder ur tabellen (BACKLOG 40), delade mellan Källaren och Barskåpet. Båda med ångra i tio minuter. */
+export function useBulkActions() {
+  const { patch, remove, add, setUndo } = useStore()
+  async function removeMany(rows: Drink[]) {
+    for (const d of rows) await remove(d.id)
+    setUndo(S.undo.removed(rows.length), async () => {
+      for (const { id: _id, household_id: _h, created_at: _c, updated_at: _u, ...input } of rows) await add(input)
+    })
+  }
+  async function rewishMany(rows: Drink[]) {
+    for (const d of rows) await patch(d.id, { owned: false, count: 0, open_level: null })
+    setUndo(S.undo.rewished(rows.length), async () => {
+      for (const d of rows) await patch(d.id, { owned: true, count: d.count, open_level: d.open_level })
+    })
+  }
+  return { removeMany, rewishMany }
+}
