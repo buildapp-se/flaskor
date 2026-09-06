@@ -3,14 +3,17 @@ import type { Drink, DrinkPatch, WindowState } from '../../shared/types.ts'
 import { windowState } from '../../shared/window.ts'
 import { DrinkRow } from '../components/DrinkRow.tsx'
 import { Pill } from '../components/Pill.tsx'
-import { IconChevron, IconMinus, IconPlus, IconSearch } from '../icons.tsx'
+import { kr } from '../format.ts'
+import { IconArrow, IconChevron, IconMinus, IconPlus, IconSearch } from '../icons.tsx'
+import { usePersisted } from '../persist.ts'
+import { compare, DEFAULT_DIR, valueOf, type SortDir, type SortKey } from '../sort.ts'
 import { useStore } from '../store.tsx'
 import { S } from '../strings.ts'
 
 // Källaren (beslut 24, 28): ägda viner grupperade på kategori, sorterade på pris, sök och chips, "Dags att dricka: N".
-type Sort = 'price' | 'vintage' | 'windowEnd'
+// Filter och sortering överlever sidbyte: de ligger i localStorage (usePersisted).
 
-/** Kategoriernas ordning i listan: rött först, som i designen; okända sist i bokstavsordning. */
+/** Kategoriernas ordning i listan: rött först, som i designen; okända sist i bokstavsordning. Alla fyra visas alltid som chips. */
 const CATEGORY_ORDER = ['Rött vin', 'Vitt vin', 'Rosévin', 'Mousserande vin']
 
 function categoryRank(category: string): number {
@@ -18,36 +21,42 @@ function categoryRank(category: string): number {
   return i === -1 ? CATEGORY_ORDER.length : i
 }
 
-function matches(d: Drink, q: string): boolean {
+/** Sökningen träffar namn, ursprung, druva, årgång, och maten och kommentarerna, så "fläsk" hittar vinerna som passar. */
+export function matches(d: Drink, q: string): boolean {
   if (q === '') return true
-  return [d.name, d.producer, d.grapes, d.region, d.country, d.vintage === null ? null : String(d.vintage)].some((f) => f?.toLowerCase().includes(q))
-}
-
-const SORTERS: Record<Sort, (a: Drink, b: Drink) => number> = {
-  price: (a, b) => (b.price_paid ?? b.price_current ?? 0) - (a.price_paid ?? a.price_current ?? 0),
-  vintage: (a, b) => (a.vintage ?? 9999) - (b.vintage ?? 9999),
-  windowEnd: (a, b) => (a.drink_to ?? 9999) - (b.drink_to ?? 9999),
+  return [d.name, d.producer, d.grapes, d.region, d.country, d.vintage === null ? null : String(d.vintage), d.food, d.note, d.taste, d.style].some((f) => f?.toLowerCase().includes(q))
 }
 
 const DUE: ReadonlyArray<WindowState> = ['drink', 'soon']
+const LIST_SORTS = Object.keys(S.cellar.sort) as ReadonlyArray<keyof typeof S.cellar.sort>
+
+interface CellarState {
+  query: string
+  category: string | null
+  country: string | null
+  dueOnly: boolean
+  sort: SortKey
+  dir: SortDir
+}
+
+const INITIAL: CellarState = { query: '', category: null, country: null, dueOnly: false, sort: 'price', dir: 'desc' }
 
 export function Cellar() {
   const { drinks, patch } = useStore()
-  const [query, setQuery] = useState('')
-  const [category, setCategory] = useState<string | null>(null)
-  const [country, setCountry] = useState<string | null>(null)
-  const [dueOnly, setDueOnly] = useState(false)
-  const [sort, setSort] = useState<Sort>('price')
+  const [state, set] = usePersisted<CellarState>('flaskor.cellar', INITIAL)
+  const { query, category, country, dueOnly, sort, dir } = state
   const [showDepleted, setShowDepleted] = useState(false)
 
   const wines = useMemo(() => (drinks ?? []).filter((d) => d.kind === 'wine' && d.owned), [drinks])
   const inStock = wines.filter((d) => d.count > 0)
-  const depleted = wines.filter((d) => d.count === 0).sort(SORTERS.price)
-  const categories = [...new Set(inStock.map((d) => d.category ?? ''))].sort((a, b) => categoryRank(a) - categoryRank(b) || a.localeCompare(b, 'sv'))
+  const depleted = wines.filter((d) => d.count === 0).sort(compare('price', 'desc'))
+  const present = [...new Set(inStock.map((d) => d.category ?? ''))]
+  const categories = [...new Set([...CATEGORY_ORDER, ...present])].sort((a, b) => categoryRank(a) - categoryRank(b) || a.localeCompare(b, 'sv'))
   const countries = [...new Set(inStock.map((d) => d.country).filter((c): c is string => c !== null))].sort((a, b) => a.localeCompare(b, 'sv'))
   // "Dags att dricka" räknar viner (rader) inne i fönstret eller i dess sista år, inte flaskor.
   const due = inStock.filter((d) => DUE.includes(windowState(d.drink_from, d.drink_to))).length
   const bottles = inStock.reduce((sum, d) => sum + d.count, 0)
+  const value = inStock.reduce((sum, d) => sum + valueOf(d), 0)
 
   const q = query.trim().toLowerCase()
   const visible = inStock
@@ -55,8 +64,12 @@ export function Cellar() {
     .filter((d) => category === null || (d.category ?? '') === category)
     .filter((d) => country === null || d.country === country)
     .filter((d) => !dueOnly || DUE.includes(windowState(d.drink_from, d.drink_to)))
-    .sort(SORTERS[sort])
+    .sort(compare(sort, dir))
   const groups = categories.map((c) => ({ category: c, rows: visible.filter((d) => (d.category ?? '') === c) })).filter((g) => g.rows.length > 0)
+
+  function pickSort(key: SortKey) {
+    set({ sort: key, dir: DEFAULT_DIR[key] ?? 'asc' })
+  }
 
   if (drinks === null) return <div className="fl-muted">{S.loading}</div>
 
@@ -65,46 +78,59 @@ export function Cellar() {
       <div className="fl-head">
         <h1>{S.cellar.title}</h1>
         <div className="fl-head__aside fl-desktop-only">
+          <span className="fl-head__count">
+            {S.bottles(bottles)} · {kr(value)}
+          </span>
+          <span className="fl-chips__sep" />
           <Pill state="drink" />
           <span>
             {S.cellar.dueLabel} <strong className="fl-nums">{due}</strong>
           </span>
         </div>
-        <span className="fl-head__count fl-mobile-only">{S.bottles(bottles)}</span>
+        <span className="fl-head__count fl-mobile-only">
+          {S.bottles(bottles)} · {kr(value)}
+        </span>
       </div>
 
       <div className="fl-toolbar">
         <label className="fl-search">
           <IconSearch />
-          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={S.cellar.search} aria-label={S.cellar.search} />
+          <input value={query} onChange={(e) => set({ query: e.target.value })} placeholder={S.cellar.search} aria-label={S.cellar.search} />
         </label>
         <div className="fl-chips fl-chips--scroll">
-          <button className="fl-chip" aria-pressed={category === null} onClick={() => setCategory(null)}>
+          <span className="fl-chips__label">{S.cellar.show}</span>
+          <button className="fl-chip" aria-pressed={category === null} onClick={() => set({ category: null })}>
             {S.cellar.all}
           </button>
           {categories.map((c) => (
-            <button key={c} className="fl-chip" aria-pressed={category === c} onClick={() => setCategory(category === c ? null : c)}>
+            <button key={c} className="fl-chip" aria-pressed={category === c} disabled={!present.includes(c)} onClick={() => set({ category: category === c ? null : c })}>
               {S.categoryShort[c] ?? c}
             </button>
           ))}
           {countries.length > 0 && <span className="fl-chips__sep" />}
           {countries.map((c) => (
-            <button key={c} className="fl-chip" aria-pressed={country === c} onClick={() => setCountry(country === c ? null : c)}>
+            <button key={c} className="fl-chip" aria-pressed={country === c} onClick={() => set({ country: country === c ? null : c })}>
               {c}
             </button>
           ))}
           <span className="fl-chips__sep" />
-          <button className="fl-chip" aria-pressed={dueOnly} onClick={() => setDueOnly((v) => !v)}>
+          <button className="fl-chip" aria-pressed={dueOnly} onClick={() => set({ dueOnly: !dueOnly })}>
             {S.cellar.drinkNow}
           </button>
-          {/* Bytbar sortering (beslut 28) saknar artboard: en select i chip-form sist i raden. */}
-          <select className="fl-chip fl-chip--select" value={sort} onChange={(e) => setSort(e.target.value as Sort)} aria-label={S.cellar.sortLabel}>
-            {(Object.keys(S.cellar.sort) as Sort[]).map((key) => (
+        </div>
+        {/* Sortering (beslut 28): fält i en select, riktningen växlas med pilen, som kolumnrubriker på en vanlig sajt. */}
+        <div className="fl-sort">
+          <span className="fl-chips__label">{S.cellar.sortLabel}</span>
+          <select className="fl-chip fl-chip--select" value={LIST_SORTS.includes(sort as (typeof LIST_SORTS)[number]) ? sort : 'price'} onChange={(e) => pickSort(e.target.value as SortKey)} aria-label={S.cellar.sortLabel}>
+            {LIST_SORTS.map((key) => (
               <option key={key} value={key}>
                 {S.cellar.sort[key]}
               </option>
             ))}
           </select>
+          <button className="fl-chip fl-chip--icon" title={S.cellar.sortDir[dir]} aria-label={S.cellar.sortDir[dir]} onClick={() => set({ dir: dir === 'asc' ? 'desc' : 'asc' })}>
+            <IconArrow dir={dir} />
+          </button>
         </div>
         <div className="fl-due fl-mobile-only">
           <Pill state="drink" />
@@ -121,12 +147,12 @@ export function Cellar() {
               <span className="fl-group__title">{S.categoryShort[c] ?? c}</span>
               <span className="fl-group__count">
                 <span className="fl-desktop-only">{S.cellar.wines(rows.length)} · </span>
-                {S.bottles(rows.reduce((sum, d) => sum + d.count, 0))}
+                {S.bottles(rows.reduce((sum, d) => sum + d.count, 0))} · {kr(rows.reduce((sum, d) => sum + valueOf(d), 0))}
               </span>
             </div>
             <div className="fl-card fl-list">
               {rows.map((d) => (
-                <DrinkRow key={d.id} drink={d} actions={<CountStepper drink={d} onPatch={(p) => patch(d.id, p)} />} />
+                <DrinkRow key={d.id} drink={d} query={q} actions={<CountStepper drink={d} onPatch={(p) => patch(d.id, p)} />} />
               ))}
             </div>
           </section>
@@ -145,7 +171,7 @@ export function Cellar() {
             {showDepleted && (
               <div className="fl-card fl-list">
                 {depleted.map((d) => (
-                  <DrinkRow key={d.id} drink={d} muted actions={<Rewish drink={d} onPatch={(p) => patch(d.id, p)} />} />
+                  <DrinkRow key={d.id} drink={d} query={q} muted actions={<Rewish drink={d} onPatch={(p) => patch(d.id, p)} />} />
                 ))}
               </div>
             )}

@@ -59,6 +59,13 @@ export const IconChevron = () => (
   </Icon>
 )
 
+/** Sorteringsriktning: pil ner för fallande, upp för stigande. */
+export const IconArrow = ({ dir }: { dir: 'asc' | 'desc' }) => (
+  <Icon size={16}>
+    {dir === 'desc' ? <path d="M10 4v12M5 11l5 5 5-5" /> : <path d="M10 16V4M5 9l5-5 5 5" />}
+  </Icon>
+)
+
 /** Appikonen (512, maskable-säker) i valfri storlek. */
 export const Logo = ({ size = 28 }: { size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 512 512" aria-hidden="true">

@@ -1277,3 +1277,71 @@ p {
     gap: var(--fl-s6);
   }
 }
+
+/* ── Källaren: filterrubrik, sortering, sökträff, betyg ─ */
+@media (min-width: 900px) {
+  /* Bara på desktop: i mobilens kolumn gör wrap att chipraden sätter hela radens bredd. */
+  .fl-toolbar {
+    flex-wrap: wrap;
+  }
+}
+.fl-chips__label {
+  font: var(--fl-label);
+  color: var(--fl-ink-2);
+  flex: none;
+  padding-right: 2px;
+}
+.fl-chip:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.fl-sort {
+  display: flex;
+  align-items: center;
+  gap: var(--fl-s2);
+  margin-left: auto;
+}
+.fl-chip--icon {
+  width: 36px;
+  padding: 0;
+  justify-content: center;
+}
+.fl-row__hit {
+  font-size: 13px;
+  color: var(--fl-ink-2);
+  text-wrap: pretty;
+}
+.fl-row__hit mark,
+.fl-table mark {
+  background: var(--fl-soon-tint);
+  color: var(--fl-ink);
+  border-radius: 2px;
+  padding: 0 2px;
+}
+.fl-rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: var(--fl-s2);
+  color: var(--fl-accent);
+  font-weight: 500;
+  font-size: 12px;
+  font-variant-numeric: var(--fl-nums);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.fl-rating__count {
+  color: var(--fl-ink-2);
+  font-weight: 400;
+}
+.fl-side__foot {
+  line-height: 1.6;
+}
+@media (max-width: 899px) {
+  .fl-sort {
+    margin-left: 0;
+  }
+  .fl-sort .fl-chip--select {
+    flex: 1;
+  }
+}
