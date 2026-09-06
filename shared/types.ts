@@ -39,6 +39,11 @@ export interface Drink {
   food: string | null
   note: string | null
   taste: string | null
+  /** Vivinos betyg för vinet (inte årgången), 1 till 5, med antal röster och länk. null: inte hämtat eller ingen träff. */
+  vivino_rating: number | null
+  vivino_count: number | null
+  vivino_url: string | null
+  vivino_checked_at: string | null
   created_at: string
   updated_at: string
 }
