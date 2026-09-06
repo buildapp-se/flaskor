@@ -6,6 +6,8 @@
 
 v1 byggd 2026-09-05 i chunk-läge (commits `ca195ed` till `c1de427`): tsc, 23 enhetstester, 11 Worker-tester i workerd, `vite build`, Chromium 1 280 och 390 px mot `vite dev` och `wrangler dev`. Samma kväll i molnet: D1, Worker på `flaskor-api.buildapp.se` med secret, GitHub Pages på `buildapp.se/flaskor`, 21 seedade rader. Grinden svarar 401 på fel kod live.
 
+Patriks önskelista 2026-09-06 (GRILL-STATUS 31 till 35) byggd i chunk-läge, commits `1e76ee3` till `99021cc`: tsc, 33 enhetstester, 14 Worker-tester, Chromium 1 280 och 390 px. Migrering 0002 körd i molnet, Worker-version `2f9dc058`, Pages-bygget grönt, `refresh-all` live gav Vivino-betyg på 19 av 20 viner.
+
 ## Designrunda (före kod)
 
 - [x] `[P0]` Designbrief skriven: `docs/DESIGN-BRIEF.md` (beslut 19, 26).
@@ -28,6 +30,17 @@ v1 byggd 2026-09-05 i chunk-läge (commits `ca195ed` till `c1de427`): tsc, 23 en
 - [x] `[P1]` PWA: manifest, service worker, cache av senaste listan (beslut 11, 27). Listan cachas i localStorage, skalet av service workern. Installation på telefon overifierad.
 - [x] `[P1]` Ordbok för alla strängar, svenska (beslut 18): `src/strings.ts`.
 - [x] `[P1]` Cockpit: `gh repo edit --homepage https://buildapp.se/flaskor` gjort, HANDOFF har frontmatter.
+
+## Önskelistan 2026-09-06
+
+- [x] `[P1]` Filtret syns som filter, sortering med riktning, val överlever sidbyte (31).
+- [x] `[P1]` Totalpris i Källaren, per kategori och i sidofoten (32).
+- [x] `[P1]` Tabellvy med Excel-fälten, sorterbara rubriker, valbara kolumner (33).
+- [x] `[P1]` Sök på mat, kommentar och smak med markerad träff; Bubbel-chip (34).
+- [x] `[P1]` Vivino-betyg och länkat artikelnummer på önskelistan (35).
+- [ ] `[P1]` Barskåpet från Sipdecks skafferi (36): väntar på dumpen ur Sipdecks D1, kommandot står i `HANDOFF.md` §Nästa steg.
+- [ ] `[P3]` Streckkod eller etikett för att lägga till (37): Systembolagets data saknar EAN, så en streckkod kan inte bli ett artikelnummer; etikettfoto kräver AI-anrop (beslut 15). Öppnas igen om en EAN-källa dyker upp.
+- [ ] `[P3]` Lager i vald butik direkt i Flaskor: `stockbalance/store/{butik}/{produkt}/` hos `api-extern.systembolaget.se` med frontendnyckeln ur Systembolagets JS-bundle (metoden i `AlexGustafsson/systembolaget-api`, `credentials.go`). Nyckeln utvinns inte av Claude Code (klassificeraren stoppar det); Patrik kör i så fall skriptet själv. Tills dess: artikelnumret länkar till produktsidan där Systembolaget minns vald butik.
 
 ## Efter första molndeployen
 

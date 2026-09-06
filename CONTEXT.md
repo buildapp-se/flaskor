@@ -35,6 +35,7 @@ En tabell `drink`, en modell för vin och sprit (beslut 3). Fält:
 - `price_paid` (per flaska, kr), `price_current` (senast kända pris i källan), `price_checked_at`, `availability`: `in_stock` | `temporarily_out` | `discontinued` | `unknown` (beslut 23)
 - `count`: antal oöppnade. Sprit dessutom `open_level`: `null` | `4` | `3` | `2` | `1` fjärdedelar av en öppnad flaska (beslut 14)
 - `drink_from`, `drink_to`: år. `serve_temp` (text som "16-18"), `decant_hours`, `food` (fritext), `note` (fritext, "smakade gött, köp mer")
+- `vivino_rating` (vinets snitt 1 till 5, null när Vivino har för få röster), `vivino_count`, `vivino_url` (vinets sida), `vivino_checked_at`
 - `created_at`, `updated_at`
 
 Ingen drucken-logg, inget betyg (beslut 16, i backlog). Ingen plats (beslut 9).
@@ -70,10 +71,11 @@ Sprit får inget fönster.
 - **Drack en**: antalet minskar ett steg, ingen ruta (beslut 16). Sprit: plus/minus på fjärdedelar (beslut 14).
 - **Slut**: antal 0 stannar grått med "lägg på önskelistan igen" (beslut 30).
 - **Nattlig uppdatering** (beslut 23): cron i Workern hämtar varje artikelnummer en gång per natt (dedupe över hushåll, tak) och uppdaterar pris, årgång och tillgänglighet. En "uppdatera"-knapp per rad gör samma sak på begäran.
+- **Vivino-betyg** (2026-09-06): ett vin får sitt betyg när det sparas, via uppdatera-knappen (alla viner, även Caviste och manuella) och nattligt för viner utan betyg eller med betyg äldre än 30 dagar, högst 20 per natt. `POST /api/refresh-all` kör nattens jobb på begäran. Workern läser Vivinos söksida och tar första träffen om minst hälften av sökorden finns i träffens namn; annars sparas bara hämtdatumet.
 
 ## Vyer (beslut 24, 28)
 
-Startsidan är Källaren: grupperad på kategori, sorterad på pris (bytbar till årgång eller fönsterslut), sökruta, chips för kategori, land och piller, en rad överst "Dags att dricka: N". Önskelistan, Barskåpet och Lägg till i bottennavigeringen på mobil, sidnavigering på desktop. Bara svenska.
+Startsidan är Källaren: grupperad på kategori, sorterad på pris (bytbar till årgång, fönsterslut, antal, namn eller Vivino, riktningen växlas med en pil), sökruta som även träffar mat, kommentar och smak (träffen visas markerad under vinet), chips för kategori (Rött, Vitt, Rosé och Bubbel syns alltid, gråa när de är tomma), land och "Drick nu", en rad överst "Dags att dricka: N" och summan "N flaskor · X kr" (antal gånger inköpspris). Sök, chips, sortering och vy sparas i `localStorage` så de överlever sidbyte. En tabellvy (Excel-läget) visar alla ägda viner platt med sorterbara kolumnrubriker, valbara kolumner och sidscroll. Önskelistan visar artikelnumret som länk till produktsidan (Systembolaget minns vald butik där) och Vivino-betyget. Önskelistan, Barskåpet och Lägg till i bottennavigeringen på mobil, sidnavigering på desktop. Bara svenska.
 
 ## Arkitektur (beslut 2, 10, 11, 21, 27)
 
@@ -92,3 +94,5 @@ Verifierat 2026-09-05, detaljer i [docs/RESEARCH.md](docs/RESEARCH.md):
 - Namnsökning hos Systembolaget är osäker (inofficiellt API svarade 404). Reserv: tredjepartsdump av hela sortimentet.
 - Systembolagets sparade listor kan inte exporteras.
 - Caviste är WooCommerce; produktsidan läses som HTML för bild och pris.
+- Vivino (verifierat 2026-09-06): inget öppet API, men `vivino.com/sv/explore?search_term=` är serverrenderad och bär träfflistan som HTML-kodad JSON med `wine_ratings_average`, `wine_ratings_count` och vinets id (`vivino.com/w/<id>`). Sidan väger 1,7 MB. Under fem röster skriver Vivino snittet 0. Svarar Cloudflares nät (20 av 20 träffar vid första körningen).
+- Systembolagets data saknar EAN (kontrollerat i fixturerna och i `AlexGustafsson/systembolaget-api`), så en skannad streckkod kan inte mappas till artikelnummer. Lager per butik finns på `api-extern.systembolaget.se/sb-api-ecommerce/v1/stockbalance/store/<butik>/<produkt>/` med frontendnyckeln `NEXT_PUBLIC_API_KEY_APIM` ur deras JS-bundle, samma nyckel som namnsökningen behöver.

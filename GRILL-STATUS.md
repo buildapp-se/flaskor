@@ -36,3 +36,17 @@ Status per 2026-09-05 kl. 21:20, efter v1-bygget. **beslutad** betyder att beslu
 | 28 | Källarens ordning | Grupperad på kategori, sorterad på pris, bytbar sortering, sök och chips | byggd |
 | 29 | Köpt från önskelistan | Ruta med antal och pris, raden flyttas | byggd |
 | 30 | Antal noll | Stannar grå i ihopfälld sektion med "lägg på önskelistan igen" | byggd |
+
+## Ändringar efter grillen
+
+Begärda av Patrik i klartext 2026-09-06, inte grillade. Numren fortsätter serien.
+
+| Nr | Titel | Beslut | Status |
+|---|---|---|---|
+| 31 | Filter och sortering | Chipraden får rubriken "Visa", sorteringen är select plus riktningspil, alla val sparas i `localStorage` | byggd |
+| 32 | Totalpris | Antal gånger inköpspris (annars dagspris) i Källarens huvud, per kategori, i tabellens summarad och i sidofoten | byggd |
+| 33 | Tabellvy | Excel-läget: platt lista över alla ägda viner, sorterbara kolumnrubriker, valbara kolumner, sidscroll. Listvyn är kvar som standard | byggd |
+| 34 | Sök på mat | Sökningen träffar mat, kommentar och smak; träffen visas markerad under vinet | byggd |
+| 35 | Vivino-betyg | Hämtas ur Vivinos söksida vid tillägg, via uppdatera-knappen och nattligt (30 dagar, tak 20). Första träffen om namnet stämmer till hälften. Länk till vinets sida | byggd, live |
+| 36 | Barskåpet från Sipdeck | Skafferiet i Sipdecks D1 (`users.state.pantry`) seedas som sprit: spirits, liqueurs och bitters, antal 1 oöppnad | väntar på dumpen |
+| 37 | Streckkod och etikett | Uppskjutet: Systembolagets data saknar EAN, etikett kräver AI (beslut 15). Lager per butik kräver frontendnyckeln, backlog P3 | uppskjuten |

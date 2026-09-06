@@ -1,69 +1,58 @@
 ---
 schemaVersion: 1
 status: active
-currentGoal: v1 byggd 2026-09-05 och live på buildapp.se/flaskor med Worker, secret och seedad D1.
-nextAction: Patrik öppnar https://buildapp.se/flaskor, skriver grindkoden, ser 21 viner, lägger till ett Systembolagsvin och installerar appen på telefonen. Sedan ja eller nej på §Val tagna åt Patrik.
-blockers: []
-reviewedAt: 2026-09-05
+currentGoal: Patriks önskelista 2026-09-06 byggd och live (filter, totalpris, tabellvy, sök på mat, Vivino-betyg). Barskåpet från Sipdeck väntar på dumpen.
+nextAction: Patrik kör kommandot i §Nästa steg 1 så skafferiet kan seedas, provar tabellvyn och Vivino-betygen på buildapp.se/flaskor, och säger ja eller nej på §Val tagna åt Patrik.
+blockers: [Sipdecks skafferi kan inte läsas av Claude Code (klassificeraren stoppar D1-läsning i molnet), Patrik kör kommandot själv]
+reviewedAt: 2026-09-06
 ---
 
 # Handoff: Flaskor
 
-Senast uppdaterad: 2026-09-05 kl. 21:40, v1 helt i molnet.
+Senast uppdaterad: 2026-09-06 kl. 08:45, önskelistan 2026-09-06 live.
 
 ## Läge
 
-Hela v1 finns i `main` (commits `ca195ed` till `c1de427`), en commit per backlogpunkt. Verifierat lokalt: `tsc -b`, 23 enhetstester (piller, tumregel, format, Systembolaget-parsern mot två sparade produktsidor i `worker/test/fixtures/`), 11 Worker-tester i riktig workerd med lokal D1, `wrangler deploy --dry-run`, `vite build`, och alla fem vyer i Chromium på 1 280 och 390 px mot `vite dev` (port 5180) och `wrangler dev` (8787).
+v1 (commits `ca195ed` till `4583af4`) plus önskelistan 2026-09-06 (`1e76ee3` till `99021cc`, en commit per punkt) finns i `main` och är live. Verifierat lokalt: `tsc -b`, 33 enhetstester (piller, tumregel, format, sortering, Systembolaget-parsern, Vivino-parsern mot en fixtur klippt ur den riktiga söksidan), 14 Worker-tester i workerd med lokal D1, och Källaren (lista och tabell), Önskelistan och Vindetalj i Chromium på 1 280 och 390 px mot `vite dev` (5180) och `wrangler dev` (8787).
 
-Molnet, 2026-09-05 kl. 21:25: D1 `flaskor` skapad (region EEUR, id i `wrangler.jsonc`), migrering 0001 körd, Workern deployad som version `b251db85` med routen `flaskor-api.buildapp.se` (DNS skapad av wrangler, `/health` svarar 200) och cron `0 2 * * *`, GitHub Pages aktiverat med Actions och workflowkörningen grön, https://buildapp.se/flaskor svarar 200 och bundeln bär API-adressen, `npm run seed -- --remote` la 21 rader med bild i molnets D1. Secreten `GATE_CODE` satt kl. 21:38 med `wrangler secret bulk .dev.vars`; grinden svarar 401 på fel och saknad kod. Inloggning i appen är inte kontrollerad av mig, koden finns bara hos Patrik.
+Molnet 2026-09-06: migrering `0002_vivino.sql` körd (fyra nya nullbara kolumner), Workern deployad som version `2f9dc058` (`/health` 200), Pages-workflowkörningen kl. 08:42 grön och bundeln `index-CaUE-K5e.js` bär de nya strängarna. `POST /api/refresh-all` kördes live: 5 Systembolagsrader uppdaterade, 20 viner fick Vivino-svar på 22 sekunder, 19 av dem med betyg (ett vin har under fem röster). Databasen hade 26 rader, så Patrik har redan lagt till fem sedan i går. Resten av vinerna får betyg i natt (tak 20 per natt).
 
-Layout: `src/` (React, en CSS-fil `app.css` ovanpå `tokens.css`), `shared/` (typer, fel, piller- och tumregellogik, delas av klient och Worker), `worker/` (routes i `src/index.ts`, D1 i `src/db.ts`, Systembolaget i `src/systembolaget.ts`, migreringar, tester, fixturer), `scripts/seed.ts`, `design/` (facit).
+Layout: `src/` (React, `app.css` ovanpå `tokens.css`; `sort.ts` är den enda sorteringen för lista och tabell, `persist.ts` sparar vyval i `localStorage`, `views/CellarTable.tsx` är tabellvyn, `components/Rating.tsx` och `Highlight.tsx`), `shared/` (typer, fel, piller- och tumregellogik), `worker/` (routes i `src/index.ts`, D1 i `src/db.ts`, Systembolaget i `src/systembolaget.ts`, Vivino i `src/vivino.ts`, migreringar, tester, fixturer), `scripts/seed.ts`, `design/` (facit).
 
 ## Nästa steg
 
-1. **Verifiera live:** öppna https://buildapp.se/flaskor, skriv grindkoden (samma som i `.dev.vars`), se 21 viner i Källaren. Lägg till ett Systembolagsvin via nummer. Installera som app på telefonen (Dela, Lägg till på hemskärmen). Ge Julia koden.
-2. **Cron:** morgonen efter, `npx wrangler tail flaskor-api` runt 04:00 eller kolla "Kollat" i detaljvyn för ett Systembolagsvin.
+1. **Skafferiet ur Sipdeck, ditt steg.** Claude Codes klassificerare stoppar all läsning av molnets D1 (både `wrangler d1 execute --remote` och Cloudflare-MCP:n). Kör i prompten:
 
-Byta grindkod: ändra raden i `.dev.vars` och kör `npx wrangler secret bulk .dev.vars` själv i terminalen. Inte `secret put` via Claude Codes `!`-prefix: den läser tom stdin och sparar en tom sträng (hände 2026-09-05).
+   ```
+   ! cd C:\dev\sipdeck; npx wrangler d1 execute sipdeck --remote --json --command "SELECT id, firebase_uid, state FROM users"
+   ```
 
-Sedan: punkterna under "Efter första molndeployen" i `BACKLOG.md`, främst Caviste-bilden, och ja eller nej på §Val tagna åt Patrik.
+   Sedan matchas `state.pantry` mot `drinks.json` (149 ingredienser med grupp) och seedas som sprit i barskåpet: `spirits`, `liqueurs` och allt med `bitters` i id:t, antal 1 oöppnad, utan pris och bild. Blobben har inget e-postfält, bara Firebase-uid; finns flera rader med skafferi tas den största och det sägs vilken.
+2. **Prova live:** tabellvyn (knappen Lista/Tabell i Källaren), klicka på en kolumnrubrik, bocka i Kommentar och Källa, sök "fisk", öppna önskelistans artikelnummer, se betyget i detaljvyn. Fortfarande ogjort från i går: installera som app på telefonen, ge Julia koden, kolla att cron gått (fältet Kollat i detaljvyn).
+3. **Nyckeln till lager per butik** (backlog P3) om du vill ha det: skriptet som gräver nyckeln ur Systembolagets JS-bundle ligger i sessionens scratchpad som `sbkey.mjs` och får inte köras av Claude Code. Säg till så skrivs det in i `scripts/` för dig att köra själv.
+
+Byta grindkod: ändra raden i `.dev.vars` och kör `npx wrangler secret bulk .dev.vars` själv i terminalen. Inte `secret put` via `!`-prefixet: den läser tom stdin och sparar en tom sträng (hände 2026-09-05).
 
 ## Val tagna åt Patrik
 
-Chunk-läge 2026-09-05. Säg till om något ska ändras.
+Chunk-läge 2026-09-06 (önskelistan). Säg till om något ska ändras.
 
-**Designleveransen saknade:**
-- Grindvyn: ett kort med tokens ur §1 (ordmärke, etikett, fält, knapp), `src/views/Gate.tsx`.
-- Desktop för Önskelistan, Barskåpet och Lägg till: samma innehåll som mobilen i en kolumn (720 respektive 560 px) bredvid sidnavigeringen.
-- Vindetalj på mobil: samma block i en kolumn, fotot 120 px högt, faktarutan i två kolumner. Under 1 400 px får fotokolumnen 200 px i stället för 260 så texten får plats.
-- Redigering (beslut 17): "Ändra" uppe till höger byter mittkolumnen mot ett formulär med alla fält, Spara/Avbryt.
-- Bytbar sortering (beslut 28): en `select` i chip-form sist i chip-raden, Pris (fallande), Årgång, Fönsterslut.
-- Slut-sektionen utfälld: grå rader med "Lägg på önskelistan igen" plus stegaren, i Barskåpet grå kort med samma knapp.
-- "Hämta"-knappen i Lägg till visas bara när fältet har text och inget hämtats; Enter fungerar alltid.
-
-**Logik:**
-- "Dags att dricka: N" räknar viner (rader), inte flaskor, med piller Drick eller Snart. Chippet "Drick nu" filtrerar på samma två.
-- Kategoriordning i Källaren: Rött, Vitt, Rosé, Mousserande, sedan övriga i bokstavsordning.
-- Kolumnen `taste` tillagd i `drink` (designen visar "Smak enligt Systembolaget", byggprompten listar fältet). Enda tillägget till modellen i CONTEXT.md.
-- Nattlig uppdatering och uppdatera-knappen rör årgången bara på önskelisterader; ägda flaskor behåller sin årgång (Systembolaget säljer den nya, källaren har den gamla). 404 från Systembolaget sätter `availability = discontinued`; nätfel lämnar raden orörd.
-- "Direkt till källaren" sparar antal 1 och inköpspris = dagens pris; ändras i detaljvyn.
-- Tillgänglighetstext i Önskelistan: "Finns på Systembolaget · nr 75624 01", "Tillfälligt slut på Systembolaget", "Utgått hos Systembolaget" (grå rad, tom Köpt-knapp), "Caviste" för Caviste-rader, inget för manuella.
-- "Öppna en" i Barskåpet visas så länge oöppnade finns, även med en öppnad flaska; den sätter nivån till Full. Under en fjärdedel blir öppnad flaska `null`.
-- Systembolagets `usage` delas: temperaturen ("16-18") till `serve_temp`, texten efter "till" till `food`, annars hela texten till `food`.
-- Ingen route för att ta bort en rad; ligger i backlog.
-
-**Teknik:**
-- Hash-routing (`#/onskelistan`, `#/flaska/12`) i 30 egna rader i stället för ett routerbibliotek: GitHub Pages kan inte skriva om djupa sökvägar till `index.html`.
-- Listan cachas i `localStorage` och hämtas om vid start och varje gång fliken får fokus (två användare delar den). Service workern cachar skalet, typsnitten och flaskbilderna, inte API-svaren.
-- PWA `registerType: 'autoUpdate'` utan omladdningsbanner (inget pågående arbete att förlora, till skillnad från Beefcakes pass).
-- `compatibility_date` 2026-08-08: vitest-poolens workerd stödjer inte senare.
-- Lokal utvecklingsport 5180 (5173 och 5174 hålls av Familjehubbens vite från en annan terminal). Båda 5173 och 5180 står i `FRONTEND_ORIGINS`.
-- Seed-skriptet raderar alla `caviste`-rader före omkörning, så det går att köra om utan dubbletter. WordPress tumnagelsuffix (`-100x100`) tas bort från bildlänken.
-- Fixturer: 7562401 (Domaine Georges d'Ibry, ordervara utan druvor och usage) och 1101 (Vanlig Vodka, sprit med usage och taste). Testsviten släpper ingen trafik ut; Systembolaget svarar ur fixturerna via `outboundService`.
-- `.gitattributes` med `eol=lf` så Windows-checkouten slutar varna om CRLF.
+- **Sorteringen** är en select (Pris, Årgång, Fönsterslut, Antal, Namn, Vivino) plus en pil som växlar riktning. Väljs en ny nyckel får den sin naturliga riktning: pris, antal, totalt och Vivino fallande, resten stigande. Tabellens kolumnrubriker delar samma tillstånd, klick på samma rubrik vänder riktningen.
+- **Vyval i `localStorage`** (`flaskor.cellar`, `flaskor.columns`), inte i adressen: hash-routingen har inga sökparametrar och ingen behöver länka till ett filter.
+- **Totalpriset** räknar antal gånger inköpspris, annars dagspris; rader utan pris räknas som noll utan markering (alla 21 seedrader har pris). Källarens huvud och kategorisummorna räknar bara viner med flaskor kvar; sidofoten räknar allt ägt, sprit inräknad.
+- **Grundchipsen** Rött, Vitt, Rosé, Bubbel syns alltid, gråa och oklickbara när kategorin är tom. "Mousserande" heter "Bubbel" i chips och rubriker.
+- **Tabellen** visar alla ägda viner, även de med noll flaskor (gråa), platt utan kategorigrupper, med summarad. Dolda från start: Region, Druvor, Karaff, Kommentar, Källa. Namnkolumnen står fast vid sidscroll. Mobilen får tabellen kant i kant.
+- **Sökträffen** i mat, kommentar eller smak visas som en extra rad under vinnamnet med ordet markerat, i lista och tabell. Träff i namn, land eller druva markeras bara i tabellen.
+- **Vivino**: söksträngen är producent plus namn (inte dubblerad). Första träffen tas när minst hälften av sökorden (tre tecken eller längre, årtal borträknade) finns i träffens namn; annars sparas bara hämtdatumet så raden inte frågas igen i morgon. Betyget är vinets snitt över alla årgångar, inte årgångens. Snittet 0 (under fem röster) sparas som inget betyg men med länk. Fel träff rättas inte i appen än: sätt `vivino_url` med ett PATCH-anrop eller vänta på en redigerbar Vivino-länk i detaljvyn (inte byggd).
+- **Uppdatera-knappen** finns nu på alla viner, "Uppdatera från Systembolaget" för Systembolagsrader (gör båda), "Uppdatera Vivino-betyg" för övriga.
+- **`POST /api/refresh-all`** bakom grindkoden kör nattens jobb på begäran. Finns för att fylla på betyg direkt och för att kunna verifiera cronen utan att vänta till natten.
+- **Länkfält** (`source_url`, `image_url`, `vivino_url`) tar bara `http(s)://`, annars 400. Kom ur commit-granskningens XSS-fynd på `Rating.tsx`: fälten renderas som `href`.
+- **Streckkod och etikett** uppskjutet (backlog P3) med motivering i `CONTEXT.md` §Datakällor.
 
 ## Fällor
 
-- **`wrangler dev` under Claude Code svarar 401 på allt.** Starta med agentvariablerna avstängda, metoden står i vaultnoten `Browser Automation`.
-- **Caviste-bilden är en liggande banner**, inte en flaska (första `CAV<nr>`-bilden på sidan). Ser konstig ut i 32×50-rutan. Backlog P2.
+- **`wrangler dev` under Claude Code svarar 401 på allt.** Starta med agentvariablerna avstängda, metoden står i vaultnoten `Browser Automation`. För kontroll i webbläsaren utan att grindkoden hamnar i chatten: `--var GATE_CODE:test-kod` och skriv `test-kod` i grinden.
+- **Lokal D1 kan vara tom** även om migreringarna står som körda (2026-09-06). `npm run seed` fyller på från Excel-raderna.
+- **Vivinos söksida är 1,7 MB** per vin. Nattens tak på 20 håller cronen kort; höj inte utan att kolla körtiden i `wrangler tail`.
+- **Caviste-bilden är en liggande banner**, inte en flaska. Backlog P2.
 - **Skärmbilder av utvecklingsservern visar cachad lista** tills sidan laddas om; `location.hash`-byten hämtar inte om.
