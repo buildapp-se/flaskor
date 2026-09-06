@@ -1,8 +1,8 @@
 import { FatalError, NotFoundError, TransientError, UnauthorizedError } from '../../shared/errors.ts'
 import type { Drink, DrinkPatch, Preview } from '../../shared/types.ts'
-import { getDrink, insertDrink, listDrinks, sanitize, updateDrink } from './db.ts'
+import { deleteDrink, getDrink, insertDrink, listDrinks, sanitize, updateDrink } from './db.ts'
 import { fetchProduct, parseProductNumber, toPreview } from './systembolaget.ts'
-import { findVivino, queryFor, vivinoDue, vivinoPatch } from './vivino.ts'
+import { fetchWine, findVivino, parseVivinoUrl, parseWinePage, queryFor, vivinoDue, vivinoPatch, vivinoToPreview } from './vivino.ts'
 
 // Grindkoden (beslut 2): en delad kod, skickad som Bearer, jämförd mot secreten GATE_CODE. Sitter här, aldrig bara i klienten.
 type GateEnv = Env & { GATE_CODE?: string }
@@ -52,6 +52,10 @@ async function route(request: Request, env: GateEnv): Promise<unknown> {
 
   const single = path.match(/^\/api\/drinks\/(\d+)$/)
   if (single?.[1] && method === 'PATCH') return updateDrink(env.DB, Number(single[1]), sanitize(await request.json()))
+  if (single?.[1] && method === 'DELETE') {
+    await deleteDrink(env.DB, Number(single[1]))
+    return null
+  }
 
   const refresh = path.match(/^\/api\/drinks\/(\d+)\/refresh$/)
   if (refresh?.[1] && method === 'POST') return refreshDrink(env.DB, await getDrink(env.DB, Number(refresh[1])))
@@ -59,6 +63,11 @@ async function route(request: Request, env: GateEnv): Promise<unknown> {
   if (method === 'GET' && path === '/api/systembolaget') {
     const number = parseProductNumber(url.searchParams.get('q') ?? '')
     return toPreview(await fetchProduct(number))
+  }
+
+  if (method === 'GET' && path === '/api/vivino') {
+    const { wineId, year } = parseVivinoUrl(url.searchParams.get('q') ?? '')
+    return vivinoToPreview(parseWinePage(await fetchWine(wineId), wineId), wineId, year)
   }
 
   throw new NotFoundError('no such route')
@@ -87,7 +96,7 @@ function corsHeaders(origin: string | null, list: string): Record<string, string
   const allowed = origin && allowedOrigins(list).includes(origin) ? origin : ''
   return {
     'access-control-allow-origin': allowed,
-    'access-control-allow-methods': 'GET, POST, PATCH, OPTIONS',
+    'access-control-allow-methods': 'GET, POST, PATCH, DELETE, OPTIONS',
     'access-control-allow-headers': 'authorization, content-type',
     'access-control-max-age': '86400',
     vary: 'origin',

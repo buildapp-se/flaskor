@@ -41,5 +41,7 @@ export const api = {
   createDrink: (input: DrinkInput) => call<Drink>('POST', '/api/drinks', input),
   patchDrink: (id: number, patch: DrinkPatch) => call<Drink>('PATCH', `/api/drinks/${id}`, patch),
   refreshDrink: (id: number) => call<Drink>('POST', `/api/drinks/${id}/refresh`),
+  deleteDrink: (id: number) => call<void>('DELETE', `/api/drinks/${id}`),
   preview: (q: string) => call<Preview>('GET', `/api/systembolaget?q=${encodeURIComponent(q)}`),
+  previewVivino: (url: string) => call<Preview>('GET', `/api/vivino?q=${encodeURIComponent(url)}`),
 }

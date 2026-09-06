@@ -14,6 +14,7 @@ export interface Store {
   patch(id: number, patch: DrinkPatch): Promise<void>
   add(input: DrinkInput): Promise<Drink>
   refresh(id: number): Promise<void>
+  remove(id: number): Promise<void>
 }
 
 const StoreContext = createContext<Store | null>(null)
@@ -115,8 +116,19 @@ export function StoreProvider({ onLocked, children }: { onLocked: () => void; ch
           fail(err)
         }
       },
+      async remove(id) {
+        // Raden försvinner direkt; misslyckas servern laddas listan om och raden kommer tillbaka.
+        setDrinks((list) => list?.filter((d) => d.id !== id) ?? null)
+        try {
+          await api.deleteDrink(id)
+          keep((drinks ?? []).filter((d) => d.id !== id))
+        } catch (err) {
+          fail(err)
+          await reload()
+        }
+      },
     }),
-    [drinks, error, reload, replace, fail],
+    [drinks, error, reload, replace, fail, keep],
   )
 
   return <StoreContext.Provider value={store}>{children}</StoreContext.Provider>

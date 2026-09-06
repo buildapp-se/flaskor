@@ -3,7 +3,7 @@ import type { Drink, DrinkPatch } from '../../shared/types.ts'
 import { windowState } from '../../shared/window.ts'
 import { Pill } from '../components/Pill.tsx'
 import { articleNo, dateShort, kr, pct, temp } from '../format.ts'
-import { PATHS } from '../hash.ts'
+import { navigate, PATHS } from '../hash.ts'
 import { IconExternal, IconMinus, IconPlus } from '../icons.tsx'
 import { useStore } from '../store.tsx'
 import { S } from '../strings.ts'
@@ -13,9 +13,11 @@ import { SpiritCard } from './Bar.tsx'
 // Vindetalj (design §3 "Vindetalj desktop", beslut 17): foto, namn, fönster som tidslinje, fakta, smak, kommentar, antal, priser, länkar.
 // Mobil saknar artboard: samma block i en kolumn. Redigering saknas i leveransen: "Ändra" byter mittkolumnen mot ett formulär.
 export function Detail({ id }: { id: number }) {
-  const { drinks, patch, refresh } = useStore()
+  const { drinks, patch, refresh, remove } = useStore()
   const [editing, setEditing] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
+  // Ta bort i två tryck i stället för en dialogruta: första trycket byter text, andra tar bort.
+  const [armed, setArmed] = useState(false)
   if (drinks === null) return <div className="fl-muted">{S.loading}</div>
   const drink = drinks.find((d) => d.id === id)
   if (!drink) return <p className="fl-muted">{S.detail.notFound}</p>
@@ -164,6 +166,21 @@ export function Detail({ id }: { id: number }) {
             </button>
           )}
         </div>
+
+        <button
+          className="fl-textbtn fl-detail__remove"
+          onClick={async () => {
+            if (!armed) {
+              setArmed(true)
+              return
+            }
+            await remove(drink.id)
+            navigate(parent.path)
+          }}
+          onBlur={() => setArmed(false)}
+        >
+          {armed ? S.detail.removeConfirm : S.detail.remove}
+        </button>
       </aside>
     </div>
   )
@@ -218,7 +235,8 @@ type Field = keyof typeof S.detail.fields
 const TEXTAREAS: ReadonlyArray<Field> = ['food', 'note', 'taste']
 const NUMBERS: ReadonlyArray<Field> = ['vintage', 'alcohol', 'volume', 'drink_from', 'drink_to', 'decant_hours', 'price_paid']
 
-function EditForm({ drink, onCancel, onSave }: { drink: Drink; onCancel: () => void; onSave: (p: DrinkPatch) => void }) {
+/** Formuläret med alla fält. Används av Ändra i detaljvyn och av "Skriv in själv" i Lägg till (då med egna knapptexter). */
+export function EditForm({ drink, onCancel, onSave, saveLabel = S.detail.save }: { drink: Drink; onCancel: () => void; onSave: (p: DrinkPatch) => void; saveLabel?: string }) {
   const initial: Record<Field, string> = {
     name: drink.name,
     producer: drink.producer ?? '',
@@ -267,7 +285,7 @@ function EditForm({ drink, onCancel, onSave }: { drink: Drink; onCancel: () => v
             {TEXTAREAS.includes(f) ? (
               <textarea className="fl-input fl-edit__area" rows={3} value={values[f]} onChange={(e) => setValues({ ...values, [f]: e.target.value })} />
             ) : (
-              <input className="fl-input" inputMode={NUMBERS.includes(f) ? 'decimal' : undefined} value={values[f]} onChange={(e) => setValues({ ...values, [f]: e.target.value })} />
+              <input className="fl-input" required={f === 'name'} inputMode={NUMBERS.includes(f) ? 'decimal' : undefined} value={values[f]} onChange={(e) => setValues({ ...values, [f]: e.target.value })} />
             )}
           </label>
         ))}
@@ -277,7 +295,7 @@ function EditForm({ drink, onCancel, onSave }: { drink: Drink; onCancel: () => v
           {S.detail.cancel}
         </button>
         <button type="submit" className="fl-btn fl-btn--primary">
-          {S.detail.save}
+          {saveLabel}
         </button>
       </div>
     </form>
