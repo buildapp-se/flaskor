@@ -66,7 +66,7 @@ export function Bar() {
   }
 
   return (
-    <div className="fl-bar">
+    <>
       <div className="fl-head">
         <h1>{S.bar.title}</h1>
         <span className="fl-head__count">
@@ -160,7 +160,7 @@ export function Bar() {
           </>
         )}
       </div>
-    </div>
+    </>
   )
 }
 

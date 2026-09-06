@@ -922,16 +922,11 @@ p {
 }
 
 /* ── Barskåpet (design §3) ────────────────────────────── */
-.fl-bar {
-  display: flex;
-  flex-direction: column;
-  gap: var(--fl-s5);
-  max-width: 720px;
-}
 .fl-bar__list {
   display: flex;
   flex-direction: column;
   gap: var(--fl-s3);
+  max-width: 720px;
 }
 .fl-spirit {
   padding: 14px;
@@ -998,7 +993,7 @@ p {
   font-size: 15px;
 }
 @media (max-width: 899px) {
-  .fl-bar {
+  .fl-bar__list {
     max-width: none;
     gap: 14px;
   }
