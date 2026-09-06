@@ -925,8 +925,12 @@ p {
 .fl-bar__list {
   display: flex;
   flex-direction: column;
+  gap: var(--fl-s5);
+}
+.fl-spirit-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
   gap: var(--fl-s3);
-  max-width: 720px;
 }
 .fl-spirit {
   padding: 14px;
@@ -994,7 +998,6 @@ p {
 }
 @media (max-width: 899px) {
   .fl-bar__list {
-    max-width: none;
     gap: 14px;
   }
 }
