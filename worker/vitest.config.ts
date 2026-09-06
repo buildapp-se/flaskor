@@ -26,6 +26,15 @@ export default defineConfig({
           }
           // Vivino svarar alltid med Le Grappin-fixturen; rimlighetskontrollen avgör om betyget tas.
           if (url.hostname === 'www.vivino.com') {
+            // Vinsidor: bara 2379181 finns som fixtur, andra id:n ger 404. Söksidan svarar alltid Le Grappin.
+            const wine = url.pathname.match(/\/w\/(\d+)/)?.[1]
+            if (wine) {
+              try {
+                return new Response(await readFile(`worker/test/fixtures/vivino-w-${wine}.html`, 'utf8'), { headers: { 'content-type': 'text/html' } })
+              } catch {
+                return new Response('not found', { status: 404 })
+              }
+            }
             return new Response(await readFile('worker/test/fixtures/vivino-le-grappin.html', 'utf8'), { headers: { 'content-type': 'text/html' } })
           }
           return new Response(`Unexpected outbound request in tests: ${request.url}`, { status: 503 })

@@ -1504,3 +1504,16 @@ p {
   width: 12px;
   height: 12px;
 }
+.fl-detail__remove {
+  align-self: flex-start;
+  padding: 0 20px;
+  color: var(--fl-ink-2);
+}
+.fl-detail__remove:hover {
+  color: var(--fl-past);
+}
+.fl-add__manual {
+  display: flex;
+  gap: var(--fl-s2);
+  align-items: center;
+}

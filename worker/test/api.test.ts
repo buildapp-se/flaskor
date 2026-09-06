@@ -59,6 +59,13 @@ describe('drinks', () => {
   })
   it('okänt id: 404', async () => {
     expect((await api('PATCH', '/api/drinks/999', { count: 1 })).status).toBe(404)
+    expect((await api('DELETE', '/api/drinks/999')).status).toBe(404)
+  })
+  it('tar bort en rad', async () => {
+    const row = await (await api('POST', '/api/drinks', { kind: 'spirit', name: 'Felinlagd', owned: true, count: 1 })).json<{ id: number }>()
+    expect((await api('DELETE', `/api/drinks/${row.id}`)).status).toBe(204)
+    const list = await (await api('GET', '/api/drinks')).json<{ drinks: unknown[] }>()
+    expect(list.drinks).toHaveLength(0)
   })
 })
 
@@ -82,6 +89,30 @@ describe('vivino', () => {
     await api('PATCH', `/api/drinks/${cav.id}`, { vivino_rating: null, vivino_checked_at: null })
     const all = await (await api('POST', '/api/refresh-all')).json<{ vivino: number }>()
     expect(all.vivino).toBe(1)
+  })
+})
+
+describe('vivino-länk', () => {
+  it('förhandsvisar ett vin ur länken, årgång ur year', async () => {
+    const res = await api('GET', `/api/vivino?q=${encodeURIComponent('https://www.vivino.com/en/colombera-cascina-cottignano-bramaterra/w/2379181?year=2018&price_id=31367393')}`)
+    expect(res.status, await res.clone().text()).toBe(200)
+    const p = await res.json<{ name: string; producer: string; vintage: number; category: string; region: string; country: string; grapes: string; alcohol: number; vivino_rating: number; vivino_url: string; image_url: string; food: string }>()
+    expect(p.name).toBe('Colombera & Garella Cascina Cottignano Bramaterra')
+    expect(p.producer).toBe('Colombera & Garella')
+    expect(p.vintage).toBe(2018)
+    expect(p.category).toBe('Rött vin')
+    expect(p.region).toBe('Bramaterra, Piemonte')
+    expect(p.country).toBe('Italien')
+    expect(p.grapes).toBe('Nebbiolo')
+    expect(p.alcohol).toBe(13)
+    expect(p.vivino_rating).toBe(3.9)
+    expect(p.vivino_url).toBe('https://www.vivino.com/w/2379181')
+    expect(p.image_url).toMatch(/^https:\/\/images\.vivino\.com\//)
+    expect(p.food).toContain('Beef')
+  })
+  it('okänt vin: 404, annan länk: 400', async () => {
+    expect((await api('GET', `/api/vivino?q=${encodeURIComponent('https://www.vivino.com/w/1')}`)).status).toBe(404)
+    expect((await api('GET', `/api/vivino?q=${encodeURIComponent('https://www.systembolaget.se/produkt/vin/x-7562401/')}`)).status).toBe(400)
   })
 })
 

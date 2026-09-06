@@ -70,6 +70,12 @@ export async function insertDrink(db: D1Database, input: DrinkPatch): Promise<Dr
   return rowToDrink(row)
 }
 
+/** Tar bort raden. Kastar NotFoundError när den inte finns. */
+export async function deleteDrink(db: D1Database, id: number): Promise<void> {
+  const result = await db.prepare('DELETE FROM drink WHERE id = ? AND household_id = ?').bind(id, HOUSEHOLD_ID).run()
+  if (result.meta.changes === 0) throw new NotFoundError(`drink ${id} not found`)
+}
+
 export async function updateDrink(db: D1Database, id: number, patch: DrinkPatch): Promise<Drink> {
   const keys = Object.keys(patch) as Array<keyof DrinkPatch>
   if (keys.length === 0) return getDrink(db, id)
