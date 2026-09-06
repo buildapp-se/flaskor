@@ -1,15 +1,15 @@
 ---
 schemaVersion: 1
 status: active
-currentGoal: Patriks önskelista 2026-09-06 byggd och live (filter, totalpris, tabellvy, sök på mat, Vivino-betyg). Barskåpet från Sipdeck väntar på dumpen.
-nextAction: Patrik kör kommandot i §Nästa steg 1 så skafferiet kan seedas, provar tabellvyn och Vivino-betygen på buildapp.se/flaskor, och säger ja eller nej på §Val tagna åt Patrik.
-blockers: [Sipdecks skafferi kan inte läsas av Claude Code (klassificeraren stoppar D1-läsning i molnet), Patrik kör kommandot själv]
+currentGoal: Patriks önskelista 2026-09-06 byggd och live (filter, totalpris, tabellvy, sök på mat, Vivino-betyg, barskåpet från Sipdeck).
+nextAction: Patrik provar tabellvyn, Vivino-betygen och barskåpet på buildapp.se/flaskor, justerar öppnade flaskor, och säger ja eller nej på §Val tagna åt Patrik.
+blockers: []
 reviewedAt: 2026-09-06
 ---
 
 # Handoff: Flaskor
 
-Senast uppdaterad: 2026-09-06 kl. 08:45, önskelistan 2026-09-06 live.
+Senast uppdaterad: 2026-09-06 kl. 09:10, önskelistan 2026-09-06 live, barskåpet seedat.
 
 ## Läge
 
@@ -21,13 +21,7 @@ Layout: `src/` (React, `app.css` ovanpå `tokens.css`; `sort.ts` är den enda so
 
 ## Nästa steg
 
-1. **Skafferiet ur Sipdeck, ditt steg.** Claude Codes klassificerare stoppar all läsning av molnets D1 (både `wrangler d1 execute --remote` och Cloudflare-MCP:n). Kör i prompten:
-
-   ```
-   ! cd C:\dev\sipdeck; npx wrangler d1 execute sipdeck --remote --json --command "SELECT id, firebase_uid, state FROM users"
-   ```
-
-   Sedan matchas `state.pantry` mot `drinks.json` (149 ingredienser med grupp) och seedas som sprit i barskåpet: `spirits`, `liqueurs` och allt med `bitters` i id:t, antal 1 oöppnad, utan pris och bild. Blobben har inget e-postfält, bara Firebase-uid; finns flera rader med skafferi tas den största och det sägs vilken.
+1. **Barskåpet är seedat** (kl. 09:05): 18 sorter ur Sipdecks skafferi, antal 1 oöppnad, utan pris och bild, kommentaren "Från Sipdecks skafferi (id)". Tryck "Öppna en" på de som är öppnade. Sipdecks D1 lästes av Patrik själv (Claude Codes klassificerare stoppar D1-läsning i molnet), och kontot var id 1 av sex; de två största skafferierna (id 7 och 8) är testkonton.
 2. **Prova live:** tabellvyn (knappen Lista/Tabell i Källaren), klicka på en kolumnrubrik, bocka i Kommentar och Källa, sök "fisk", öppna önskelistans artikelnummer, se betyget i detaljvyn. Fortfarande ogjort från i går: installera som app på telefonen, ge Julia koden, kolla att cron gått (fältet Kollat i detaljvyn).
 3. **Nyckeln till lager per butik** (backlog P3) om du vill ha det: skriptet som gräver nyckeln ur Systembolagets JS-bundle ligger i sessionens scratchpad som `sbkey.mjs` och får inte köras av Claude Code. Säg till så skrivs det in i `scripts/` för dig att köra själv.
 
@@ -48,6 +42,7 @@ Chunk-läge 2026-09-06 (önskelistan). Säg till om något ska ändras.
 - **`POST /api/refresh-all`** bakom grindkoden kör nattens jobb på begäran. Finns för att fylla på betyg direkt och för att kunna verifiera cronen utan att vänta till natten.
 - **Länkfält** (`source_url`, `image_url`, `vivino_url`) tar bara `http(s)://`, annars 400. Kom ur commit-granskningens XSS-fynd på `Rating.tsx`: fälten renderas som `href`.
 - **Streckkod och etikett** uppskjutet (backlog P3) med motivering i `CONTEXT.md` §Datakällor.
+- **Barskåpsseeden** går via API:t med grindkoden ur `.dev.vars` (`scripts/seed-bar.ts`), inte via wrangler, och hoppar över sprit som redan finns med samma namn. Kategorierna (Whisky, Rom, Gin, Likör, Bitterlikör, Bitter) är satta för hand i `seed/barskap.tsv`, Sipdeck har bara grupperna spirits, liqueurs och pantry.
 
 ## Fällor
 
