@@ -145,9 +145,11 @@ export function Bar() {
               <span className="fl-group__title">{c || S.bar.all}</span>
               <span className="fl-group__count">{S.bar.kinds(rows.length)}</span>
             </div>
-            {rows.map((d) => (
-              <SpiritCard key={d.id} drink={d} onPatch={(p) => patch(d.id, p)} />
-            ))}
+            <div className="fl-spirit-grid">
+              {rows.map((d) => (
+                <SpiritCard key={d.id} drink={d} onPatch={(p) => patch(d.id, p)} />
+              ))}
+            </div>
           </section>
         ))}
         {depleted.length > 0 && (
@@ -156,7 +158,7 @@ export function Bar() {
               <IconChevron />
               {S.bar.depleted} · {S.bar.kinds(depleted.length)}
             </button>
-            {showDepleted && depleted.map((d) => <SpiritCard key={d.id} drink={d} muted onPatch={(p) => patch(d.id, p)} />)}
+            {showDepleted && <div className="fl-spirit-grid">{depleted.map((d) => <SpiritCard key={d.id} drink={d} muted onPatch={(p) => patch(d.id, p)} />)}</div>}
           </>
         )}
       </div>
