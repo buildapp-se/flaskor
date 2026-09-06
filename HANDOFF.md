@@ -1,15 +1,15 @@
 ---
 schemaVersion: 1
 status: active
-currentGoal: Patriks önskelista 2026-09-06 byggd och live (filter, totalpris, tabellvy, sök på mat, Vivino-betyg, barskåpet från Sipdeck).
-nextAction: Patrik provar tabellvyn, Vivino-betygen och barskåpet på buildapp.se/flaskor, justerar öppnade flaskor, och säger ja eller nej på §Val tagna åt Patrik.
+currentGoal: Önskelistan 2026-09-06 byggd och live (filter, totalpris, tabellvy, sök på mat, Vivino-betyg, barskåpet från Sipdeck, ta bort, Vivino-länk, skriv in själv). Bulkimport via egen AI (40) föreslagen, väntar på ja.
+nextAction: Patrik säger ja eller nej på bulkimporten (BACKLOG 40), provar ta bort, Vivino-länk och Skriv in själv live, och säger ja eller nej på §Val tagna åt Patrik.
 blockers: []
 reviewedAt: 2026-09-06
 ---
 
 # Handoff: Flaskor
 
-Senast uppdaterad: 2026-09-06 kl. 09:10, önskelistan 2026-09-06 live, barskåpet seedat.
+Senast uppdaterad: 2026-09-06 kl. 09:15, ta bort, Vivino-länk och skriv in själv live (Worker `86214a11`, commit `79ca403`).
 
 ## Läge
 
@@ -42,6 +42,9 @@ Chunk-läge 2026-09-06 (önskelistan). Säg till om något ska ändras.
 - **`POST /api/refresh-all`** bakom grindkoden kör nattens jobb på begäran. Finns för att fylla på betyg direkt och för att kunna verifiera cronen utan att vänta till natten.
 - **Länkfält** (`source_url`, `image_url`, `vivino_url`) tar bara `http(s)://`, annars 400. Kom ur commit-granskningens XSS-fynd på `Rating.tsx`: fälten renderas som `href`.
 - **Streckkod och etikett** uppskjutet (backlog P3) med motivering i `CONTEXT.md` §Datakällor.
+- **Ta bort** är två tryck på samma knapp ("Säkert? Tryck igen"), ingen dialogruta: webbläsarens `confirm()` blockerar allt annat och ser olika ut per telefon. Knappen ligger längst ner i detaljvyn, grå, röd vid hover. Ingen ångra: raden är borta när servern svarat.
+- **Vivino-länken** ger källa `manual` (inte en ny `source_kind`, det hade krävt en ny CHECK-constraint och tabellbygge i SQLite) med Vivino-länken i betygsfältet. Vivinos matförslag kommer på svenska tack vare `accept-language`. Landsnamn översätts för de 17 vanliga, resten behåller Vivinos engelska. Namnet blir producent plus vinnamn ("Colombera & Garella Cascina Cottignano Bramaterra"), längre än Excel-namnet.
+- **Skriv in själv** återanvänder Ändra-formuläret (nu exporterat ur `Detail.tsx`) och matar den vanliga förhandsvisningen, så sparknapparna är desamma. Namn är obligatoriskt (webbläsarens `required`). Kategori förifylls "Rött vin" för vin.
 - **Barskåpsseeden** går via API:t med grindkoden ur `.dev.vars` (`scripts/seed-bar.ts`), inte via wrangler, och hoppar över sprit som redan finns med samma namn. Kategorierna (Whisky, Rom, Gin, Likör, Bitterlikör, Bitter) är satta för hand i `seed/barskap.tsv`, Sipdeck har bara grupperna spirits, liqueurs och pantry.
 
 ## Fällor

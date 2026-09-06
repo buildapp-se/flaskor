@@ -67,6 +67,9 @@ Sprit får inget fönster.
 ## Flöden
 
 - **Lägg till via Systembolaget** (beslut 6): användaren skriver artikelnummer eller klistrar in produktlänk. Workern hämtar `https://www.systembolaget.se/produkt/vin/x-<nummer>/` (sluggen ignoreras av Systembolaget), läser `__NEXT_DATA__` och returnerar fälten. Raden hamnar på önskelistan med fönster från tumregeln, temp och mat ur `usage`.
+- **Lägg till via Vivino-länk** (2026-09-06): en länk med `/w/<id>` ger samma förhandsvisning ur vinsidan (producent, namn, typ, region, land, druvor, alkohol, bild, betyg, matförslag på svenska), årgång ur `?year=`. Pris och fönster fylls i för hand. Källa `manual`, Vivino-länken sparad så uppdatera-knappen träffar rätt vin.
+- **Skriv in själv** (2026-09-06): Ändra-formuläret i Lägg till, vin eller sprit, sedan samma förhandsvisning och sparknappar.
+- **Ta bort** (2026-09-06): knapp längst ner i detaljvyn, två tryck. Raden försvinner direkt, servern bekräftar eller listan laddas om.
 - **Köpt** (beslut 29): ett tryck, ruta med antal (1) och pris (Systembolagets), raden får `owned = 1`. Vin till Källaren, sprit till Barskåpet.
 - **Drack en**: antalet minskar ett steg, ingen ruta (beslut 16). Sprit: plus/minus på fjärdedelar (beslut 14).
 - **Slut**: antal 0 stannar grått med "lägg på önskelistan igen" (beslut 30).
