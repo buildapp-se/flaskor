@@ -11,6 +11,7 @@ import { Bar } from './views/Bar.tsx'
 import { Cellar } from './views/Cellar.tsx'
 import { Detail } from './views/Detail.tsx'
 import { Gate } from './views/Gate.tsx'
+import { Import } from './views/Import.tsx'
 import { Wishlist } from './views/Wishlist.tsx'
 
 export function App() {
@@ -37,9 +38,9 @@ const NAV = [
 
 function Shell() {
   const route = useRoute()
-  const { drinks, error } = useStore()
-  // Detaljvyn hör till Källaren eller Barskåpet i navigeringen.
-  const active = route.view === 'detail' ? (drinks?.find((d) => d.id === route.id)?.kind === 'spirit' ? 'bar' : 'cellar') : route.view
+  const { drinks, error, undo, runUndo, dismissUndo } = useStore()
+  // Detaljvyn hör till Källaren eller Barskåpet i navigeringen, importen till Lägg till.
+  const active = route.view === 'detail' ? (drinks?.find((d) => d.id === route.id)?.kind === 'spirit' ? 'bar' : 'cellar') : route.view === 'import' ? 'add' : route.view
   const owned = drinks?.filter((d) => d.owned) ?? []
   const bottles = owned.reduce((sum, d) => sum + d.count, 0)
   const value = owned.reduce((sum, d) => sum + valueOf(d), 0)
@@ -71,8 +72,20 @@ function Shell() {
         {route.view === 'wishlist' && <Wishlist />}
         {route.view === 'bar' && <Bar />}
         {route.view === 'add' && <Add />}
+        {route.view === 'import' && <Import />}
         {route.view === 'detail' && <Detail id={route.id} />}
       </main>
+      {undo && (
+        <div className="fl-undo" role="status">
+          <span>{undo}</span>
+          <button type="button" onClick={runUndo}>
+            {S.undo.undo}
+          </button>
+          <button type="button" className="fl-undo__close" aria-label={S.undo.close} onClick={dismissUndo}>
+            ×
+          </button>
+        </div>
+      )}
       <nav className="fl-bottom">
         {NAV.map(({ key, path, label, Icon }) => (
           <a key={key} href={path} className="fl-bottom__link" aria-current={active === key ? 'page' : undefined}>

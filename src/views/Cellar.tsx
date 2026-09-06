@@ -39,14 +39,16 @@ interface CellarState {
   sort: SortKey
   dir: SortDir
   view: 'list' | 'table'
+  /** Tabellen: visa även viner med noll flaskor. Av från start, så en sökning på "skaldjur" bara ger det som finns hemma. */
+  showZero: boolean
 }
 
-const INITIAL: CellarState = { query: '', category: null, country: null, dueOnly: false, sort: 'price', dir: 'desc', view: 'list' }
+const INITIAL: CellarState = { query: '', category: null, country: null, dueOnly: false, sort: 'price', dir: 'desc', view: 'list', showZero: false }
 
 export function Cellar() {
-  const { drinks, patch } = useStore()
+  const { drinks, patch, remove, add, setUndo } = useStore()
   const [state, set] = usePersisted<CellarState>('flaskor.cellar', INITIAL)
-  const { query, category, country, dueOnly, sort, dir, view } = state
+  const { query, category, country, dueOnly, sort, dir, view, showZero } = state
   const [showDepleted, setShowDepleted] = useState(false)
 
   const wines = useMemo(() => (drinks ?? []).filter((d) => d.kind === 'wine' && d.owned), [drinks])
@@ -66,10 +68,24 @@ export function Cellar() {
   const visible = inStock.filter(keep).sort(compare(sort, dir))
   const groups = categories.map((c) => ({ category: c, rows: visible.filter((d) => (d.category ?? '') === c) })).filter((g) => g.rows.length > 0)
   // Tabellen är Excel-arket: alla ägda viner, även de med noll flaskor, i en platt lista.
-  const tableRows = wines.filter(keep).sort(compare(sort, dir))
+  const tableRows = wines.filter(keep).filter((d) => showZero || d.count > 0).sort(compare(sort, dir))
+  const zeroHidden = showZero ? 0 : wines.filter(keep).filter((d) => d.count === 0).length
 
   function pickSort(key: SortKey) {
     set({ sort: key, dir: DEFAULT_DIR[key] ?? 'asc' })
+  }
+  /** Massåtgärder ur tabellen (BACKLOG 40), båda med ångra i tio minuter. Borttagna rader kommer tillbaka som nya rader. */
+  async function removeMany(rows: Drink[]) {
+    for (const d of rows) await remove(d.id)
+    setUndo(S.undo.removed(rows.length), async () => {
+      for (const { id: _id, household_id: _h, created_at: _c, updated_at: _u, ...input } of rows) await add(input)
+    })
+  }
+  async function rewishMany(rows: Drink[]) {
+    for (const d of rows) await patch(d.id, { owned: false, count: 0, open_level: null })
+    setUndo(S.undo.rewished(rows.length), async () => {
+      for (const d of rows) await patch(d.id, { owned: true, count: d.count, open_level: d.open_level })
+    })
   }
   /** Kolumnrubrik: samma nyckel igen vänder riktningen, som i Excel. */
   function headerSort(key: SortKey) {
@@ -103,6 +119,27 @@ export function Cellar() {
           <IconSearch />
           <input value={query} onChange={(e) => set({ query: e.target.value })} placeholder={S.cellar.search} aria-label={S.cellar.search} />
         </label>
+        {/* Sortering (beslut 28) bredvid sökrutan: fält i en select, riktningen växlas med pilen. Lista/Tabell längst till höger. */}
+        <div className="fl-sortrow">
+          <span className="fl-chips__label">{S.cellar.sortLabel}</span>
+          <select className="fl-chip fl-chip--select" value={LIST_SORTS.includes(sort as (typeof LIST_SORTS)[number]) ? sort : 'price'} onChange={(e) => pickSort(e.target.value as SortKey)} aria-label={S.cellar.sortLabel}>
+            {LIST_SORTS.map((key) => (
+              <option key={key} value={key}>
+                {S.cellar.sort[key]}
+              </option>
+            ))}
+          </select>
+          <button className="fl-chip fl-chip--icon" title={S.cellar.sortDir[dir]} aria-label={S.cellar.sortDir[dir]} onClick={() => set({ dir: dir === 'asc' ? 'desc' : 'asc' })}>
+            <IconArrow dir={dir} />
+          </button>
+          <div className="fl-seg" role="group">
+            {(['list', 'table'] as const).map((v) => (
+              <button key={v} type="button" aria-pressed={view === v} onClick={() => set({ view: v })}>
+                {S.cellar.view[v]}
+              </button>
+            ))}
+          </div>
+        </div>
         <div className="fl-chips fl-chips--scroll">
           <span className="fl-chips__label">{S.cellar.show}</span>
           <button className="fl-chip" aria-pressed={category === null} onClick={() => set({ category: null })}>
@@ -124,34 +161,13 @@ export function Cellar() {
             {S.cellar.drinkNow}
           </button>
         </div>
-        {/* Sortering (beslut 28): fält i en select, riktningen växlas med pilen, som kolumnrubriker på en vanlig sajt. */}
-        <div className="fl-sort">
-          <div className="fl-seg" role="group">
-            {(['list', 'table'] as const).map((v) => (
-              <button key={v} type="button" aria-pressed={view === v} onClick={() => set({ view: v })}>
-                {S.cellar.view[v]}
-              </button>
-            ))}
-          </div>
-          <span className="fl-chips__label">{S.cellar.sortLabel}</span>
-          <select className="fl-chip fl-chip--select" value={LIST_SORTS.includes(sort as (typeof LIST_SORTS)[number]) ? sort : 'price'} onChange={(e) => pickSort(e.target.value as SortKey)} aria-label={S.cellar.sortLabel}>
-            {LIST_SORTS.map((key) => (
-              <option key={key} value={key}>
-                {S.cellar.sort[key]}
-              </option>
-            ))}
-          </select>
-          <button className="fl-chip fl-chip--icon" title={S.cellar.sortDir[dir]} aria-label={S.cellar.sortDir[dir]} onClick={() => set({ dir: dir === 'asc' ? 'desc' : 'asc' })}>
-            <IconArrow dir={dir} />
-          </button>
-        </div>
         <div className="fl-due fl-mobile-only">
           <Pill state="drink" />
           {S.cellar.dueLabel} <strong className="fl-nums">{due}</strong>
         </div>
       </div>
 
-      {view === 'table' && wines.length > 0 && (tableRows.length === 0 ? <p className="fl-muted">{S.cellar.noMatch}</p> : <CellarTable rows={tableRows} query={q} sort={sort} dir={dir} onSort={headerSort} />)}
+      {view === 'table' && wines.length > 0 && (tableRows.length === 0 ? <p className="fl-muted">{S.cellar.noMatch}</p> : <CellarTable rows={tableRows} query={q} sort={sort} dir={dir} onSort={headerSort} showZero={showZero} zeroHidden={zeroHidden} onShowZero={(v) => set({ showZero: v })} onRemove={removeMany} onRewish={rewishMany} />)}
       {view === 'table' && wines.length === 0 && <p className="fl-muted">{S.cellar.empty}</p>}
       <div className="fl-groups" hidden={view === 'table'}>
         {wines.length === 0 && <p className="fl-muted">{S.cellar.empty}</p>}
