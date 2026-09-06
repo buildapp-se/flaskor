@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { clearGate, findGate } from './api.ts'
+import { kr } from './format.ts'
+import { valueOf } from './sort.ts'
 import { PATHS, useRoute } from './hash.ts'
 import { IconAdd, IconBar, IconCellar, IconWishlist, Logo } from './icons.tsx'
 import { StoreProvider, useStore } from './store.tsx'
@@ -38,7 +40,9 @@ function Shell() {
   const { drinks, error } = useStore()
   // Detaljvyn hör till Källaren eller Barskåpet i navigeringen.
   const active = route.view === 'detail' ? (drinks?.find((d) => d.id === route.id)?.kind === 'spirit' ? 'bar' : 'cellar') : route.view
-  const bottles = drinks?.filter((d) => d.owned).reduce((sum, d) => sum + d.count, 0) ?? 0
+  const owned = drinks?.filter((d) => d.owned) ?? []
+  const bottles = owned.reduce((sum, d) => sum + d.count, 0)
+  const value = owned.reduce((sum, d) => sum + valueOf(d), 0)
 
   return (
     <div className="fl-app">
@@ -56,7 +60,9 @@ function Shell() {
           ))}
         </div>
         <div className="fl-side__foot">
-          {S.household} · {S.bottles(bottles)}
+          {S.household}
+          <br />
+          {S.bottles(bottles)} · {kr(value)}
         </div>
       </nav>
       <main className="fl-main">
