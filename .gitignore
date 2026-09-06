@@ -7,3 +7,4 @@ design/artboards/img/
 seed/seed.sql
 .playwright-cli/
 worker/dist/
+.playwright-mcp/
