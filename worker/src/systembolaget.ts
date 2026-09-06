@@ -152,6 +152,10 @@ export function toPreview(p: Product, now = new Date()): Preview {
     food,
     note: null,
     taste: p.taste,
+    vivino_rating: null,
+    vivino_count: null,
+    vivino_url: null,
+    vivino_checked_at: null,
   }
 }
 
