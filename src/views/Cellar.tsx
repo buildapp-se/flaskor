@@ -9,6 +9,7 @@ import { usePersisted } from '../persist.ts'
 import { compare, DEFAULT_DIR, valueOf, type SortDir, type SortKey } from '../sort.ts'
 import { useStore } from '../store.tsx'
 import { S } from '../strings.ts'
+import { CellarTable } from './CellarTable.tsx'
 
 // Källaren (beslut 24, 28): ägda viner grupperade på kategori, sorterade på pris, sök och chips, "Dags att dricka: N".
 // Filter och sortering överlever sidbyte: de ligger i localStorage (usePersisted).
@@ -37,14 +38,15 @@ interface CellarState {
   dueOnly: boolean
   sort: SortKey
   dir: SortDir
+  view: 'list' | 'table'
 }
 
-const INITIAL: CellarState = { query: '', category: null, country: null, dueOnly: false, sort: 'price', dir: 'desc' }
+const INITIAL: CellarState = { query: '', category: null, country: null, dueOnly: false, sort: 'price', dir: 'desc', view: 'list' }
 
 export function Cellar() {
   const { drinks, patch } = useStore()
   const [state, set] = usePersisted<CellarState>('flaskor.cellar', INITIAL)
-  const { query, category, country, dueOnly, sort, dir } = state
+  const { query, category, country, dueOnly, sort, dir, view } = state
   const [showDepleted, setShowDepleted] = useState(false)
 
   const wines = useMemo(() => (drinks ?? []).filter((d) => d.kind === 'wine' && d.owned), [drinks])
@@ -59,16 +61,20 @@ export function Cellar() {
   const value = inStock.reduce((sum, d) => sum + valueOf(d), 0)
 
   const q = query.trim().toLowerCase()
-  const visible = inStock
-    .filter((d) => matches(d, q))
-    .filter((d) => category === null || (d.category ?? '') === category)
-    .filter((d) => country === null || d.country === country)
-    .filter((d) => !dueOnly || DUE.includes(windowState(d.drink_from, d.drink_to)))
-    .sort(compare(sort, dir))
+  const keep = (d: Drink) =>
+    matches(d, q) && (category === null || (d.category ?? '') === category) && (country === null || d.country === country) && (!dueOnly || DUE.includes(windowState(d.drink_from, d.drink_to)))
+  const visible = inStock.filter(keep).sort(compare(sort, dir))
   const groups = categories.map((c) => ({ category: c, rows: visible.filter((d) => (d.category ?? '') === c) })).filter((g) => g.rows.length > 0)
+  // Tabellen är Excel-arket: alla ägda viner, även de med noll flaskor, i en platt lista.
+  const tableRows = wines.filter(keep).sort(compare(sort, dir))
 
   function pickSort(key: SortKey) {
     set({ sort: key, dir: DEFAULT_DIR[key] ?? 'asc' })
+  }
+  /** Kolumnrubrik: samma nyckel igen vänder riktningen, som i Excel. */
+  function headerSort(key: SortKey) {
+    if (key === sort) set({ dir: dir === 'asc' ? 'desc' : 'asc' })
+    else pickSort(key)
   }
 
   if (drinks === null) return <div className="fl-muted">{S.loading}</div>
@@ -120,6 +126,13 @@ export function Cellar() {
         </div>
         {/* Sortering (beslut 28): fält i en select, riktningen växlas med pilen, som kolumnrubriker på en vanlig sajt. */}
         <div className="fl-sort">
+          <div className="fl-seg" role="group">
+            {(['list', 'table'] as const).map((v) => (
+              <button key={v} type="button" aria-pressed={view === v} onClick={() => set({ view: v })}>
+                {S.cellar.view[v]}
+              </button>
+            ))}
+          </div>
           <span className="fl-chips__label">{S.cellar.sortLabel}</span>
           <select className="fl-chip fl-chip--select" value={LIST_SORTS.includes(sort as (typeof LIST_SORTS)[number]) ? sort : 'price'} onChange={(e) => pickSort(e.target.value as SortKey)} aria-label={S.cellar.sortLabel}>
             {LIST_SORTS.map((key) => (
@@ -138,7 +151,9 @@ export function Cellar() {
         </div>
       </div>
 
-      <div className="fl-groups">
+      {view === 'table' && wines.length > 0 && (tableRows.length === 0 ? <p className="fl-muted">{S.cellar.noMatch}</p> : <CellarTable rows={tableRows} query={q} sort={sort} dir={dir} onSort={headerSort} />)}
+      {view === 'table' && wines.length === 0 && <p className="fl-muted">{S.cellar.empty}</p>}
+      <div className="fl-groups" hidden={view === 'table'}>
         {wines.length === 0 && <p className="fl-muted">{S.cellar.empty}</p>}
         {wines.length > 0 && groups.length === 0 && depleted.length < wines.length && <p className="fl-muted">{S.cellar.noMatch}</p>}
         {groups.map(({ category: c, rows }) => (

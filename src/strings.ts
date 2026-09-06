@@ -162,6 +162,8 @@ export const S = {
     decant: 'Karaff',
     food: 'Mat',
     vivino: 'Vivino',
+    note: 'Kommentar',
+    source: 'Källa',
   },
   error: { generic: 'Något gick fel.', offline: 'Ingen kontakt med servern.' },
   loading: 'Laddar …',

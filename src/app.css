@@ -359,6 +359,7 @@ p {
   .fl-bottom {
     position: sticky;
     bottom: 0;
+    z-index: 3;
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     border-top: 1px solid var(--fl-line);
@@ -1343,5 +1344,151 @@ p {
   }
   .fl-sort .fl-chip--select {
     flex: 1;
+  }
+}
+
+/* ── Tabellvyn (Excel-läget) ──────────────────────────── */
+.fl-seg {
+  display: inline-flex;
+  border: 1px solid var(--fl-line);
+  border-radius: var(--fl-r-pill);
+  overflow: hidden;
+  flex: none;
+}
+.fl-seg button {
+  height: 34px;
+  padding: 0 14px;
+  font-size: 13px;
+}
+.fl-seg button[aria-pressed='true'] {
+  background: var(--fl-accent);
+  color: var(--fl-surface);
+  font-weight: 500;
+}
+.fl-tableview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fl-s3);
+}
+.fl-chip--xs {
+  height: 28px;
+  padding: 0 10px;
+  font-size: 12px;
+}
+.fl-tablewrap {
+  overflow-x: auto;
+}
+.fl-table {
+  border-collapse: collapse;
+  width: max-content;
+  min-width: 100%;
+  font-size: 14px;
+  font-variant-numeric: var(--fl-nums);
+  white-space: nowrap;
+}
+.fl-table th,
+.fl-table td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--fl-line);
+  vertical-align: middle;
+}
+.fl-table th {
+  font: var(--fl-label);
+  color: var(--fl-ink-2);
+  position: sticky;
+  top: 0;
+  background: var(--fl-surface);
+}
+.fl-table th:first-child,
+.fl-table td:first-child {
+  padding-left: 16px;
+}
+.fl-table__num {
+  text-align: right !important;
+}
+.fl-table__sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font: inherit;
+  color: inherit;
+  min-height: 24px;
+}
+.fl-table th[aria-sort] .fl-table__sort {
+  color: var(--fl-ink);
+}
+.fl-table__row {
+  cursor: pointer;
+}
+.fl-table__row:hover {
+  background: var(--fl-wait-tint);
+}
+.fl-table__row--muted {
+  color: var(--fl-ink-2);
+}
+.fl-table__row td:first-child {
+  font-family: var(--fl-font-serif);
+  font-style: italic;
+  font-size: 16px;
+  max-width: 320px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* Namnet står kvar när tabellen scrollas i sidled. */
+.fl-table th:first-child,
+.fl-table td:first-child {
+  position: sticky;
+  left: 0;
+  background: var(--fl-surface);
+  z-index: 1;
+}
+.fl-table th:first-child {
+  z-index: 2;
+}
+.fl-table__row:hover td:first-child {
+  background: var(--fl-wait-tint);
+}
+/* Fritextkolumnerna (mat, kommentar, druvor) får bryta rad, men först från en läsbar bredd. */
+.fl-table__wide {
+  white-space: normal;
+  min-width: 280px;
+  max-width: 420px;
+}
+.fl-table__window {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--fl-s2);
+  color: var(--fl-ink-2);
+  font-size: 12px;
+}
+.fl-table tfoot td {
+  border-bottom: 0;
+  font-weight: 500;
+  color: var(--fl-ink-2);
+}
+.fl-table .fl-rating {
+  margin-left: 0;
+}
+.fl-chips--wrap {
+  flex-wrap: wrap;
+}
+@media (min-width: 900px) {
+  .fl-chips {
+    flex-wrap: wrap;
+  }
+}
+@media (max-width: 899px) {
+  .fl-chips--wrap {
+    margin: 0;
+    padding: 0 4px;
+  }
+  .fl-tablewrap {
+    margin: 0 -16px;
+    border-radius: 0;
+  }
+  .fl-table__row td:first-child {
+    max-width: 190px;
+    font-size: 15px;
   }
 }
