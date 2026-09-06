@@ -26,6 +26,8 @@ export const S = {
     sortDir: { asc: 'Stigande', desc: 'Fallande' },
     view: { list: 'Lista', table: 'Tabell' },
     columns: 'Kolumner',
+    showZeroOn: 'Visar slut',
+    showZeroOff: (n: number) => (n === 0 ? 'Visa slut' : `Visa slut (${n})`),
     empty: 'Inga viner än. Lägg till ett via Systembolagets artikelnummer.',
     noMatch: 'Inget matchar.',
     depleted: 'Slut',
@@ -151,6 +153,43 @@ export const S = {
       taste: 'Smak',
     },
   },
+  import: {
+    title: 'Importera lista',
+    link: 'Importera en hel lista via din AI',
+    lead: 'Kopiera prompten, klistra in den i din AI tillsammans med texten från Systembolagets lista (markera allt på sidan, kopiera), och klistra in svaret här.',
+    copyPrompt: 'Kopiera prompten',
+    copied: 'Kopierad',
+    pasteLabel: 'AI:ns svar',
+    pastePlaceholder: 'Klistra in JSON-svaret här',
+    load: 'Läs in',
+    badJson: 'Hittade ingen JSON-lista i texten. Be AI:n svara med bara listan.',
+    empty: 'Listan är tom.',
+    review: (n: number) => (n === 1 ? '1 vara att importera' : `${n} varor att importera`),
+    allTo: 'Alla till',
+    to: 'Till',
+    dest: { wishlist: 'Önskelistan', cellar: 'Källaren', bar: 'Barskåpet' },
+    status: { pending: 'Hämtar …', found: 'Systembolaget', notfound: 'Hittades inte, sparas som egen', manual: 'Egen' },
+    count: 'Antal',
+    include: 'Med',
+    back: 'Börja om',
+    import: (n: number) => `Importera ${n}`,
+    importing: (i: number, n: number) => `Sparar ${i} av ${n} …`,
+    done: (n: number) => (n === 1 ? 'Importerade 1 vara' : `Importerade ${n} varor`),
+    prompt: `Du får text kopierad från Systembolagets webbplats (en sparad lista, en varukorg eller en sökning) eller annan text om vin och sprit. Plocka ut varje vara och svara ENBART med en JSON-lista, ett objekt per vara med exakt dessa fält:
+
+- "nr": Systembolagets artikelnummer som sträng, bara siffror (4 till 7 siffror, "75624 01" skrivs "7562401"), eller null om det saknas
+- "namn": varans namn, inklusive producent om den står med
+- "argang": årgång som heltal, eller null
+- "pris": pris i kronor som tal, eller null
+- "antal": antal flaskor som heltal, 1 om inget står
+- "typ": "vin" eller "sprit"
+
+Ingen förklaring, ingen text före eller efter listan, inga kodstaket. Här är texten:
+
+`,
+  },
+  undo: { undo: 'Ångra', close: 'Stäng', removed: (n: number) => (n === 1 ? 'Tog bort 1 flaska' : `Tog bort ${n} flaskor`), rewished: (n: number) => (n === 1 ? 'Flyttade 1 till önskelistan' : `Flyttade ${n} till önskelistan`) },
+  bulk: { selected: (n: number) => (n === 1 ? '1 markerad' : `${n} markerade`), remove: 'Ta bort', rewish: 'Lägg på önskelistan igen', clear: 'Avmarkera', all: 'Markera alla' },
   rating: { votes: (n: number) => `Vivino, ${n} röster`, none: 'Inget betyg' },
   units: { kr: 'kr', bottle: 'flaska', bottles: 'flaskor', bottleShort: 'fl', cl: 'cl' },
   bottles: (n: number) => (n === 1 ? '1 flaska' : `${n} flaskor`),

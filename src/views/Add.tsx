@@ -103,6 +103,11 @@ export function Add() {
           </button>
         )}
         {!preview && manual === null && query.trim() === '' && (
+          <a className="fl-link fl-small" href={PATHS.import}>
+            {S.import.link}
+          </a>
+        )}
+        {!preview && manual === null && query.trim() === '' && (
           <div className="fl-add__manual">
             <span className="fl-small fl-muted">{S.add.manual}:</span>
             {(['wine', 'spirit'] as const).map((k) => (

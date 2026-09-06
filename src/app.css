@@ -1296,11 +1296,20 @@ p {
   opacity: 0.4;
   cursor: default;
 }
-.fl-sort {
+.fl-sortrow {
   display: flex;
   align-items: center;
   gap: var(--fl-s2);
+  flex: 1;
+}
+.fl-sortrow .fl-seg {
   margin-left: auto;
+}
+@media (min-width: 900px) {
+  /* Chipsen får en egen rad under sök och sortering. */
+  .fl-toolbar > .fl-chips {
+    flex-basis: 100%;
+  }
 }
 .fl-chip--icon {
   width: 36px;
@@ -1339,11 +1348,9 @@ p {
   line-height: 1.6;
 }
 @media (max-width: 899px) {
-  .fl-sort {
-    margin-left: 0;
-  }
-  .fl-sort .fl-chip--select {
+  .fl-sortrow .fl-chip--select {
     flex: 1;
+    min-width: 0;
   }
 }
 
@@ -1427,7 +1434,8 @@ p {
 .fl-table__row--muted {
   color: var(--fl-ink-2);
 }
-.fl-table__row td:first-child {
+/* Kryssrutan (kolumn 1) och namnet (kolumn 2) står kvar när tabellen scrollas i sidled. */
+.fl-table__row td:nth-child(2) {
   font-family: var(--fl-font-serif);
   font-style: italic;
   font-size: 16px;
@@ -1435,7 +1443,6 @@ p {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-/* Namnet står kvar när tabellen scrollas i sidled. */
 .fl-table th:first-child,
 .fl-table td:first-child {
   position: sticky;
@@ -1443,10 +1450,19 @@ p {
   background: var(--fl-surface);
   z-index: 1;
 }
-.fl-table th:first-child {
+.fl-table th:nth-child(2),
+.fl-table td:nth-child(2) {
+  position: sticky;
+  left: 36px;
+  background: var(--fl-surface);
+  z-index: 1;
+}
+.fl-table th:first-child,
+.fl-table th:nth-child(2) {
   z-index: 2;
 }
-.fl-table__row:hover td:first-child {
+.fl-table__row:hover td:first-child,
+.fl-table__row:hover td:nth-child(2) {
   background: var(--fl-wait-tint);
 }
 /* Fritextkolumnerna (mat, kommentar, druvor) får bryta rad, men först från en läsbar bredd. */
@@ -1487,8 +1503,8 @@ p {
     margin: 0 -16px;
     border-radius: 0;
   }
-  .fl-table__row td:first-child {
-    max-width: 190px;
+  .fl-table__row td:nth-child(2) {
+    max-width: 170px;
     font-size: 15px;
   }
 }
@@ -1516,4 +1532,127 @@ p {
   display: flex;
   gap: var(--fl-s2);
   align-items: center;
+}
+
+/* ── Bulkimport, ångra-rad, massåtgärder (BACKLOG 40) ── */
+.fl-import {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fl-s5);
+  max-width: 960px;
+}
+.fl-import__paste {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 640px;
+}
+.fl-import__prompt {
+  margin: 0;
+  padding: 14px 16px;
+  background: var(--fl-surface);
+  border: 1px solid var(--fl-line);
+  border-radius: var(--fl-r-sm);
+  font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  white-space: pre-wrap;
+  max-height: 220px;
+  overflow: auto;
+}
+.fl-import__area {
+  height: auto;
+  padding: 12px 14px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 13px;
+  resize: vertical;
+}
+.fl-import__review {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fl-s3);
+}
+.fl-import__table td:first-child,
+.fl-import__table th:first-child {
+  position: static;
+}
+.fl-import__name {
+  font-family: var(--fl-font-serif);
+  font-style: italic;
+  font-size: 16px;
+  white-space: normal;
+  min-width: 220px;
+}
+.fl-import__name .fl-small {
+  font-family: var(--fl-font-sans);
+  font-style: normal;
+}
+.fl-import__count {
+  width: 64px;
+  height: 36px;
+  padding: 0 10px;
+  text-align: right;
+}
+.fl-import__table .fl-chip--select {
+  height: 32px;
+}
+.fl-import__review > .fl-btn {
+  align-self: flex-start;
+}
+.fl-undo {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: var(--fl-s3);
+  padding: 10px 12px 10px 16px;
+  background: var(--fl-ink);
+  color: var(--fl-surface);
+  border-radius: var(--fl-r-md);
+  box-shadow: var(--fl-shadow);
+  font-size: 14px;
+  white-space: nowrap;
+}
+.fl-undo button {
+  color: inherit;
+  font-weight: 600;
+  min-height: 32px;
+  padding: 0 6px;
+}
+.fl-undo__close {
+  opacity: 0.7;
+}
+.fl-bulk {
+  display: flex;
+  align-items: center;
+  gap: var(--fl-s3);
+  padding: 8px 16px;
+  background: var(--fl-accent-tint);
+  border-radius: var(--fl-r-sm);
+  font-size: 13px;
+  flex-wrap: wrap;
+}
+.fl-bulk strong {
+  font-weight: 600;
+}
+.fl-table__check {
+  width: 36px;
+  padding-right: 0 !important;
+}
+.fl-table__check input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--fl-accent);
+  cursor: pointer;
+}
+@media (max-width: 899px) {
+  .fl-import {
+    max-width: none;
+  }
+  .fl-undo {
+    bottom: 96px;
+    width: calc(100% - 32px);
+    justify-content: space-between;
+  }
 }

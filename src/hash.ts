@@ -8,9 +8,10 @@ export type Route =
   | { view: 'wishlist' }
   | { view: 'bar' }
   | { view: 'add' }
+  | { view: 'import' }
   | { view: 'detail'; id: number }
 
-export const PATHS = { cellar: '#/', wishlist: '#/onskelistan', bar: '#/barskapet', add: '#/lagg-till' } as const
+export const PATHS = { cellar: '#/', wishlist: '#/onskelistan', bar: '#/barskapet', add: '#/lagg-till', import: '#/importera' } as const
 
 export function detailPath(id: number): string {
   return `#/flaska/${id}`
@@ -22,6 +23,7 @@ function parse(hash: string): Route {
   if (hash === PATHS.wishlist) return { view: 'wishlist' }
   if (hash === PATHS.bar) return { view: 'bar' }
   if (hash === PATHS.add) return { view: 'add' }
+  if (hash === PATHS.import) return { view: 'import' }
   return { view: 'cellar' }
 }
 
