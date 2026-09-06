@@ -2,12 +2,15 @@ import { FatalError, NotFoundError, TransientError, UnauthorizedError } from '..
 import type { Drink, DrinkPatch, Preview } from '../../shared/types.ts'
 import { getDrink, insertDrink, listDrinks, sanitize, updateDrink } from './db.ts'
 import { fetchProduct, parseProductNumber, toPreview } from './systembolaget.ts'
+import { findVivino, queryFor, vivinoDue, vivinoPatch } from './vivino.ts'
 
 // Grindkoden (beslut 2): en delad kod, skickad som Bearer, jämförd mot secreten GATE_CODE. Sitter här, aldrig bara i klienten.
 type GateEnv = Env & { GATE_CODE?: string }
 
 /** Nattens tak (beslut 23): så många artikelnummer hämtas per körning. */
 const NIGHTLY_CAP = 50
+/** Vivino: så många viner får nytt betyg per natt (saknat eller äldre än 30 dagar). */
+const VIVINO_CAP = 20
 
 export default {
   async fetch(request: Request, env: GateEnv): Promise<Response> {
@@ -44,7 +47,8 @@ async function route(request: Request, env: GateEnv): Promise<unknown> {
 
   if (method === 'GET' && path === '/api/ping') return null
   if (method === 'GET' && path === '/api/drinks') return { drinks: await listDrinks(env.DB) }
-  if (method === 'POST' && path === '/api/drinks') return insertDrink(env.DB, sanitize(await request.json()))
+  if (method === 'POST' && path === '/api/drinks') return insertDrink(env.DB, await withVivino(sanitize(await request.json())))
+  if (method === 'POST' && path === '/api/refresh-all') return refreshAll(env.DB)
 
   const single = path.match(/^\/api\/drinks\/(\d+)$/)
   if (single?.[1] && method === 'PATCH') return updateDrink(env.DB, Number(single[1]), sanitize(await request.json()))
@@ -90,11 +94,24 @@ function corsHeaders(origin: string | null, list: string): Record<string, string
   }
 }
 
-/** Hämtar Systembolagets sida på nytt och uppdaterar pris, tillgänglighet och (för önskelistan) årgång (beslut 23). */
+/** Ett nytt vin får sitt Vivino-betyg direkt vid sparandet. Misslyckas hämtningen sparas raden ändå, utan betyg. */
+async function withVivino(input: DrinkPatch): Promise<DrinkPatch> {
+  if (input.kind !== 'wine' || typeof input.name !== 'string' || input.vivino_rating !== undefined) return input
+  try {
+    return { ...input, ...vivinoPatch(await findVivino(queryFor({ name: input.name, producer: input.producer ?? null }))) }
+  } catch (error) {
+    console.error('vivino lookup failed', error)
+    return input
+  }
+}
+
+/** Uppdatera-knappen: Systembolagets pris, tillgänglighet och (för önskelistan) årgång (beslut 23), och Vivinos betyg för vin. */
 async function refreshDrink(db: D1Database, drink: Drink): Promise<Drink> {
-  if (drink.source_kind !== 'systembolaget' || !drink.source_id) throw new FatalError('drink has no systembolaget source')
-  const fresh = await fetchFresh(drink.source_id)
-  return updateDrink(db, drink.id, refreshPatch(fresh, drink))
+  const patch: DrinkPatch = {}
+  if (drink.source_kind === 'systembolaget' && drink.source_id) Object.assign(patch, refreshPatch(await fetchFresh(drink.source_id), drink))
+  if (drink.kind === 'wine') Object.assign(patch, vivinoPatch(await findVivino(queryFor(drink))))
+  if (Object.keys(patch).length === 0) throw new FatalError('nothing to refresh for this drink')
+  return updateDrink(db, drink.id, patch)
 }
 
 type Fresh = { gone: true } | { gone: false; preview: Preview }
@@ -119,7 +136,7 @@ function refreshPatch(fresh: Fresh, drink: Drink): DrinkPatch {
   return patch
 }
 
-export async function refreshAll(db: D1Database): Promise<{ refreshed: number; failed: number }> {
+export async function refreshAll(db: D1Database): Promise<{ refreshed: number; failed: number; vivino: number }> {
   const drinks = await listDrinks(db)
   // En hämtning per artikelnummer, oavsett hur många rader som delar det (beslut 23).
   const byNumber = new Map<string, Drink[]>()
@@ -139,5 +156,16 @@ export async function refreshAll(db: D1Database): Promise<{ refreshed: number; f
       console.error(`refresh ${number} failed`, error)
     }
   }
-  return { refreshed, failed }
+  // Vivino: viner utan betyg eller med betyg äldre än 30 dagar, ett tak per natt så resten tas nästa natt.
+  let vivino = 0
+  for (const row of drinks.filter((d) => vivinoDue(d)).slice(0, VIVINO_CAP)) {
+    try {
+      await updateDrink(db, row.id, vivinoPatch(await findVivino(queryFor(row))))
+      vivino++
+    } catch (error) {
+      failed++
+      console.error(`vivino ${row.id} failed`, error)
+    }
+  }
+  return { refreshed, failed, vivino }
 }

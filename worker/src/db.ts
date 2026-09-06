@@ -20,6 +20,8 @@ const NUMBER_FIELDS = new Set<keyof DrinkInput>([
   'vintage', 'volume_ml', 'alcohol', 'price_paid', 'price_current', 'count', 'open_level', 'drink_from', 'drink_to', 'decant_hours', 'vivino_rating', 'vivino_count',
 ])
 
+const URL_FIELDS = new Set<keyof DrinkInput>(['source_url', 'image_url', 'vivino_url'])
+
 /** Släpper bara igenom kända fält med rätt grovtyp. Databasens CHECK tar resten. */
 export function sanitize(body: unknown): DrinkPatch {
   if (typeof body !== 'object' || body === null) throw new FatalError('body must be an object')
@@ -37,6 +39,8 @@ export function sanitize(body: unknown): DrinkPatch {
       out[key] = value
     } else {
       if (typeof value !== 'string') throw new FatalError(`${key} must be a string`)
+      // Länkfält renderas som href i klienten: bara http(s), aldrig javascript: eller data:.
+      if (URL_FIELDS.has(key) && !/^https?:\/\//.test(value)) throw new FatalError(`${key} must be an http(s) url`)
       out[key] = value
     }
   }

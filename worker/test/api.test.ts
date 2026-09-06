@@ -62,6 +62,29 @@ describe('drinks', () => {
   })
 })
 
+describe('vivino', () => {
+  it('nytt vin får betyg när namnet liknar träffen, annars inget', async () => {
+    const hit = await (await api('POST', '/api/drinks', { kind: 'wine', name: 'Le Grappin Savigny-les-Beaune Rouge', owned: true, count: 1 })).json<{ vivino_rating: number; vivino_url: string; vivino_checked_at: string }>()
+    expect(hit.vivino_rating).toBe(4.2)
+    expect(hit.vivino_url).toBe('https://www.vivino.com/w/1661808')
+    expect(hit.vivino_checked_at).toBeTruthy()
+    const miss = await (await api('POST', '/api/drinks', { kind: 'wine', name: 'Testbubbel Brut', owned: true, count: 1 })).json<{ vivino_rating: number | null; vivino_checked_at: string }>()
+    expect(miss.vivino_rating).toBeNull()
+    expect(miss.vivino_checked_at).toBeTruthy()
+    const spirit = await (await api('POST', '/api/drinks', { kind: 'spirit', name: 'Le Grappin Gin', owned: true, count: 1 })).json<{ vivino_checked_at: string | null }>()
+    expect(spirit.vivino_checked_at).toBeNull()
+  })
+  it('uppdatera hämtar betyget även för Caviste-rader; refresh-all fyller på de som saknar', async () => {
+    const cav = await (await api('POST', '/api/drinks', { kind: 'wine', name: 'Le Grappin Savigny-les-Beaune Rouge', source_kind: 'caviste', vivino_rating: null, vivino_checked_at: null })).json<{ id: number; vivino_rating: number | null }>()
+    expect(cav.vivino_rating).toBeNull()
+    const refreshed = await (await api('POST', `/api/drinks/${cav.id}/refresh`)).json<{ vivino_rating: number }>()
+    expect(refreshed.vivino_rating).toBe(4.2)
+    await api('PATCH', `/api/drinks/${cav.id}`, { vivino_rating: null, vivino_checked_at: null })
+    const all = await (await api('POST', '/api/refresh-all')).json<{ vivino: number }>()
+    expect(all.vivino).toBe(1)
+  })
+})
+
 describe('systembolaget', () => {
   it('förhandsvisar ett nummer ur fixturen', async () => {
     const res = await api('GET', '/api/systembolaget?q=7562401')
@@ -86,11 +109,16 @@ describe('systembolaget', () => {
     expect(one.availability).toBe('in_stock')
 
     const result = await refreshAll(env.DB)
-    expect(result).toEqual({ refreshed: 2, failed: 0 })
+    // Raderna fick sitt Vivino-datum redan vid POST, så natten har inget vin att hämta betyg för.
+    expect(result).toEqual({ refreshed: 2, failed: 0, vivino: 0 })
     const rows = (await (await api('GET', '/api/drinks')).json<{ drinks: Array<{ id: number; vintage: number | null; availability: string }> }>()).drinks
     expect(rows.find((r) => r.id === wished.id)?.vintage).toBe(2023)
     expect(rows.find((r) => r.id === owned.id)?.vintage).toBe(2019)
     expect(rows.find((r) => r.id === gone.id)?.availability).toBe('discontinued')
+  })
+  it('avvisar länkfält som inte är http(s)', async () => {
+    expect((await api('POST', '/api/drinks', { kind: 'wine', name: 'x', vivino_url: 'javascript:alert(1)' })).status).toBe(400)
+    expect((await api('POST', '/api/drinks', { kind: 'wine', name: 'x', source_url: 'data:text/html,hej' })).status).toBe(400)
   })
   it('scheduled kör utan att kasta', async () => {
     await expect(worker.scheduled({} as ScheduledController, env)).resolves.toBeUndefined()
