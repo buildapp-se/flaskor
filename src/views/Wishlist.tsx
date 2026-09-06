@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import type { Drink, Kind } from '../../shared/types.ts'
 import { articleNo, kr } from '../format.ts'
 import { detailPath, navigate } from '../hash.ts'
-import { IconMinus, IconPlus } from '../icons.tsx'
+import { Rating } from '../components/Rating.tsx'
+import { IconExternal, IconMinus, IconPlus } from '../icons.tsx'
 import { useStore } from '../store.tsx'
 import { S } from '../strings.ts'
 import { Bottle } from './Add.tsx'
@@ -62,17 +63,29 @@ function WishRow({ drink, onBuy }: { drink: Drink; onBuy: () => void }) {
   const gone = drink.availability === 'discontinued'
   const price = drink.price_current ?? drink.price_paid
   const source = drink.source_kind === 'systembolaget' ? S.wishlist.availability[drink.availability] : drink.source_kind === 'caviste' ? S.wishlist.availability.unknown : null
-  const number = drink.source_kind === 'systembolaget' && drink.source_id && drink.availability === 'in_stock' ? `${S.wishlist.number} ${articleNo(drink.source_id)}` : null
+  // Numret är en länk till produktsidan: där minns Systembolaget din valda butik, så lagret för den syns direkt.
+  const number = drink.source_id ? (drink.source_kind === 'systembolaget' ? `${S.wishlist.number} ${articleNo(drink.source_id)}` : drink.source_kind === 'caviste' ? `CAV ${drink.source_id}` : null) : null
   const name = drink.vintage ? `${drink.name} ${drink.vintage}` : drink.name
   return (
     <div className={gone ? 'fl-wish fl-wish--gone' : 'fl-wish'}>
       <Bottle url={drink.image_url} size="sm" />
-      <div className="fl-wish__main" onClick={() => navigate(detailPath(drink.id))}>
+      <div className="fl-wish__main" onClick={(e) => !(e.target as HTMLElement).closest('a') && navigate(detailPath(drink.id))}>
         <div className="fl-wish__name">{name}</div>
         <div className="fl-wish__line">
           {price !== null && <span className="fl-wish__price">{kr(price)}</span>}
           {price !== null && ' · '}
-          {[source, number].filter(Boolean).join(' · ')}
+          {source}
+          {source && number && ' · '}
+          {number &&
+            (drink.source_url ? (
+              <a className="fl-wish__link" href={drink.source_url} target="_blank" rel="noreferrer">
+                {number}
+                <IconExternal />
+              </a>
+            ) : (
+              number
+            ))}
+          <Rating drink={drink} count />
         </div>
       </div>
       <button className={gone ? 'fl-btn fl-btn--sm fl-btn--secondary' : 'fl-btn fl-btn--sm fl-btn--primary'} onClick={onBuy}>

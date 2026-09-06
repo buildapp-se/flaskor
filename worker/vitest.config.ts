@@ -24,6 +24,10 @@ export default defineConfig({
               return new Response('not found', { status: 404 })
             }
           }
+          // Vivino svarar alltid med Le Grappin-fixturen; rimlighetskontrollen avgör om betyget tas.
+          if (url.hostname === 'www.vivino.com') {
+            return new Response(await readFile('worker/test/fixtures/vivino-le-grappin.html', 'utf8'), { headers: { 'content-type': 'text/html' } })
+          }
           return new Response(`Unexpected outbound request in tests: ${request.url}`, { status: 503 })
         },
       },

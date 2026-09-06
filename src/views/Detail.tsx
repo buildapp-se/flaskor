@@ -153,14 +153,14 @@ export function Detail({ id }: { id: number }) {
             </a>
           )}
           {!spirit && (
-            <a className="fl-link fl-small" href={vivino} target="_blank" rel="noreferrer">
-              {S.detail.vivino}
+            <a className="fl-link fl-small" href={drink.vivino_url ?? vivino} target="_blank" rel="noreferrer">
+              {drink.vivino_rating !== null ? S.detail.vivinoRated(String(drink.vivino_rating).replace('.', ','), drink.vivino_count) : S.detail.vivino}
               <IconExternal />
             </a>
           )}
-          {drink.source_kind === 'systembolaget' && (
+          {(drink.source_kind === 'systembolaget' || !spirit) && (
             <button className="fl-link fl-small fl-detail__refresh" disabled={refreshing} onClick={doRefresh}>
-              {refreshing ? S.detail.refreshing : S.detail.refresh}
+              {refreshing ? S.detail.refreshing : drink.source_kind === 'systembolaget' ? S.detail.refresh : S.detail.refreshVivino}
             </button>
           )}
         </div>
