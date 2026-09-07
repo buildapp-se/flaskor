@@ -1,15 +1,17 @@
 ---
 schemaVersion: 1
 status: active
-currentGoal: Allt Patrik bad om 2026-09-06 är byggt och live, senast bulkimport via egen AI med ångra, massåtgärder i tabellen, tabellen utan slut, sorteringen bredvid sök.
-nextAction: Patrik provar importen med en riktig Systembolagslista (Lägg till, "Importera en hel lista via din AI"), massåtgärderna i tabellen, och säger ja eller nej på §Val tagna åt Patrik.
+currentGoal: Öl som tredje kind, eget betygsfält för sprit/öl, Önskelistan ombyggd i Källarens/Barskåpets stil, byggt 2026-09-07. Distiller-importen (bulk-skrapa alla spritsorter till en egen databas) väntar på ett uttryckligt ja.
+nextAction: Patrik säger ja eller nej på Distiller-importen (BACKLOG §Öl och betyg 2026-09-07). Under tiden: prova Öl-flödet live och skriv in ett eget betyg på en sprit.
 blockers: []
-reviewedAt: 2026-09-06
+reviewedAt: 2026-09-07
 ---
 
 # Handoff: Flaskor
 
-Senast uppdaterad: 2026-09-06 kl. 13:05, bulkimport, massåtgärder, visa slut och sorteringens plats live (Worker `bfc28ed5`, commit `00e2531`). Verifierat: tsc, 40 enhetstester, 17 Worker-tester, Chromium 1 280 och 390 px (import av två rader, ångra, massborttagning av två rader och ångra som gav dem tillbaka med betyg och antal).
+Senast uppdaterad: 2026-09-07, öl som tredje kind, eget betygsfält (`rating`, `rating_url`) för sprit och öl, Önskelistan ombyggd i samma stil som Källaren/Barskåpet. Verifierat lokalt: `tsc -b`, 40 enhetstester, 17 Worker-tester (migrering 0003 mot lokal D1), `wrangler deploy --dry-run`, och manuellt i Chromium mot `vite dev` + `wrangler dev`: lade till ett öl med eget betyg och länk, såg det landa i Källaren (inte Barskåpet) utan drickfönster-piller, betyget synas på raden och i detaljvyn, Önskelistans nya tabell/lista-växel, sedan borttaget igen. Inte pushat eller deployat än.
+
+Tidigare: bulkimport, massåtgärder, visa slut och sorteringens plats live (Worker `bfc28ed5`, commit `00e2531`).
 
 ## Läge
 
@@ -50,6 +52,16 @@ Chunk-läge 2026-09-06 (önskelistan). Säg till om något ska ändras.
 - **Massåtgärderna** i tabellen är Ta bort och Lägg på önskelistan igen, inte Drack en eller Köpte fler (de är ett tryck per rad ändå). Markeringen nollställs när vyn byts.
 - **Tabellen utan slut** är standard (`showZero: false`), motsatt listvyn som har Slut-sektionen ihopfälld. Knappen "Visa slut (N)" står först i kolumnraden.
 - **Barskåpsseeden** går via API:t med grindkoden ur `.dev.vars` (`scripts/seed-bar.ts`), inte via wrangler, och hoppar över sprit som redan finns med samma namn. Kategorierna (Whisky, Rom, Gin, Likör, Bitterlikör, Bitter) är satta för hand i `seed/barskap.tsv`, Sipdeck har bara grupperna spirits, liqueurs och pantry.
+
+## Val tagna åt Patrik, 2026-09-07 (öl och betyg)
+
+- **Öl hamnar i Källaren, inte ett eget nav-läge.** Samma resonemang som i researchsvaret: källaren är "det man samlar/väntar på att dricka", barskåpets öppen-flaska-logik (fjärdedelar) passar inte öl som dricks upp på en gång. Ingen ny flik i navigeringen.
+- **Kategorin (Systembolagets nivå 1) styr kind vid import**: `"Öl"` antas vara den exakta strängen Systembolaget använder, ograverifierat mot en riktig ölrad (ingen testades live, bara gissat av samma mönster som `"Sprit"`). Om en importerad öl landar som vin: kolla `categoryLevel1` i en riktig Systembolagsrespons och justera `systembolaget.ts`.
+- **Betygsfältet (`rating`, `rating_url`) är manuellt, ingen automatisk hämtning.** Research visade inget gratis öppet API som täcker whiskey/rom/gin och öl (Distiller: ingen API, bara oofficiella scrapers; Whiskybase/Whiskystats: bara whisky, betal-API; Untappd: registrering för nya appar verkar stängd). `Rating`-komponenten föredrar `vivino_rating` (vin), annars `rating`, samma stjärnformat och länk.
+- **`Rating` syns nu även i Barskåpets kort och tabell** (ny `vivino`-kolumn i `BAR_COLUMNS`, döpt om till "Betyg" i UI:t eftersom den nu bär både Vivino- och egna betyg).
+- **CellarTable fick två nya valfria props** (`onShowZero`, `onRewish`) i stället för required: Önskelistan återanvänder samma tabellkomponent för sin tabellvy men har varken "Visa slut" (allt där har alltid 0 flaskor) eller "Lägg på önskelistan igen" (det är redan listan). Utelämnas propen döljs kontrollen.
+- **Migrering 0003 bygger om `drink`-tabellen** (SQLite kan inte ändra en `CHECK`), inte bara `ALTER TABLE ADD COLUMN`. Kör `npm run db:migrate:remote` innan Workern deployas, annars svarar `POST /api/drinks` med `kind: beer` 500 (CHECK-krock) mot molnets gamla schema.
+- **Distiller-skrapningen är medvetet inte byggd än**, väntar på ett uttryckligt ja (se BACKLOG §Öl och betyg 2026-09-07 och research-svaret i chatten): ToS-risk och underhållsbörda för en scraper mot en sajt utan officiellt API.
 
 ## Fällor
 

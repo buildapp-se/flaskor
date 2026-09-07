@@ -52,7 +52,8 @@ export function Cellar() {
   const { query, category, country, dueOnly, sort, dir, view, showZero } = state
   const [showDepleted, setShowDepleted] = useState(false)
 
-  const wines = useMemo(() => (drinks ?? []).filter((d) => d.kind === 'wine' && d.owned), [drinks])
+  // Källaren: vin och öl, det som inte dricks ur en öppnad flaska (det är barskåpets grej).
+  const wines = useMemo(() => (drinks ?? []).filter((d) => (d.kind === 'wine' || d.kind === 'beer') && d.owned), [drinks])
   const inStock = wines.filter((d) => d.count > 0)
   const depleted = wines.filter((d) => d.count === 0).sort(compare('price', 'desc'))
   const present = [...new Set(inStock.map((d) => d.category ?? ''))]

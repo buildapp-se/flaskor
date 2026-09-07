@@ -118,7 +118,8 @@ export function splitUsage(usage: string | null): { serve_temp: string | null; f
 
 /** En rad redo att sparas (owned false, count 0), fönster från tumregeln (beslut 13). */
 export function toPreview(p: Product, now = new Date()): Preview {
-  const kind: Kind = p.categoryLevel1 === 'Sprit' ? 'spirit' : 'wine'
+  // Systembolagets nivå 1: "Vin", "Sprit", "Öl", "Cider & blanddrycker" osv. Bara sprit och öl bryts ut, resten är vin.
+  const kind: Kind = p.categoryLevel1 === 'Sprit' ? 'spirit' : p.categoryLevel1 === 'Öl' ? 'beer' : 'wine'
   const vintage = p.vintage ? Number(p.vintage) : null
   const window = ruleOfThumb(kind, p.categoryLevel2, vintage, p.priceInclVat)
   const { serve_temp, food } = splitUsage(p.usage)
@@ -156,6 +157,8 @@ export function toPreview(p: Product, now = new Date()): Preview {
     vivino_count: null,
     vivino_url: null,
     vivino_checked_at: null,
+    rating: null,
+    rating_url: null,
   }
 }
 

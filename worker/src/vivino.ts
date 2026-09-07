@@ -233,5 +233,7 @@ export function vivinoToPreview(wine: VivinoWine, wineId: string, year: number |
     vivino_count: wine.count,
     vivino_url: wineUrl(wineId),
     vivino_checked_at: now.toISOString(),
+    rating: null,
+    rating_url: null,
   }
 }

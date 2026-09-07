@@ -28,7 +28,7 @@ export const SORT_VALUE: Record<SortKey, (d: Drink) => number | string | null> =
   serve_temp: (d) => (d.serve_temp === null ? null : Number.parseInt(d.serve_temp, 10)),
   decant: (d) => d.decant_hours,
   food: (d) => d.food,
-  vivino: (d) => d.vivino_rating,
+  vivino: (d) => d.vivino_rating ?? d.rating,
   open_level: (d) => d.open_level,
 }
 

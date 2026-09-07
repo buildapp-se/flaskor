@@ -21,7 +21,7 @@ function blank(kind: Kind): Drink {
     id: 0, household_id: 0, kind, owned: false, name: '', producer: null, vintage: null, country: null, region: null, category: kind === 'wine' ? 'Rött vin' : null,
     style: null, grapes: null, volume_ml: null, alcohol: null, source_kind: 'manual', source_id: null, source_url: null, image_url: null, price_paid: null,
     price_current: null, price_checked_at: null, availability: 'unknown', count: 0, open_level: null, drink_from: null, drink_to: null, serve_temp: null,
-    decant_hours: null, food: null, note: null, taste: null, vivino_rating: null, vivino_count: null, vivino_url: null, vivino_checked_at: null, created_at: '', updated_at: '',
+    decant_hours: null, food: null, note: null, taste: null, vivino_rating: null, vivino_count: null, vivino_url: null, vivino_checked_at: null, rating: null, rating_url: null, created_at: '', updated_at: '',
   }
 }
 
@@ -82,7 +82,7 @@ export function Add() {
     }
   }
 
-  const state = preview ? (preview.kind === 'spirit' ? null : windowState(preview.drink_from, preview.drink_to)) : null
+  const state = preview ? (preview.kind === 'wine' ? windowState(preview.drink_from, preview.drink_to) : null) : null
   const windowManual = preview !== null && preview.source_kind === 'systembolaget' && state !== 'unknown' && !editingWindow
   const fromVivino = preview !== null && preview.source_kind === 'manual' && preview.vivino_url !== null && fetchedAt !== null
 
@@ -110,7 +110,7 @@ export function Add() {
         {!preview && manual === null && query.trim() === '' && (
           <div className="fl-add__manual">
             <span className="fl-small fl-muted">{S.add.manual}:</span>
-            {(['wine', 'spirit'] as const).map((k) => (
+            {(['wine', 'spirit', 'beer'] as const).map((k) => (
               <button key={k} type="button" className="fl-chip" onClick={() => setManual(k)}>
                 {S.add.manualKind[k]}
               </button>

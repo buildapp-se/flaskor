@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { Drink, DrinkInput, Preview } from '../../shared/types.ts'
+import type { Drink, DrinkInput, Kind, Preview } from '../../shared/types.ts'
 import { api } from '../api.ts'
 import { kr } from '../format.ts'
 import { navigate, PATHS } from '../hash.ts'
@@ -27,7 +27,7 @@ interface Row {
 
 const DESTS: ReadonlyArray<Dest> = ['wishlist', 'cellar', 'bar']
 
-function destsFor(kind: 'wine' | 'spirit'): Dest[] {
+function destsFor(kind: Kind): Dest[] {
   return kind === 'spirit' ? ['wishlist', 'bar'] : ['wishlist', 'cellar']
 }
 
@@ -39,7 +39,7 @@ function toInput(row: Row): DrinkInput {
     kind: input.kind, owned: false, name: input.name, producer: null, vintage: null, country: null, region: null, category: input.kind === 'wine' ? 'Rött vin' : null,
     style: null, grapes: null, volume_ml: null, alcohol: null, source_kind: 'manual', source_id: null, source_url: null, image_url: null, price_paid: null,
     price_current: null, price_checked_at: null, availability: 'unknown', count: 0, open_level: null, drink_from: null, drink_to: null, serve_temp: null,
-    decant_hours: null, food: null, note: null, taste: null, vivino_rating: null, vivino_count: null, vivino_url: null, vivino_checked_at: null,
+    decant_hours: null, food: null, note: null, taste: null, vivino_rating: null, vivino_count: null, vivino_url: null, vivino_checked_at: null, rating: null, rating_url: null,
   }
   return {
     ...base,

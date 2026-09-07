@@ -23,7 +23,8 @@ export function Detail({ id }: { id: number }) {
   if (!drink) return <p className="fl-muted">{S.detail.notFound}</p>
 
   const spirit = drink.kind === 'spirit'
-  const state = spirit ? null : windowState(drink.drink_from, drink.drink_to)
+  const wine = drink.kind === 'wine'
+  const state = wine ? windowState(drink.drink_from, drink.drink_to) : null
   const title = drink.vintage ? `${drink.name} ${drink.vintage}` : drink.name
   const meta = [
     [drink.region, drink.country].filter(Boolean).join(', '),
@@ -154,13 +155,19 @@ export function Detail({ id }: { id: number }) {
               <IconExternal />
             </a>
           )}
-          {!spirit && (
+          {wine && (
             <a className="fl-link fl-small" href={drink.vivino_url ?? vivino} target="_blank" rel="noreferrer">
               {drink.vivino_rating !== null ? S.detail.vivinoRated(String(drink.vivino_rating).replace('.', ','), drink.vivino_count) : S.detail.vivino}
               <IconExternal />
             </a>
           )}
-          {(drink.source_kind === 'systembolaget' || !spirit) && (
+          {!wine && drink.rating !== null && drink.rating_url && (
+            <a className="fl-link fl-small" href={drink.rating_url} target="_blank" rel="noreferrer">
+              {S.detail.ownRated(String(drink.rating).replace('.', ','))}
+              <IconExternal />
+            </a>
+          )}
+          {(drink.source_kind === 'systembolaget' || wine) && (
             <button className="fl-link fl-small fl-detail__refresh" disabled={refreshing} onClick={doRefresh}>
               {refreshing ? S.detail.refreshing : drink.source_kind === 'systembolaget' ? S.detail.refresh : S.detail.refreshVivino}
             </button>
@@ -233,7 +240,10 @@ function Timeline({ from, to }: { from: number; to: number }) {
 
 type Field = keyof typeof S.detail.fields
 const TEXTAREAS: ReadonlyArray<Field> = ['food', 'note', 'taste']
-const NUMBERS: ReadonlyArray<Field> = ['vintage', 'alcohol', 'volume', 'drink_from', 'drink_to', 'decant_hours', 'price_paid']
+const NUMBERS: ReadonlyArray<Field> = ['vintage', 'alcohol', 'volume', 'drink_from', 'drink_to', 'decant_hours', 'price_paid', 'rating']
+const WINE_ONLY: ReadonlyArray<Field> = ['drink_from', 'drink_to', 'decant_hours', 'grapes', 'vintage']
+/** Vivino täcker vinets betyg, så det egna betygsfältet är bara till för sprit och öl. */
+const RATING_ONLY: ReadonlyArray<Field> = ['rating', 'rating_url']
 
 /** Formuläret med alla fält. Används av Ändra i detaljvyn och av "Skriv in själv" i Lägg till (då med egna knapptexter). */
 export function EditForm({ drink, onCancel, onSave, saveLabel = S.detail.save }: { drink: Drink; onCancel: () => void; onSave: (p: DrinkPatch) => void; saveLabel?: string }) {
@@ -255,9 +265,11 @@ export function EditForm({ drink, onCancel, onSave, saveLabel = S.detail.save }:
     price_paid: drink.price_paid?.toString() ?? '',
     note: drink.note ?? '',
     taste: drink.taste ?? '',
+    rating: drink.rating?.toString() ?? '',
+    rating_url: drink.rating_url ?? '',
   }
   const [values, setValues] = useState(initial)
-  const fields = (Object.keys(S.detail.fields) as Field[]).filter((f) => drink.kind === 'wine' || !['drink_from', 'drink_to', 'decant_hours', 'grapes', 'vintage'].includes(f))
+  const fields = (Object.keys(S.detail.fields) as Field[]).filter((f) => (drink.kind === 'wine' || !WINE_ONLY.includes(f)) && (drink.kind !== 'wine' || !RATING_ONLY.includes(f)))
 
   function submit() {
     const p: Record<string, unknown> = {}
