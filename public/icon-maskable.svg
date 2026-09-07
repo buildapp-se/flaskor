@@ -1,7 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <circle cx="256" cy="256" r="256" fill="#85444F"/>
-  <rect x="148" y="176" width="96" height="232" rx="24" fill="#FBF7EF"/>
-  <rect x="176.8" y="112" width="38.400000000000006" height="80" rx="9.6" fill="#FBF7EF"/>
-  <rect x="268" y="232" width="96" height="176" rx="24" fill="#FBF7EF"/>
-  <rect x="296.8" y="168" width="38.400000000000006" height="80" rx="9.6" fill="#FBF7EF"/>
+  <rect x="132" y="112" width="32" height="12" rx="3" fill="#C9A9A9"/>
+  <path d="M135,122 V218 C135,246 109,248 109,280 V400 Q109,408 117,408 H179 Q187,408 187,400 V280 C187,248 161,246 161,218 V122 Z" fill="#C9A9A9"/>
+  <rect x="240" y="88" width="32" height="12" rx="3" fill="#FBF7EF"/>
+  <path d="M243,98 V194 C243,222 217,224 217,256 V400 Q217,408 225,408 H287 Q295,408 295,400 V256 C295,224 269,222 269,194 V98 Z" fill="#FBF7EF"/>
+  <rect x="348" y="112" width="32" height="12" rx="3" fill="#C9A9A9"/>
+  <path d="M351,122 V218 C351,246 325,248 325,280 V400 Q325,408 333,408 H395 Q403,408 403,400 V280 C403,248 377,246 377,218 V122 Z" fill="#C9A9A9"/>
 </svg>
