@@ -77,6 +77,7 @@ Sprit och öl får inget fönster.
 - **Drack en**: antalet minskar ett steg, ingen ruta (beslut 16). Sprit: plus/minus på fjärdedelar (beslut 14).
 - **Slut**: antal 0 stannar grått med "lägg på önskelistan igen" (beslut 30).
 - **Nattlig uppdatering** (beslut 23): cron i Workern hämtar varje artikelnummer en gång per natt (dedupe över hushåll, tak) och uppdaterar pris, årgång och tillgänglighet. En "uppdatera"-knapp per rad gör samma sak på begäran.
+- **Sök på Distiller** (2026-09-07): sprit och öl saknar en automatiserad betygskälla (Distiller.com sitter bakom en Cloudflare-utmaning som bara en riktig webbläsare klarar, ingen Worker/cron kan komma åt den). Detaljvyn visar i stället en sökknapp till `distiller.com/search?term=<namn>`, samma plats och mönster som vinets "Sök på Vivino". Betyg och länk skrivs in för hand i `rating`/`rating_url`.
 - **Vivino-betyg** (2026-09-06): ett vin får sitt betyg när det sparas, via uppdatera-knappen (alla viner, även Caviste och manuella) och nattligt för viner utan betyg eller med betyg äldre än 30 dagar, högst 20 per natt. `POST /api/refresh-all` kör nattens jobb på begäran. Workern läser Vivinos söksida och tar första träffen om minst hälften av sökorden finns i träffens namn; annars sparas bara hämtdatumet.
 
 ## Vyer (beslut 24, 28)
