@@ -9,7 +9,7 @@ reviewedAt: 2026-09-07
 
 # Handoff: Flaskor
 
-Senast uppdaterad: 2026-09-07, öl som tredje kind, eget betygsfält (`rating`, `rating_url`) för sprit och öl, Önskelistan ombyggd i samma stil som Källaren/Barskåpet. Verifierat lokalt: `tsc -b`, 40 enhetstester, 17 Worker-tester (migrering 0003 mot lokal D1), `wrangler deploy --dry-run`, och manuellt i Chromium mot `vite dev` + `wrangler dev`: lade till ett öl med eget betyg och länk, såg det landa i Källaren (inte Barskåpet) utan drickfönster-piller, betyget synas på raden och i detaljvyn, Önskelistans nya tabell/lista-växel, sedan borttaget igen. Inte pushat eller deployat än.
+Senast uppdaterad: 2026-09-07, öl som tredje kind, eget betygsfält (`rating`, `rating_url`) för sprit och öl, Önskelistan ombyggd i samma stil som Källaren/Barskåpet. Verifierat lokalt: `tsc -b`, 40 enhetstester, 17 Worker-tester (migrering 0003 mot lokal D1), `wrangler deploy --dry-run`, och manuellt i Chromium mot `vite dev` + `wrangler dev`: lade till ett öl med eget betyg och länk, såg det landa i Källaren (inte Barskåpet) utan drickfönster-piller, betyget synas på raden och i detaljvyn, Önskelistans nya tabell/lista-växel, sedan borttaget igen. Live: migrering 0003 körd i molnet, Worker deployad (version `569ce9a6`, `/health` 200), GitHub Pages-workflowkörningen grön, commit `729f884`.
 
 Tidigare: bulkimport, massåtgärder, visa slut och sorteringens plats live (Worker `bfc28ed5`, commit `00e2531`).
 
