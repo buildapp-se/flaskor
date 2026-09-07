@@ -116,7 +116,7 @@ export function Wishlist() {
         ))}
       {view === 'table' && wished.length === 0 && <p className="fl-muted">{S.wishlist.empty}</p>}
 
-      <div hidden={view === 'table'}>
+      <div className="fl-wishlist__listwrap" hidden={view === 'table'}>
         {wished.length === 0 && <p className="fl-muted">{S.wishlist.empty}</p>}
         {wished.length > 0 && visible.length === 0 && <p className="fl-muted">{S.wishlist.noMatch}</p>}
         {visible.length > 0 && (
