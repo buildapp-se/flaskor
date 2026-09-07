@@ -760,6 +760,9 @@ p {
   display: flex;
   flex-direction: column;
   gap: var(--fl-s5);
+}
+/* Bara listvyns kort hålls smala som en mobilspalt (design §3); tabellen ska fylla sidan som i Källaren/Barskåpet. */
+.fl-wishlist__listwrap {
   max-width: 720px;
 }
 .fl-wish {
@@ -903,11 +906,10 @@ p {
 }
 @media (max-width: 899px) {
   .fl-wishlist {
-    max-width: none;
     gap: 14px;
   }
-  .fl-wishlist__chips {
-    padding: 0 4px;
+  .fl-wishlist__listwrap {
+    max-width: none;
   }
   .fl-wishlist .fl-list {
     margin-top: -2px;
