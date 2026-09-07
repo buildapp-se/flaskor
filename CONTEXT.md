@@ -13,9 +13,9 @@ Ett hushåll (Patrik och Julia) håller reda på vilka flaskor som finns hemma, 
 | Svenska (UI) | Kod | Betyder |
 |---|---|---|
 | Flaska | `drink` | En rad: ett vin eller en sprit i en viss årgång. Räknas i antal, aldrig per fysisk flaska (beslut 4) |
-| Källaren | `cellar` | Vin med flaggan `owned`, i vyn Källaren |
+| Källaren | `cellar` | Vin och öl med flaggan `owned`, i vyn Källaren (öl 2026-09-07: dricks upp helt, ingen öppen-flaska-logik som sprit) |
 | Barskåpet | `bar` | Sprit med flaggan `owned`, i vyn Barskåpet |
-| Önskelistan | `wishlist` | Rader utan `owned`, vin och sprit i samma vy |
+| Önskelistan | `wishlist` | Rader utan `owned`, vin, sprit och öl i samma vy |
 | Slut | `depleted` | En ägd rad vars antal är 0; stannar grå i en ihopfälld sektion (beslut 30) |
 | Drickfönster | `drinkWindow` | Årsintervall från och till, egna fält, förifylls av tumregeln (beslut 5, 13) |
 | Piller | `windowState` | Härledd: `wait`, `drink`, `soon`, `past`, `unknown` (beslut 12) |
@@ -28,7 +28,7 @@ Ett hushåll (Patrik och Julia) håller reda på vilka flaskor som finns hemma, 
 En tabell `drink`, en modell för vin och sprit (beslut 3). Fält:
 
 - `id`, `household_id`
-- `kind`: `wine` | `spirit`
+- `kind`: `wine` | `spirit` | `beer` (öl 2026-09-07, hamnar i Källaren som vin, inte Barskåpet)
 - `owned`: boolean. `owned = 0` betyder önskelista
 - `name`, `producer`, `vintage` (år eller null), `country`, `region`, `category` (Systembolagets nivå 2, t.ex. Rött vin), `style` (nivå 3, t.ex. Fylligt & Smakrikt), `grapes`, `volume_ml`, `alcohol`
 - `source_kind`: `systembolaget` | `caviste` | `manual`; `source_id` (artikelnummer eller CAV-nummer); `source_url`; `image_url`
@@ -36,9 +36,10 @@ En tabell `drink`, en modell för vin och sprit (beslut 3). Fält:
 - `count`: antal oöppnade. Sprit dessutom `open_level`: `null` | `4` | `3` | `2` | `1` fjärdedelar av en öppnad flaska (beslut 14)
 - `drink_from`, `drink_to`: år. `serve_temp` (text som "16-18"), `decant_hours`, `food` (fritext), `note` (fritext, "smakade gött, köp mer")
 - `vivino_rating` (vinets snitt 1 till 5, null när Vivino har för få röster), `vivino_count`, `vivino_url` (vinets sida), `vivino_checked_at`
+- `rating`, `rating_url` (öl/sprit 2026-09-07: eget eller importerat betyg 1 till 5 med länk till källan, Vivino täcker bara vin. `Rating`-komponenten visar `vivino_rating` när den finns, annars `rating`)
 - `created_at`, `updated_at`
 
-Ingen drucken-logg, inget betyg (beslut 16, i backlog). Ingen plats (beslut 9).
+Ingen drucken-logg (beslut 16, i backlog). Ingen plats (beslut 9).
 
 ## Pillerlogiken (beslut 12)
 
@@ -50,7 +51,7 @@ Räknat på dagens datum mot `drink_from` och `drink_to`:
 - `soon`: inom 12 månader före slutet. Gult.
 - `drink`: annars inne i fönstret. Grönt.
 
-Sprit får inget fönster.
+Sprit och öl får inget fönster.
 
 ## Tumregeln för förifyllt fönster (beslut 13)
 
@@ -72,7 +73,7 @@ Sprit får inget fönster.
 - **Ta bort** (2026-09-06): knapp längst ner i detaljvyn, två tryck. Raden försvinner direkt, servern bekräftar eller listan laddas om.
 - **Bulkimport via egen AI** (2026-09-06): "Importera lista" under Lägg till visar en prompt att kopiera in i valfri AI tillsammans med texten från en Systembolagslista. AI:n svarar med JSON (nr, namn, årgång, pris, antal, typ), som klistras in. Varje artikelnummer slås upp hos Systembolaget (fyra åt gången), rader utan nummer sparas som egna. Granskningstabell med kryssruta, mål (önskelistan, källaren, barskåpet) och antal per rad, "Alla till". Import sparar raderna en och en; ångra-raden längst ner tar bort dem igen inom tio minuter. Ångra lever bara i minnet.
 - **Massåtgärder i tabellen** (2026-09-06): kryssrutor per rad och för alla, sedan Ta bort eller Lägg på önskelistan igen, båda med ångra (borttagna rader kommer tillbaka som nya rader med samma innehåll).
-- **Köpt** (beslut 29): ett tryck, ruta med antal (1) och pris (Systembolagets), raden får `owned = 1`. Vin till Källaren, sprit till Barskåpet.
+- **Köpt** (beslut 29): ett tryck, ruta med antal (1) och pris (Systembolagets), raden får `owned = 1`. Vin och öl till Källaren, sprit till Barskåpet.
 - **Drack en**: antalet minskar ett steg, ingen ruta (beslut 16). Sprit: plus/minus på fjärdedelar (beslut 14).
 - **Slut**: antal 0 stannar grått med "lägg på önskelistan igen" (beslut 30).
 - **Nattlig uppdatering** (beslut 23): cron i Workern hämtar varje artikelnummer en gång per natt (dedupe över hushåll, tak) och uppdaterar pris, årgång och tillgänglighet. En "uppdatera"-knapp per rad gör samma sak på begäran.
@@ -80,7 +81,9 @@ Sprit får inget fönster.
 
 ## Vyer (beslut 24, 28)
 
-Startsidan är Källaren: grupperad på kategori, sorterad på pris (bytbar till årgång, fönsterslut, antal, namn eller Vivino, riktningen växlas med en pil), sökruta som även träffar mat, kommentar och smak (träffen visas markerad under vinet), chips för kategori (Rött, Vitt, Rosé och Bubbel syns alltid, gråa när de är tomma), land och "Drick nu", en rad överst "Dags att dricka: N" och summan "N flaskor · X kr" (antal gånger inköpspris). Sök, chips, sortering och vy sparas i `localStorage` så de överlever sidbyte. En tabellvy (Excel-läget) visar alla ägda viner platt med sorterbara kolumnrubriker, valbara kolumner och sidscroll. Önskelistan visar artikelnumret som länk till produktsidan (Systembolaget minns vald butik där) och Vivino-betyget. Önskelistan, Barskåpet och Lägg till i bottennavigeringen på mobil, sidnavigering på desktop. Bara svenska.
+Startsidan är Källaren: grupperad på kategori (öl grupperas på sin egen stil, t.ex. "IPA", i samma lista som vinkategorierna, okända sist i bokstavsordning), sorterad på pris (bytbar till årgång, fönsterslut, antal, namn eller Betyg, riktningen växlas med en pil), sökruta som även träffar mat, kommentar och smak (träffen visas markerad under vinet), chips för kategori (Rött, Vitt, Rosé och Bubbel syns alltid, gråa när de är tomma), land och "Drick nu", en rad överst "Dags att dricka: N" och summan "N flaskor · X kr" (antal gånger inköpspris). Sök, chips, sortering och vy sparas i `localStorage` så de överlever sidbyte. En tabellvy (Excel-läget) visar alla ägda viner och öl platt med sorterbara kolumnrubriker, valbara kolumner och sidscroll.
+
+Önskelistan (ombyggd 2026-09-07 i samma stil som Källaren/Barskåpet): sök, sortering (billigast först som standard), kind-chips (Vin, Sprit, Öl) och kategorichips, lista/tabell-växel. Visar artikelnumret som länk till produktsidan (Systembolaget minns vald butik där) och betyget (Vivino för vin, det egna för sprit och öl). Önskelistan, Barskåpet och Lägg till i bottennavigeringen på mobil, sidnavigering på desktop. Bara svenska.
 
 ## Arkitektur (beslut 2, 10, 11, 21, 27)
 

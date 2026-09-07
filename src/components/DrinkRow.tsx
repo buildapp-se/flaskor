@@ -13,6 +13,8 @@ import { Rating } from './Rating.tsx'
 /** Raden i Källaren (design §3): foto, namn och ursprung, piller, pris, antal, knappar. Mobilen visar pris och "N fl" till höger.
  * Träffar sökningen maten eller kommentaren visas det fältet som en extra rad med träffen markerad. */
 export function DrinkRow({ drink, actions, query = '', muted = false }: { drink: Drink; actions?: ReactNode; query?: string; muted?: boolean }) {
+  // Drickfönstret är en vingrej: öl har inget, visa ingen pill för det.
+  const wine = drink.kind === 'wine'
   const state = windowState(drink.drink_from, drink.drink_to)
   const range = yearRange(drink.drink_from, drink.drink_to)
   const meta = [[drink.region, drink.country].filter(Boolean).join(', '), drink.grapes].filter(Boolean).join(' · ')
@@ -30,14 +32,14 @@ export function DrinkRow({ drink, actions, query = '', muted = false }: { drink:
       <Bottle url={drink.image_url} size="md" />
       <div className="fl-row__main">
         <div className="fl-row__name">{name}</div>
-        {meta && (
+        {(meta || drink.vivino_rating !== null || drink.rating !== null) && (
           <div className="fl-row__meta fl-desktop-only">
             {meta}
             <Rating drink={drink} />
           </div>
         )}
         <div className="fl-row__pill fl-mobile-only">
-          <Pill state={state} />
+          {wine && <Pill state={state} />}
           {range}
           <Rating drink={drink} />
         </div>
@@ -48,7 +50,7 @@ export function DrinkRow({ drink, actions, query = '', muted = false }: { drink:
         )}
       </div>
       <div className="fl-row__pill fl-desktop-only">
-        <Pill state={state} />
+        {wine && <Pill state={state} />}
         {range}
       </div>
       <div className="fl-row__price">{price !== null ? kr(price) : ''}</div>

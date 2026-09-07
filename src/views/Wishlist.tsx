@@ -3,21 +3,58 @@ import type { Drink, Kind } from '../../shared/types.ts'
 import { articleNo, kr } from '../format.ts'
 import { detailPath, navigate } from '../hash.ts'
 import { Rating } from '../components/Rating.tsx'
-import { IconExternal, IconMinus, IconPlus } from '../icons.tsx'
-import { useStore } from '../store.tsx'
+import { IconArrow, IconExternal, IconMinus, IconPlus, IconSearch } from '../icons.tsx'
+import { usePersisted } from '../persist.ts'
+import { compare, DEFAULT_DIR, type SortDir, type SortKey } from '../sort.ts'
+import { useBulkActions, useStore } from '../store.tsx'
 import { S } from '../strings.ts'
 import { Bottle } from './Add.tsx'
+import { matches } from './Cellar.tsx'
+import { CellarTable, type ColumnKey } from './CellarTable.tsx'
 
-// Önskelistan (design §3, beslut 29): vin och sprit i samma lista, ett tryck "Köpt" öppnar rutan med antal och pris.
-// Desktop saknar artboard: samma lista i en kolumn på 720 px, rutan centrerad i stället för längst ner.
+// Önskelistan (design §3, beslut 29). Ombyggd 2026-09-07 i samma stil som Källaren/Barskåpet:
+// sök, sortering (billigast först som standard), kind- och kategorichips, lista/tabell-växel.
+// Filter och sortering överlever sidbyte, precis som där (usePersisted).
+
+const WISH_COLUMNS: ColumnKey[] = ['name', 'vintage', 'category', 'country', 'price', 'vivino', 'source']
+const WISH_HIDDEN_AT_START: ColumnKey[] = ['vintage', 'country']
+const WISH_SORTS = Object.keys(S.wishlist.sort) as ReadonlyArray<keyof typeof S.wishlist.sort>
+
+interface WishlistState {
+  query: string
+  kind: Kind | null
+  category: string | null
+  sort: SortKey
+  dir: SortDir
+  view: 'list' | 'table'
+}
+
+const INITIAL: WishlistState = { query: '', kind: null, category: null, sort: 'price', dir: 'asc', view: 'list' }
+
 export function Wishlist() {
   const { drinks, patch } = useStore()
-  const [kind, setKind] = useState<Kind | null>(null)
+  const { removeMany } = useBulkActions()
+  const [state, set] = usePersisted<WishlistState>('flaskor.wishlist', INITIAL)
+  const { query, kind, category, sort, dir, view } = state
   const [buying, setBuying] = useState<Drink | null>(null)
 
   if (drinks === null) return <div className="fl-muted">{S.loading}</div>
   const wished = drinks.filter((d) => !d.owned)
-  const visible = wished.filter((d) => kind === null || d.kind === kind)
+  // Kategorichips beror på vilket kind som är valt: sprit ger whiskey/rom/gin, öl ger IPA/lager, osv.
+  const byKind = wished.filter((d) => kind === null || d.kind === kind)
+  const categories = [...new Set(byKind.map((d) => d.category).filter((c): c is string => c !== null))].sort((a, b) => a.localeCompare(b, 'sv'))
+
+  const q = query.trim().toLowerCase()
+  const keep = (d: Drink) => matches(d, q) && (kind === null || d.kind === kind) && (category === null || d.category === category)
+  const visible = wished.filter(keep).sort(compare(sort, dir))
+
+  function pickSort(key: SortKey) {
+    set({ sort: key, dir: DEFAULT_DIR[key] ?? 'asc' })
+  }
+  function headerSort(key: SortKey) {
+    if (key === sort) set({ dir: dir === 'asc' ? 'desc' : 'asc' })
+    else pickSort(key)
+  }
 
   return (
     <div className="fl-wishlist">
@@ -25,25 +62,72 @@ export function Wishlist() {
         <h1>{S.wishlist.title}</h1>
         <span className="fl-head__count">{S.wishlist.items(wished.length)}</span>
       </div>
-      <div className="fl-chips fl-wishlist__chips">
-        <button className="fl-chip" aria-pressed={kind === null} onClick={() => setKind(null)}>
-          {S.wishlist.all}
-        </button>
-        <button className="fl-chip" aria-pressed={kind === 'wine'} onClick={() => setKind('wine')}>
-          {S.wishlist.wine}
-        </button>
-        <button className="fl-chip" aria-pressed={kind === 'spirit'} onClick={() => setKind('spirit')}>
-          {S.wishlist.spirit}
-        </button>
-      </div>
-      {wished.length === 0 && <p className="fl-muted">{S.wishlist.empty}</p>}
-      {visible.length > 0 && (
-        <div className="fl-card fl-list">
-          {visible.map((d) => (
-            <WishRow key={d.id} drink={d} onBuy={() => setBuying(d)} />
+
+      <div className="fl-toolbar">
+        <label className="fl-search">
+          <IconSearch />
+          <input value={query} onChange={(e) => set({ query: e.target.value })} placeholder={S.wishlist.search} aria-label={S.wishlist.search} />
+        </label>
+        <div className="fl-sortrow">
+          <span className="fl-chips__label">{S.wishlist.sortLabel}</span>
+          <select className="fl-chip fl-chip--select" value={WISH_SORTS.includes(sort as (typeof WISH_SORTS)[number]) ? sort : 'price'} onChange={(e) => pickSort(e.target.value as SortKey)} aria-label={S.wishlist.sortLabel}>
+            {WISH_SORTS.map((key) => (
+              <option key={key} value={key}>
+                {S.wishlist.sort[key]}
+              </option>
+            ))}
+          </select>
+          <button className="fl-chip fl-chip--icon" title={S.cellar.sortDir[dir]} aria-label={S.cellar.sortDir[dir]} onClick={() => set({ dir: dir === 'asc' ? 'desc' : 'asc' })}>
+            <IconArrow dir={dir} />
+          </button>
+          <div className="fl-seg" role="group">
+            {(['list', 'table'] as const).map((v) => (
+              <button key={v} type="button" aria-pressed={view === v} onClick={() => set({ view: v })}>
+                {S.cellar.view[v]}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="fl-chips fl-chips--scroll">
+          <span className="fl-chips__label">{S.wishlist.show}</span>
+          <button className="fl-chip" aria-pressed={kind === null} onClick={() => set({ kind: null, category: null })}>
+            {S.wishlist.all}
+          </button>
+          {(['wine', 'spirit', 'beer'] as const).map((k) => (
+            <button key={k} className="fl-chip" aria-pressed={kind === k} onClick={() => set({ kind: kind === k ? null : k, category: null })}>
+              {S.wishlist[k]}
+            </button>
+          ))}
+          {categories.length > 0 && <span className="fl-chips__sep" />}
+          {categories.map((c) => (
+            <button key={c} className="fl-chip" aria-pressed={category === c} onClick={() => set({ category: category === c ? null : c })}>
+              {S.categoryShort[c] ?? c}
+            </button>
           ))}
         </div>
-      )}
+      </div>
+
+      {view === 'table' &&
+        wished.length > 0 &&
+        (visible.length === 0 ? (
+          <p className="fl-muted">{S.wishlist.noMatch}</p>
+        ) : (
+          <CellarTable rows={visible} query={q} sort={sort} dir={dir} onSort={headerSort} onRemove={removeMany} columns={WISH_COLUMNS} hiddenAtStart={WISH_HIDDEN_AT_START} persistKey="flaskor.wishlist.columns" itemLabel={S.wishlist.items} />
+        ))}
+      {view === 'table' && wished.length === 0 && <p className="fl-muted">{S.wishlist.empty}</p>}
+
+      <div hidden={view === 'table'}>
+        {wished.length === 0 && <p className="fl-muted">{S.wishlist.empty}</p>}
+        {wished.length > 0 && visible.length === 0 && <p className="fl-muted">{S.wishlist.noMatch}</p>}
+        {visible.length > 0 && (
+          <div className="fl-card fl-list">
+            {visible.map((d) => (
+              <WishRow key={d.id} drink={d} onBuy={() => setBuying(d)} />
+            ))}
+          </div>
+        )}
+      </div>
+
       {buying && (
         <BoughtSheet
           drink={buying}

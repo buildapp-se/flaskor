@@ -37,12 +37,16 @@ const COLUMNS: ReadonlyArray<Column> = [
   { key: 'total', numeric: true, render: (d) => (priceOf(d) === null ? '' : kr(valueOf(d))) },
   {
     key: 'windowEnd',
-    render: (d) => (
-      <span className="fl-table__window">
-        <Pill state={windowState(d.drink_from, d.drink_to)} />
-        {yearRange(d.drink_from, d.drink_to)}
-      </span>
-    ),
+    // Drickfönstret är en vingrej: öl (och sprit i Barskåpet) har inget.
+    render: (d) =>
+      d.kind === 'wine' ? (
+        <span className="fl-table__window">
+          <Pill state={windowState(d.drink_from, d.drink_to)} />
+          {yearRange(d.drink_from, d.drink_to)}
+        </span>
+      ) : (
+        ''
+      ),
   },
   { key: 'serve_temp', numeric: true, render: (d) => d.serve_temp ?? '' },
   { key: 'decant', numeric: true, render: (d) => d.decant_hours ?? '' },
@@ -77,8 +81,8 @@ export function CellarTable({
   sort,
   dir,
   onSort,
-  showZero,
-  zeroHidden,
+  showZero = false,
+  zeroHidden = 0,
   onShowZero,
   onRemove,
   onRewish,
@@ -92,11 +96,13 @@ export function CellarTable({
   sort: SortKey
   dir: SortDir
   onSort: (key: SortKey) => void
-  showZero: boolean
-  zeroHidden: number
-  onShowZero: (v: boolean) => void
+  showZero?: boolean
+  zeroHidden?: number
+  /** Utelämnad: "Visa slut"-togglen visas inte (den betyder inget för t.ex. Önskelistan). */
+  onShowZero?: (v: boolean) => void
   onRemove: (rows: Drink[]) => void
-  onRewish: (rows: Drink[]) => void
+  /** Utelämnad: massåtgärdsraden visar ingen "Lägg på önskelistan igen" (t.ex. Önskelistan, som redan är den listan). */
+  onRewish?: (rows: Drink[]) => void
   columns?: ColumnKey[]
   hiddenAtStart?: ColumnKey[]
   persistKey?: string
@@ -127,10 +133,14 @@ export function CellarTable({
   return (
     <div className="fl-tableview">
       <div className="fl-chips fl-chips--scroll fl-chips--wrap">
-        <button className="fl-chip fl-chip--xs" aria-pressed={showZero} onClick={() => onShowZero(!showZero)}>
-          {showZero ? S.cellar.showZeroOn : S.cellar.showZeroOff(zeroHidden)}
-        </button>
-        <span className="fl-chips__sep" />
+        {onShowZero && (
+          <>
+            <button className="fl-chip fl-chip--xs" aria-pressed={showZero} onClick={() => onShowZero(!showZero)}>
+              {showZero ? S.cellar.showZeroOn : S.cellar.showZeroOff(zeroHidden)}
+            </button>
+            <span className="fl-chips__sep" />
+          </>
+        )}
         <span className="fl-chips__label">{S.cellar.columns}</span>
         {available.map((c) => (
           <button key={c.key} className="fl-chip fl-chip--xs" aria-pressed={!hidden.includes(c.key)} onClick={() => set({ hidden: hidden.includes(c.key) ? hidden.filter((k) => k !== c.key) : [...hidden, c.key] })}>
@@ -144,9 +154,11 @@ export function CellarTable({
           <button className="fl-textbtn" onClick={() => act(onRemove)}>
             {S.bulk.remove}
           </button>
-          <button className="fl-textbtn" onClick={() => act(onRewish)}>
-            {S.bulk.rewish}
-          </button>
+          {onRewish && (
+            <button className="fl-textbtn" onClick={() => act(onRewish)}>
+              {S.bulk.rewish}
+            </button>
+          )}
           <button className="fl-textbtn" onClick={() => setSelected(new Set())}>
             {S.bulk.clear}
           </button>
@@ -175,7 +187,7 @@ export function CellarTable({
           </thead>
           <tbody>
             {rows.map((d) => (
-              <tr key={d.id} className={d.count === 0 && d.open_level === null ? 'fl-table__row fl-table__row--muted' : 'fl-table__row'} onClick={(e) => !(e.target as HTMLElement).closest('a, input') && navigate(detailPath(d.id))}>
+              <tr key={d.id} className={d.owned && d.count === 0 && d.open_level === null ? 'fl-table__row fl-table__row--muted' : 'fl-table__row'} onClick={(e) => !(e.target as HTMLElement).closest('a, input') && navigate(detailPath(d.id))}>
                 <td className="fl-table__check">
                   <input type="checkbox" checked={selected.has(d.id)} onChange={() => toggle(d.id)} />
                 </td>

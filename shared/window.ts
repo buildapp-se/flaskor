@@ -1,4 +1,4 @@
-import type { WindowState } from './types.ts'
+import type { Kind, WindowState } from './types.ts'
 
 /**
  * Pillerlogiken (beslut 12), räknad på dagens datum mot drink_from och drink_to.
@@ -35,7 +35,7 @@ function ruleRow(category: string): [[number, number], [number, number], [number
 }
 
 export function ruleOfThumb(
-  kind: 'wine' | 'spirit',
+  kind: Kind,
   category: string | null,
   vintage: number | null,
   price: number | null,

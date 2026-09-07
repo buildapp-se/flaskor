@@ -13,14 +13,14 @@ const WRITABLE: ReadonlyArray<keyof DrinkInput> = [
   'kind', 'owned', 'name', 'producer', 'vintage', 'country', 'region', 'category', 'style', 'grapes',
   'volume_ml', 'alcohol', 'source_kind', 'source_id', 'source_url', 'image_url', 'price_paid',
   'price_current', 'price_checked_at', 'availability', 'count', 'open_level', 'drink_from', 'drink_to',
-  'serve_temp', 'decant_hours', 'food', 'note', 'taste', 'vivino_rating', 'vivino_count', 'vivino_url', 'vivino_checked_at',
+  'serve_temp', 'decant_hours', 'food', 'note', 'taste', 'vivino_rating', 'vivino_count', 'vivino_url', 'vivino_checked_at', 'rating', 'rating_url',
 ]
 
 const NUMBER_FIELDS = new Set<keyof DrinkInput>([
-  'vintage', 'volume_ml', 'alcohol', 'price_paid', 'price_current', 'count', 'open_level', 'drink_from', 'drink_to', 'decant_hours', 'vivino_rating', 'vivino_count',
+  'vintage', 'volume_ml', 'alcohol', 'price_paid', 'price_current', 'count', 'open_level', 'drink_from', 'drink_to', 'decant_hours', 'vivino_rating', 'vivino_count', 'rating',
 ])
 
-const URL_FIELDS = new Set<keyof DrinkInput>(['source_url', 'image_url', 'vivino_url'])
+const URL_FIELDS = new Set<keyof DrinkInput>(['source_url', 'image_url', 'vivino_url', 'rating_url'])
 
 /** Släpper bara igenom kända fält med rätt grovtyp. Databasens CHECK tar resten. */
 export function sanitize(body: unknown): DrinkPatch {
@@ -60,7 +60,7 @@ export async function getDrink(db: D1Database, id: number): Promise<Drink> {
 
 export async function insertDrink(db: D1Database, input: DrinkPatch): Promise<Drink> {
   if (typeof input.name !== 'string' || input.name.trim() === '') throw new FatalError('name is required')
-  if (input.kind !== 'wine' && input.kind !== 'spirit') throw new FatalError('kind is required')
+  if (input.kind !== 'wine' && input.kind !== 'spirit' && input.kind !== 'beer') throw new FatalError('kind is required')
   const keys = Object.keys(input) as Array<keyof DrinkPatch>
   const columns = ['household_id', ...keys].join(', ')
   const marks = ['?', ...keys.map(() => '?')].join(', ')

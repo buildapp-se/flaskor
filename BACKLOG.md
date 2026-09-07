@@ -54,6 +54,13 @@ Patriks önskelista 2026-09-06 (GRILL-STATUS 31 till 35) byggd i chunk-läge, co
 - [ ] `[P2]` Grindkoden ligger i localStorage i klartext på delad dator; räcker tills Firebase Auth (beslut 2).
 - [x] `[P2]` Ta bort en rad: knapp längst ner i detaljvyn, två tryck utan dialogruta (2026-09-06, Patrik saknade den efter en felinläggning).
 
+## Öl och betyg 2026-09-07
+
+- [x] `[P1]` Öl som tredje `kind`: går att lägga till (Lägg till, Systembolagets nivå 1 "Öl") och äger plats i både Källaren och Önskelistan, inget drickfönster, ingen öppen-flaska-logik.
+- [x] `[P1]` Eget betygsfält (`rating`, `rating_url`) för sprit och öl, som Vivino inte täcker; `Rating`-komponenten visar det när Vivino-betyget saknas, samma stjärnformat.
+- [x] `[P1]` Önskelistan ombyggd i samma stil som Källaren/Barskåpet: sök, sortering (billigast först som standard), kind- och kategorichips, lista/tabell-växel.
+- [ ] `[P2]` Distiller-import: skrapa Distiller.com per spritsort för allt i sortimentet, spara betyg + länk i en egen databas, koppla till respektive flaska. Väntar på ett uttryckligt ja (research visade: inget officiellt API, bara oofficiella scrapers mot deras ToS).
+
 ## Senare, beslutat uppskjutet
 
 - [ ] `[P2]` Firebase Auth som Beefcake, användare kopplade till `household_id` (beslut 2).

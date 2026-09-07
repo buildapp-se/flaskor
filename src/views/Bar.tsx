@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { Drink, DrinkPatch, OpenLevel } from '../../shared/types.ts'
 import { kr } from '../format.ts'
 import { detailPath, navigate } from '../hash.ts'
+import { Rating } from '../components/Rating.tsx'
 import { IconArrow, IconChevron, IconMinus, IconPlus, IconSearch } from '../icons.tsx'
 import { usePersisted } from '../persist.ts'
 import { compare, DEFAULT_DIR, valueOf, type SortDir, type SortKey } from '../sort.ts'
@@ -13,7 +14,7 @@ import { CellarTable, type ColumnKey } from './CellarTable.tsx'
 // Barskåpet: samma mönster som Källaren (sök, chips, sorterbar tabell, kryssrutor, massåtgärder),
 // men filtrerat på spritsort istället för drick-år, som saknar mening för sprit.
 
-const BAR_COLUMNS: ColumnKey[] = ['name', 'category', 'count', 'price', 'total', 'open_level', 'note', 'source']
+const BAR_COLUMNS: ColumnKey[] = ['name', 'category', 'count', 'price', 'total', 'open_level', 'vivino', 'note', 'source']
 const BAR_HIDDEN_AT_START: ColumnKey[] = ['note', 'source']
 const BAR_SORTS = Object.keys(S.bar.sort) as ReadonlyArray<keyof typeof S.bar.sort>
 
@@ -186,7 +187,10 @@ export function SpiritCard({ drink, onPatch, muted = false }: { drink: Drink; on
         <Bottle url={drink.image_url} size="sm" />
         <div className="fl-spirit__main" onClick={() => navigate(detailPath(drink.id))}>
           <div className="fl-spirit__name">{drink.name}</div>
-          <div className="fl-spirit__line">{line}</div>
+          <div className="fl-spirit__line">
+            {line}
+            <Rating drink={drink} count />
+          </div>
         </div>
         {drink.count > 0 && (
           <button className="fl-btn fl-btn--sm fl-btn--secondary" onClick={openOne}>

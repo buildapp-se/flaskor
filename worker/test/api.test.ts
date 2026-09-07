@@ -54,7 +54,8 @@ describe('drinks', () => {
   })
   it('avvisar okända värden och saknat namn', async () => {
     expect((await api('POST', '/api/drinks', { kind: 'wine' })).status).toBe(400)
-    expect((await api('POST', '/api/drinks', { kind: 'beer', name: 'x' })).status).toBe(400)
+    expect((await api('POST', '/api/drinks', { kind: 'mjöd', name: 'x' })).status).toBe(400)
+    expect((await api('POST', '/api/drinks', { kind: 'beer', name: 'Pilsner', owned: true, count: 1 })).status).toBe(200)
     expect((await api('POST', '/api/drinks', { kind: 'wine', name: 'x', count: 'två' })).status).toBe(400)
   })
   it('okänt id: 404', async () => {

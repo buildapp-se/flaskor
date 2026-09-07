@@ -1,6 +1,6 @@
 // Datamodellen enligt CONTEXT.md: en tabell drink, en modell för vin och sprit (beslut 3).
 
-export type Kind = 'wine' | 'spirit'
+export type Kind = 'wine' | 'spirit' | 'beer'
 export type SourceKind = 'systembolaget' | 'caviste' | 'manual'
 export type Availability = 'in_stock' | 'temporarily_out' | 'discontinued' | 'unknown'
 /** Fjärdedelar kvar i den öppnade flaskan (beslut 14). null: ingen öppnad. */
@@ -44,6 +44,9 @@ export interface Drink {
   vivino_count: number | null
   vivino_url: string | null
   vivino_checked_at: string | null
+  /** Eget eller importerat betyg för sprit och öl (Vivino täcker bara vin), 1 till 5, med länk till källan. */
+  rating: number | null
+  rating_url: string | null
   created_at: string
   updated_at: string
 }
