@@ -36,6 +36,7 @@ export function Detail({ id }: { id: number }) {
     .join(' · ')
   const parent = spirit ? { path: PATHS.bar, label: S.nav.bar } : drink.owned ? { path: PATHS.cellar, label: S.nav.cellar } : { path: PATHS.wishlist, label: S.nav.wishlist }
   const vivino = `https://www.vivino.com/search/wines?q=${encodeURIComponent(drink.name)}`
+  const distiller = `https://distiller.com/search?term=${encodeURIComponent(drink.name)}`
 
   async function doRefresh() {
     setRefreshing(true)
@@ -161,9 +162,9 @@ export function Detail({ id }: { id: number }) {
               <IconExternal />
             </a>
           )}
-          {!wine && drink.rating !== null && drink.rating_url && (
-            <a className="fl-link fl-small" href={drink.rating_url} target="_blank" rel="noreferrer">
-              {S.detail.ownRated(String(drink.rating).replace('.', ','))}
+          {!wine && (
+            <a className="fl-link fl-small" href={drink.rating_url ?? distiller} target="_blank" rel="noreferrer">
+              {drink.rating !== null ? S.detail.ownRated(String(drink.rating).replace('.', ',')) : S.detail.distiller}
               <IconExternal />
             </a>
           )}

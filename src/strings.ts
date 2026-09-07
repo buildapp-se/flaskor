@@ -136,6 +136,7 @@ export const S = {
     systembolaget: 'Visa på Systembolaget',
     caviste: 'Visa på Caviste',
     vivino: 'Sök på Vivino',
+    distiller: 'Sök på Distiller',
     vivinoRated: (rating: string, votes: number | null) => (votes === null ? `★ ${rating} på Vivino` : `★ ${rating} på Vivino (${votes} röster)`),
     ownRated: (rating: string) => `★ ${rating}, visa betyget`,
     refreshVivino: 'Uppdatera Vivino-betyg',
