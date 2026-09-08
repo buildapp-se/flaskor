@@ -1,15 +1,17 @@
 ---
 schemaVersion: 1
 status: active
-currentGoal: Öl som tredje kind, eget betygsfält för sprit/öl, Önskelistan ombyggd i Källarens/Barskåpets stil, byggt 2026-09-07. Distiller-importen (bulk-skrapa alla spritsorter till en egen databas) väntar på ett uttryckligt ja.
-nextAction: Patrik säger ja eller nej på Distiller-importen (BACKLOG §Öl och betyg 2026-09-07). Under tiden: prova Öl-flödet live och skriv in ett eget betyg på en sprit.
+currentGoal: Streckkod och etikettfoto för att lägga till (backlog 37), byggt och deployat 2026-09-08. Distiller-importen väntar fortfarande på ett uttryckligt ja.
+nextAction: Patrik fotar riktiga flaskor i barskåpet med telefonen och ser om rätt Systembolagsprodukt hamnar bland de tre kandidaterna. Sedan ja eller nej på Distiller-importen.
 blockers: []
-reviewedAt: 2026-09-07
+reviewedAt: 2026-09-08
 ---
 
 # Handoff: Flaskor
 
-Senast uppdaterad: 2026-09-07, öl som tredje kind, eget betygsfält (`rating`, `rating_url`) för sprit och öl, Önskelistan ombyggd i samma stil som Källaren/Barskåpet. Verifierat lokalt: `tsc -b`, 40 enhetstester, 17 Worker-tester (migrering 0003 mot lokal D1), `wrangler deploy --dry-run`, och manuellt i Chromium mot `vite dev` + `wrangler dev`: lade till ett öl med eget betyg och länk, såg det landa i Källaren (inte Barskåpet) utan drickfönster-piller, betyget synas på raden och i detaljvyn, Önskelistans nya tabell/lista-växel, sedan borttaget igen. Live: migrering 0003 körd i molnet, Worker deployad (version `569ce9a6`, `/health` 200), GitHub Pages-workflowkörningen grön, commit `729f884`.
+Senast uppdaterad: 2026-09-08, streckkod och etikettfoto (backlog 37, beslut 15 återöppnat). `POST /api/scan` tar foto och/eller streckkod, svarar med en gissning och upp till tre Systembolagskandidater. Verifierat lokalt: `tsc -b`, 40 enhetstester, 30 Worker-tester, `wrangler deploy --dry-run`, och i Chromium på 390 och 1 280 px mot `vite dev` + `wrangler dev`: streckkod i rutan gav tre Absolut-kandidater, ett tryck hämtade hela raden med pris, ursprung, mat och smak; foto på ett vin gav Blanc före Rosé och Rouge; "Ingen av dessa" gav formuläret förifyllt med namn, producent, årgång och kategori ur etiketten. Live: Worker deployad (version `768e938a`, `/health` 200) och de tre vägarna körda mot molnet med riktiga foton, 1 till 2,3 sekunder per anrop. Commit `6ac1350`.
+
+Tidigare: 2026-09-07, öl som tredje kind, eget betygsfält (`rating`, `rating_url`) för sprit och öl, Önskelistan ombyggd i samma stil som Källaren/Barskåpet. Verifierat lokalt: `tsc -b`, 40 enhetstester, 17 Worker-tester (migrering 0003 mot lokal D1), `wrangler deploy --dry-run`, och manuellt i Chromium mot `vite dev` + `wrangler dev`: lade till ett öl med eget betyg och länk, såg det landa i Källaren (inte Barskåpet) utan drickfönster-piller, betyget synas på raden och i detaljvyn, Önskelistans nya tabell/lista-växel, sedan borttaget igen. Live: migrering 0003 körd i molnet, Worker deployad (version `569ce9a6`, `/health` 200), GitHub Pages-workflowkörningen grön, commit `729f884`.
 
 Tidigare: bulkimport, massåtgärder, visa slut och sorteringens plats live (Worker `bfc28ed5`, commit `00e2531`).
 
@@ -62,6 +64,17 @@ Chunk-läge 2026-09-06 (önskelistan). Säg till om något ska ändras.
 - **CellarTable fick två nya valfria props** (`onShowZero`, `onRewish`) i stället för required: Önskelistan återanvänder samma tabellkomponent för sin tabellvy men har varken "Visa slut" (allt där har alltid 0 flaskor) eller "Lägg på önskelistan igen" (det är redan listan). Utelämnas propen döljs kontrollen.
 - **Migrering 0003 bygger om `drink`-tabellen** (SQLite kan inte ändra en `CHECK`), inte bara `ALTER TABLE ADD COLUMN`. Kör `npm run db:migrate:remote` innan Workern deployas, annars svarar `POST /api/drinks` med `kind: beer` 500 (CHECK-krock) mot molnets gamla schema.
 - **Distiller-skrapningen är medvetet inte byggd än**, väntar på ett uttryckligt ja (se BACKLOG §Öl och betyg 2026-09-07 och research-svaret i chatten): ToS-risk och underhållsbörda för en scraper mot en sajt utan officiellt API.
+
+## Val tagna åt Patrik, 2026-09-08 (streckkod och etikett)
+
+- **Gemini i stället för Workers AI.** Google AI Pro är en konsumentprenumeration utan API-åtkomst, men AI Studios gratisnivå räcker (cirka 1 500 anrop per dygn). Nyckeln ligger under Firebase-projektet `flaskor-d3762`, samma projekt som Auth ska använda senare. En backend mindre än Workers AI, och tydligt bättre etikettläsning än Gemma 4.
+- **Flash-Lite, inte de stora Flash-modellerna.** Att läsa bokstäver från en etikett behöver ingen tankekedja: `gemini-3.5-flash-lite` svarar på cirka en sekund och läste båda testflaskorna rätt, medan 3.8 Flash tog 10 till 25 sekunder på samma bild och lade till fel (den tappade "Absolut" ur namnet). `gemini-flash-lite-latest` är reserv när kvoten tar slut eller modellen är överbelastad.
+- **Kandidatval, inte automatisk matchning.** Systembolaget säljer samma vodka i tre volymer och samma vin i tre färger, och etiketten säger inte alltid vilken. Tre kandidater med flaskfoto, volym och pris, ett tryck väljer. Automatik hade gissat fel tyst.
+- **Kategorin väger tyngre än årgången i rankningen** (+2 mot +1). Kom ur ett riktigt fel: Excellence Rosé rankades före Blanc för att Gemini läst 2024 på en Blanc-flaska som Systembolaget listar som 2023, och rosén råkade ha 2024. Färgen syns säkert på etiketten, årgången inte.
+- **Open Food Facts som brygga för streckkoden.** Systembolagets API känner inte till EAN alls (verifierat: `barcode=` och `gtin=` ignoreras, `textQuery` med en kod ger noll träffar). Open Food Facts är gratis och nyckelfritt, täcker sprit och öl bra, vin dåligt. Okänd kod med foto faller tillbaka på etiketten, utan foto blir det 404 och texten ber om ett foto.
+- **`BarcodeDetector` bara där den finns.** Android Chrome läser koden ur fotot direkt i webbläsaren, iPhone saknar den (trasig i WebKit sedan iOS 18) och får i stället Geminis läsning av siffrorna, eller inskrivning i rutan. Ingen WASM-läsare på 1 MB för det.
+- **Fotot krymps till 1 280 px JPEG i webbläsaren** innan det skickas, roterat enligt EXIF. En telefonbild på 4 MB blir cirka 200 kB, och Workern avvisar allt över 3 MB base64.
+- **`SB_API_KEY` är Systembolagets publika frontendnyckel**, hittad i klartext i det publika repot `oliverlevay/barcode-to-kcal`, inte utgrävd ur deras bundle. Den ligger som secret eftersom repot är publikt. Saknas den svarar skanningen ändå, men utan kandidater.
 
 ## Fällor
 
