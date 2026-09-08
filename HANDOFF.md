@@ -2,14 +2,23 @@
 schemaVersion: 1
 status: active
 currentGoal: Streckkod och etikettfoto för att lägga till (backlog 37), byggt och deployat 2026-09-08. Distiller-importen väntar fortfarande på ett uttryckligt ja.
-nextAction: Patrik fotar riktiga flaskor i barskåpet med telefonen och ser om rätt Systembolagsprodukt hamnar bland de tre kandidaterna. Sedan ja eller nej på Distiller-importen.
+nextAction: Patrik skannar om samma flaskor som missade i första omgången (matchningen rättad, 12 av 12 rätt bland kandidaterna i mätning mot skarpa data). Sedan ja eller nej på Distiller-importen.
 blockers: []
 reviewedAt: 2026-09-08
 ---
 
 # Handoff: Flaskor
 
-Senast uppdaterad: 2026-09-08, streckkod och etikettfoto (backlog 37, beslut 15 återöppnat). `POST /api/scan` tar foto och/eller streckkod, svarar med en gissning och upp till tre Systembolagskandidater. Verifierat lokalt: `tsc -b`, 40 enhetstester, 30 Worker-tester, `wrangler deploy --dry-run`, och i Chromium på 390 och 1 280 px mot `vite dev` + `wrangler dev`: streckkod i rutan gav tre Absolut-kandidater, ett tryck hämtade hela raden med pris, ursprung, mat och smak; foto på ett vin gav Blanc före Rosé och Rouge; "Ingen av dessa" gav formuläret förifyllt med namn, producent, årgång och kategori ur etiketten. Live: Worker deployad (version `768e938a`, `/health` 200) och de tre vägarna körda mot molnet med riktiga foton, 1 till 2,3 sekunder per anrop. Commit `6ac1350`.
+Senast uppdaterad: 2026-09-08 (andra omgången), matchningen mot Systembolaget rättad efter Patriks första skanning: streckkod träffade 2 av 3, foto 0 av 3, och en träff saknade flaskbild. Fyra rotorsaker, alla belagda med riktiga anrop och fixade i `worker/src/scan.ts` (commit `c4e1149`, Worker `eb848030`):
+
+1. **Söket kräver att alla ord matchar.** Ett fullständigt etikettnamn ger därför noll träffar ("Jack Daniel's Old No. 7 Tennessee Whiskey": 0, "Jack Daniel's": 13). Nu körs tre frågor samtidigt, från hela namnet till bara märket, och träffarna slås ihop. En ratad fråga (429, vanligt när flera flaskor skannas tätt) sänker inte längre hela skanningen.
+2. **Diakriter bryter söket.** "Kahlúa" ger noll träffar, "Kahlua" ger åtta. Sökfrågan skickas utan dem.
+3. **Rankningen belönade längd.** Fler matchade ord vann, så "Jack Daniel's Tennessee Honey" slog originalet. Nu vägs likheten åt båda håll (Dice på unika ord) och produkttypsord räknas inte (`STOP` i `scan.ts`). Ensiffriga och tvåsiffriga tal räknas däremot: "The Glenlivet 12 Years" och "21 Years Old" skiljs bara av dem.
+4. **`images` är tom för en del varor.** Den gissade bildadressen blev en trasig ruta i stället för designens platshållare. Gäller både kandidatlistan och den sparade raden (`toPreview` via `Product.hasImage`).
+
+Mätt på tolv riktiga spritflaskor mot skarpa data: rätt produkt bland de tre i 12 av 12, överst i 10 av 12 (Kahlúa och Cointreau hamnar tvåa). Verifierat: `tsc -b`, 40 enhetstester, 38 Worker-tester, `wrangler deploy --dry-run`, foto- och streckkodsflödet i Chromium mot `vite dev`, och alla tre vägarna mot molnets Worker efter deploy. Fixen rör bara `worker/`, så frontendbundeln är oförändrad sedan `6ac1350`.
+
+Första omgången samma dag, streckkod och etikettfoto (backlog 37, beslut 15 återöppnat): `POST /api/scan` tar foto och/eller streckkod, svarar med en gissning och upp till tre Systembolagskandidater. Verifierat lokalt: `tsc -b`, 40 enhetstester, 30 Worker-tester, `wrangler deploy --dry-run`, och i Chromium på 390 och 1 280 px mot `vite dev` + `wrangler dev`: streckkod i rutan gav tre Absolut-kandidater, ett tryck hämtade hela raden med pris, ursprung, mat och smak; foto på ett vin gav Blanc före Rosé och Rouge; "Ingen av dessa" gav formuläret förifyllt med namn, producent, årgång och kategori ur etiketten. Live: Worker deployad (version `768e938a`, `/health` 200) och de tre vägarna körda mot molnet med riktiga foton, 1 till 2,3 sekunder per anrop. Commit `6ac1350`.
 
 Tidigare: 2026-09-07, öl som tredje kind, eget betygsfält (`rating`, `rating_url`) för sprit och öl, Önskelistan ombyggd i samma stil som Källaren/Barskåpet. Verifierat lokalt: `tsc -b`, 40 enhetstester, 17 Worker-tester (migrering 0003 mot lokal D1), `wrangler deploy --dry-run`, och manuellt i Chromium mot `vite dev` + `wrangler dev`: lade till ett öl med eget betyg och länk, såg det landa i Källaren (inte Barskåpet) utan drickfönster-piller, betyget synas på raden och i detaljvyn, Önskelistans nya tabell/lista-växel, sedan borttaget igen. Live: migrering 0003 körd i molnet, Worker deployad (version `569ce9a6`, `/health` 200), GitHub Pages-workflowkörningen grön, commit `729f884`.
 
