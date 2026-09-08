@@ -1,7 +1,7 @@
 import { FatalError, NotFoundError, TransientError } from '../../shared/errors.ts'
 import type { Candidate, Kind, LabelGuess } from '../../shared/types.ts'
 import { imageUrl } from './systembolaget.ts'
-import { queryFor, tokens } from './vivino.ts'
+import { queryFor } from './vivino.ts'
 
 // Streckkod och etikett (BACKLOG 37, 2026-09-08). Systembolaget känner inte till EAN (verifierat: textQuery på en
 // streckkod ger noll träffar, barcode= och gtin= ignoreras), så vägen är: streckkod → Open Food Facts → namn, eller
@@ -184,11 +184,56 @@ export function searchUrl(query: string): string {
   return `https://api-extern.systembolaget.se/sb-api-ecommerce/v1/productsearch/search?page=1&size=10&sortBy=Score&sortDirection=Ascending&textQuery=${encodeURIComponent(query)}`
 }
 
+/**
+ * Produkttyper och fyllnadsord som står på etiketten men inte i Systembolagets namn.
+ * Utan den här listan vinner "Jack Daniel's Tennessee Honey" över originalet "Jack Daniel's", eftersom etiketten
+ * säger "Tennessee Whiskey" och originalet inte gör det (verifierat mot riktiga produkter 2026-09-08).
+ * Orden tas bort från båda sidor, så ett märke som heter ett av dem tappar bara sin poäng, aldrig sin plats.
+ */
+const STOP = new Set([
+  'whisky', 'whiskey', 'bourbon', 'scotch', 'tennessee', 'single', 'malt', 'blended', 'rye', 'gin', 'vodka', 'rom', 'rum', 'anejo',
+  'tequila', 'mezcal', 'likor', 'liqueur', 'liquor', 'cream', 'coffee', 'kaffe', 'aperitivo', 'aperitif', 'bitter', 'bitters',
+  'vin', 'wine', 'vino', 'wein', 'dry', 'london', 'old', 'years', 'year', 'ars', 'ano', 'anos', 'distillery', 'destilleri',
+  'company', 'brothers', 'the', 'and', 'och', 'triple', 'sec', 'original', 'reserve', 'premium', 'edition', 'classic', 'extra',
+  'fine', 'pure', 'natural', 'imported', 'produce', 'product',
+])
+
+/** Diakriter bort: Systembolagets sök ger noll träffar på "Kahlúa" men åtta på "Kahlua" (verifierat 2026-09-08). */
+export function strip(s: string): string {
+  return s.normalize('NFD').replace(/[̀-ͯ]/g, '')
+}
+
+/**
+ * Jämförelseord: gemener utan diakriter, minst tre tecken eller ett rent en- till tvåsiffrigt tal, utan produkttypsord.
+ * Talen måste med: "The Glenlivet 12 Years" och "21 Years Old" skiljs bara av siffran.
+ */
+export function terms(s: string): string[] {
+  return strip(s)
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter((t) => t !== '' && (t.length >= 3 || /^\d{1,2}$/.test(t)) && !/^(19|20)\d{2}$/.test(t) && !STOP.has(t))
+}
+
+/**
+ * Sökfrågorna, från hela namnet till bara märket. Systembolagets sök kräver att alla ord finns, så ett fullständigt
+ * etikettnamn ger ofta noll träffar ("Jack Daniel's Old No. 7 Tennessee Whiskey": 0, "Jack Daniel's": 13).
+ * Alla körs och träffarna slås ihop, i stället för att stanna vid den första som svarar: den kan vara en dålig granne
+ * ("Aperol Aperitivo" ger bara "Apéro Aperitif", medan "Aperol" ger rätt flaska).
+ */
+export function queries(guess: LabelGuess): string[] {
+  const words = strip(queryFor(guess)).split(/\s+/).filter(Boolean)
+  return [...new Set([words.join(' '), words.slice(0, 2).join(' '), words[0] ?? ''].filter((q) => q !== ''))]
+}
+
 interface SearchBody {
   products?: Record<string, unknown>[]
 }
 
-/** Träffarna ur sök-API:ts svar. Bilden byggs av productId som på produktsidan (samma CDN, frilagd flaska). */
+/**
+ * Träffarna ur sök-API:ts svar. Bilden byggs av productId som på produktsidan (samma CDN, frilagd flaska), men bara
+ * när produkten har en bild: `images` är tom för en del varor, och då är den gissade adressen en 404 som visas som
+ * en trasig ruta i stället för designens platshållare (upptäckt i Patriks första skanning 2026-09-08).
+ */
 export function parseSearch(json: unknown): Candidate[] {
   const products = (json as SearchBody)?.products
   if (!Array.isArray(products)) throw new FatalError('systembolaget search answered without products', 502)
@@ -202,11 +247,16 @@ export function parseSearch(json: unknown): Candidate[] {
       volume_ml: num(p['volume']),
       price: num(p['price']),
       vintage: num(p['vintage']),
-      image_url: p['productId'] === undefined || p['productId'] === null ? null : imageUrl(String(p['productId'])),
+      image_url: hasImage(p['images']) && p['productId'] !== undefined && p['productId'] !== null ? imageUrl(String(p['productId'])) : null,
     }))
 }
 
-export async function searchProducts(query: string, apiKey: string): Promise<Candidate[]> {
+/** Sant när Systembolaget faktiskt har ett flaskfoto för varan. */
+export function hasImage(images: unknown): boolean {
+  return Array.isArray(images) && images.length > 0
+}
+
+async function searchOnce(query: string, apiKey: string): Promise<Candidate[]> {
   let response: Response
   try {
     response = await fetch(searchUrl(query), { headers: { 'ocp-apim-subscription-key': apiKey, accept: 'application/json' } })
@@ -220,18 +270,40 @@ export async function searchProducts(query: string, apiKey: string): Promise<Can
 }
 
 /**
- * De tre bästa träffarna: ordöverlapp med gissningen, plus volym, kategori och årgång när de stämmer.
+ * Alla sökfrågor för gissningen, körda samtidigt och sammanslagna. Första träffen på ett artikelnummer vinner.
+ * En enskild fråga får misslyckas: Systembolaget svarar 429 när flera flaskor skannas tätt (sett 2026-09-08), och
+ * två frågor av tre räcker gott. Bara när ingen fråga gick fram kastas felet vidare.
+ */
+export async function searchProducts(guess: LabelGuess, apiKey: string): Promise<Candidate[]> {
+  const rounds = await Promise.allSettled(queries(guess).map((q) => searchOnce(q, apiKey)))
+  const ok = rounds.filter((r): r is PromiseFulfilledResult<Candidate[]> => r.status === 'fulfilled')
+  if (ok.length === 0) {
+    const first = rounds[0]
+    throw first && first.status === 'rejected' ? first.reason : new TransientError('systembolaget search failed')
+  }
+  for (const r of rounds) if (r.status === 'rejected') console.error('search query failed', r.reason)
+  const seen = new Set<string>()
+  return ok.flatMap((r) => r.value).filter((c) => !seen.has(c.number) && seen.add(c.number))
+}
+
+/**
+ * De tre bästa träffarna. Poängen är hur lika namnen är åt båda håll (Dice), inte hur många ord som råkar finnas i
+ * kandidaten: annars vinner alltid den längsta produkten, eftersom fler ord ger fler chanser att träffa.
  * Kategorin väger tyngre än årgången: färgen på ett vin syns säkert på etiketten, årgången läses ofta fel
  * (2026-09-08 rankades Excellence Rosé före Blanc för att den delade den felästa årgången). Lika poäng: sökmotorns ordning.
  */
 export function rank(candidates: Candidate[], guess: LabelGuess): Candidate[] {
-  const wanted = tokens(queryFor(guess))
-  const categoryWords = guess.category ? tokens(guess.category) : []
+  // Unika ord på båda sidor: producenten upprepar ofta märket ("The Absolut Company" plus "Absolut Vodka"),
+  // och ett dubblerat ord ska varken belöna eller straffa en kandidat.
+  const wanted = [...new Set(terms(queryFor(guess)))]
+  const categoryWords = guess.category ? terms(guess.category) : []
   const score = (c: Candidate): number => {
-    const have = new Set(tokens(`${c.producer ?? ''} ${c.name}`))
-    let s = wanted.filter((t) => have.has(t)).length
+    const have = [...new Set(terms(`${c.producer ?? ''} ${c.name}`))]
+    const set = new Set(have)
+    const shared = wanted.filter((t) => set.has(t)).length
+    let s = wanted.length + have.length === 0 ? 0 : (20 * shared) / (wanted.length + have.length)
     if (guess.volume_ml !== null && c.volume_ml === guess.volume_ml) s += 2
-    if (c.category && categoryWords.length > 0 && tokens(c.category).some((t) => categoryWords.includes(t))) s += 2
+    if (c.category && categoryWords.length > 0 && terms(c.category).some((t) => categoryWords.includes(t))) s += 2
     if (guess.vintage !== null && c.vintage === guess.vintage) s += 1
     return s
   }

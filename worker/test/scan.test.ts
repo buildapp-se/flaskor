@@ -1,7 +1,7 @@
 import { SELF } from 'cloudflare:test'
 import { describe, expect, it } from 'vitest'
 import type { LabelGuess, ScanResult } from '../../shared/types.ts'
-import { normalizeEan, parseGuess, parseSearch, parseVolume, rank, validEan } from '../src/scan.ts'
+import { normalizeEan, parseGuess, parseSearch, parseVolume, queries, rank, terms, validEan } from '../src/scan.ts'
 // Testerna kör inne i workerd utan filsystem, så fixturen importeras i stället för att läsas.
 import fixture from './fixtures/sb-search-absolut.json'
 
@@ -49,6 +49,29 @@ describe('Geminis svar', () => {
   })
 })
 
+describe('sökord och sökfrågor (Patriks första skanning 2026-09-08)', () => {
+  it('produkttypsord och fyllnadsord räknas inte', () => {
+    expect(terms("Jack Daniel's Old No. 7 Tennessee Whiskey")).toEqual(['jack', 'daniel', '7'])
+    expect(terms('The Glenlivet 12 Year Old Single Malt Scotch Whisky')).toEqual(['glenlivet', '12'])
+  })
+  it('siffror som skiljer flaskor åt behålls, årtal räknas inte', () => {
+    expect(terms('The Glenlivet 21 Years Old')).toContain('21')
+    expect(terms('Barolo 2019')).toEqual(['barolo'])
+  })
+  it('diakriter tas bort: Systembolagets sök hittar Kahlua men inte Kahlúa', () => {
+    expect(terms('Kahlúa Añejo')).toEqual(['kahlua'])
+    expect(queries({ ...absolut, producer: 'Kahlúa', name: 'Coffee Liqueur' })).toContain('Kahlua Coffee Liqueur')
+  })
+  it('frågorna går från hela namnet till bara märket, utan dubbletter', () => {
+    expect(queries({ ...absolut, producer: "Jack Daniel's", name: 'Old No. 7 Tennessee Whiskey' })).toEqual([
+      "Jack Daniel's Old No. 7 Tennessee Whiskey",
+      "Jack Daniel's",
+      'Jack',
+    ])
+    expect(queries({ ...absolut, producer: 'Aperol', name: 'Aperol' })).toEqual(['Aperol'])
+  })
+})
+
 describe('Systembolagets sök', () => {
   it('träffarna blir kandidater med bild ur productId', () => {
     const c = parseSearch(fixture)
@@ -62,6 +85,30 @@ describe('Systembolagets sök', () => {
     expect(rank(c, { ...absolut, volume_ml: 350 })[0]!.number).toBe('8802')
     expect(rank(c, absolut).map((x) => x.number)).toEqual(['8801', '8802', '8804'])
     expect(rank(c, { ...absolut, name: 'Elyx' })[0]!.number).toBe('8650801')
+  })
+  it('varor utan bild hos Systembolaget får ingen gissad bildadress', () => {
+    const [withImage, without] = parseSearch({
+      products: [
+        { productNumber: '1', productNameBold: 'Med bild', productId: '164', images: [{ imageUrl: 'x', fileType: 'png' }] },
+        { productNumber: '2', productNameBold: 'Utan bild', productId: '58719942', images: [] },
+      ],
+    })
+    expect(withImage!.image_url).toBe('https://product-cdn.systembolaget.se/productimages/164/164_200.webp')
+    expect(without!.image_url).toBeNull()
+  })
+  it('originalet slås inte ut av en längre variant med fler ord', () => {
+    const bas = { producer: "Jack Daniel's", category: 'Whisky', volume_ml: 700, price: 349, vintage: null, image_url: null }
+    const original = { ...bas, number: '58501', name: "Jack Daniel's" }
+    const honey = { ...bas, number: '8811', name: "Jack Daniel's Tennessee Honey" }
+    const guess: LabelGuess = { kind: 'spirit', name: 'Old No. 7 Tennessee Whiskey', producer: "Jack Daniel's", category: 'Whisky', vintage: null, volume_ml: null, alcohol: 40, ean: null }
+    expect(rank([honey, original], guess)[0]!.number).toBe('58501')
+  })
+  it('åldern på en whisky avgör: 12 år före 21 år', () => {
+    const bas = { producer: 'Chivas Brothers', category: 'Whisky', volume_ml: 700, price: 449, vintage: null, image_url: null }
+    const tolv = { ...bas, number: '43501', name: 'The Glenlivet 12 Years' }
+    const tjugoett = { ...bas, number: '1049901', name: 'The Glenlivet 21 Years Old' }
+    const guess: LabelGuess = { kind: 'spirit', name: '12 Year Old Single Malt', producer: 'The Glenlivet', category: 'Whisky', vintage: null, volume_ml: null, alcohol: 40, ean: null }
+    expect(rank([tjugoett, tolv], guess)[0]!.number).toBe('43501')
   })
   it('kategorin väger tyngre än årgången: vitt vin före rosé med rätt år', () => {
     const bas = { number: '', name: "Domaine Georges d'Ibry Excellence", producer: "Domaine Saint-Georges d'Ibry", volume_ml: 750, price: 164, image_url: null }
@@ -102,5 +149,10 @@ describe('POST /api/scan', () => {
   })
   it('fel bildformat: 400', async () => {
     expect((await scan({ image: 'http://example.com/x.jpg' })).status).toBe(400)
+  })
+  it('samma artikelnummer från flera sökfrågor räknas en gång', async () => {
+    // Testets Systembolaget svarar likadant på alla tre frågorna, så dedupen är det enda som håller listan kort.
+    const body = await (await scan({ ean: '7312040017034' })).json<ScanResult>()
+    expect(new Set(body.candidates.map((c) => c.number)).size).toBe(body.candidates.length)
   })
 })

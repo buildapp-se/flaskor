@@ -139,12 +139,11 @@ async function scan(body: unknown, env: GateEnv): Promise<ScanResult> {
     via = 'label'
   }
   if (!guess) throw new NotFoundError('unknown barcode')
-  const query = queryFor(guess)
-  const candidates = env.SB_API_KEY ? rank(await searchProducts(query, env.SB_API_KEY), guess) : []
+  const candidates = env.SB_API_KEY ? rank(await searchProducts(guess, env.SB_API_KEY), guess) : []
   let vivino_url: string | null = null
   if (candidates.length === 0 && guess.kind === 'wine') {
     try {
-      vivino_url = (await findVivino(query))?.url ?? null
+      vivino_url = (await findVivino(queryFor(guess)))?.url ?? null
     } catch (error) {
       console.error('vivino lookup failed', error)
     }
