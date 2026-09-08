@@ -38,7 +38,8 @@ export function findHit(html: string): VivinoHit | null {
   return { rating: Number(rating) > 0 ? Number(rating) : null, count: Number(count), url: `https://www.vivino.com/w/${wineId}`, name }
 }
 
-function tokens(s: string): string[] {
+/** Sökord ur en text: gemener utan diakriter, minst tre tecken, årtal borträknade. Delas med skanningens rankning. */
+export function tokens(s: string): string[] {
   return s
     .normalize('NFD')
     .replace(/[̀-ͯ]/g, '')

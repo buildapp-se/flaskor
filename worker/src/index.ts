@@ -1,11 +1,14 @@
 import { FatalError, NotFoundError, TransientError, UnauthorizedError } from '../../shared/errors.ts'
-import type { Drink, DrinkPatch, Preview } from '../../shared/types.ts'
+import type { Drink, DrinkPatch, LabelGuess, Preview, ScanResult } from '../../shared/types.ts'
 import { deleteDrink, getDrink, insertDrink, listDrinks, sanitize, updateDrink } from './db.ts'
+import { findByEan, normalizeEan, rank, readLabel, searchProducts, validEan } from './scan.ts'
 import { fetchProduct, parseProductNumber, toPreview } from './systembolaget.ts'
 import { fetchWine, findVivino, parseVivinoUrl, parseWinePage, queryFor, vivinoDue, vivinoPatch, vivinoToPreview } from './vivino.ts'
 
 // Grindkoden (beslut 2): en delad kod, skickad som Bearer, jämförd mot secreten GATE_CODE. Sitter här, aldrig bara i klienten.
-type GateEnv = Env & { GATE_CODE?: string }
+// GEMINI_API_KEY och SB_API_KEY (2026-09-08) är secrets för skanningen: saknas Gemini svarar /api/scan 500 på foton,
+// saknas Systembolagsnyckeln blir kandidatlistan tom och användaren får fylla i själv.
+type GateEnv = Env & { GATE_CODE?: string; GEMINI_API_KEY?: string; SB_API_KEY?: string }
 
 /** Nattens tak (beslut 23): så många artikelnummer hämtas per körning. */
 const NIGHTLY_CAP = 50
@@ -49,6 +52,7 @@ async function route(request: Request, env: GateEnv): Promise<unknown> {
   if (method === 'GET' && path === '/api/drinks') return { drinks: await listDrinks(env.DB) }
   if (method === 'POST' && path === '/api/drinks') return insertDrink(env.DB, await withVivino(sanitize(await request.json())))
   if (method === 'POST' && path === '/api/refresh-all') return refreshAll(env.DB)
+  if (method === 'POST' && path === '/api/scan') return scan(await request.json(), env)
 
   const single = path.match(/^\/api\/drinks\/(\d+)$/)
   if (single?.[1] && method === 'PATCH') return updateDrink(env.DB, Number(single[1]), sanitize(await request.json()))
@@ -112,6 +116,40 @@ async function withVivino(input: DrinkPatch): Promise<DrinkPatch> {
     console.error('vivino lookup failed', error)
     return input
   }
+}
+
+/**
+ * Streckkod eller etikett (BACKLOG 37): först en gissning om flaskan (Open Food Facts för streckkoden, Gemini för fotot),
+ * sedan Systembolagets bästa träffar på namnet som kandidater. Vin utan träff får Vivinos vinsida så klienten kan hämta den.
+ */
+async function scan(body: unknown, env: GateEnv): Promise<ScanResult> {
+  const { image, ean } = (typeof body === 'object' && body !== null ? body : {}) as { image?: unknown; ean?: unknown }
+  if (typeof image !== 'string' && typeof ean !== 'string') throw new FatalError('image or ean required')
+  let guess: LabelGuess | null = null
+  let via: ScanResult['via'] = 'label'
+  if (typeof ean === 'string' && ean.trim() !== '') {
+    const code = normalizeEan(ean)
+    if (!validEan(code)) throw new FatalError('not a valid barcode')
+    guess = await findByEan(code)
+    via = 'barcode'
+  }
+  if (!guess && typeof image === 'string' && image !== '') {
+    if (!env.GEMINI_API_KEY) throw new FatalError('GEMINI_API_KEY is not configured', 500)
+    guess = await readLabel(image, env.GEMINI_API_KEY)
+    via = 'label'
+  }
+  if (!guess) throw new NotFoundError('unknown barcode')
+  const query = queryFor(guess)
+  const candidates = env.SB_API_KEY ? rank(await searchProducts(query, env.SB_API_KEY), guess) : []
+  let vivino_url: string | null = null
+  if (candidates.length === 0 && guess.kind === 'wine') {
+    try {
+      vivino_url = (await findVivino(query))?.url ?? null
+    } catch (error) {
+      console.error('vivino lookup failed', error)
+    }
+  }
+  return { guess, candidates, vivino_url, via }
 }
 
 /** Uppdatera-knappen: Systembolagets pris, tillgänglighet och (för önskelistan) årgång (beslut 23), och Vivinos betyg för vin. */

@@ -11,7 +11,7 @@ export default defineConfig({
       wrangler: { configPath: './wrangler.jsonc' },
       miniflare: {
         d1Databases: ['DB'],
-        bindings: { TEST_MIGRATIONS: migrations, GATE_CODE: 'test-kod' },
+        bindings: { TEST_MIGRATIONS: migrations, GATE_CODE: 'test-kod', GEMINI_API_KEY: 'test-gemini', SB_API_KEY: 'test-sb' },
         // Inget test får nå internet. Systembolaget svarar ur fixturerna, allt annat är ett fel.
         async outboundService(request) {
           const url = new URL(request.url)
@@ -36,6 +36,25 @@ export default defineConfig({
               }
             }
             return new Response(await readFile('worker/test/fixtures/vivino-le-grappin.html', 'utf8'), { headers: { 'content-type': 'text/html' } })
+          }
+          // Skanningen (BACKLOG 37): Open Food Facts ur fixtur per streckkod, Systembolagets sök svarar alltid Absolut,
+          // Gemini läser alltid "Absolut Vodka". Båda API:erna kräver att testnyckeln följer med.
+          if (url.hostname === 'world.openfoodfacts.org') {
+            const ean = url.pathname.match(/\/product\/(\d+)\.json$/)?.[1]
+            try {
+              return new Response(await readFile(`worker/test/fixtures/off-${ean}.json`, 'utf8'), { headers: { 'content-type': 'application/json' } })
+            } catch {
+              return Response.json({ status: 0, status_verbose: 'product not found' }, { status: 404 })
+            }
+          }
+          if (url.hostname === 'api-extern.systembolaget.se') {
+            if (request.headers.get('ocp-apim-subscription-key') !== 'test-sb') return new Response('no key', { status: 401 })
+            return new Response(await readFile('worker/test/fixtures/sb-search-absolut.json', 'utf8'), { headers: { 'content-type': 'application/json' } })
+          }
+          if (url.hostname === 'generativelanguage.googleapis.com') {
+            if (request.headers.get('x-goog-api-key') !== 'test-gemini') return new Response('no key', { status: 403 })
+            const text = JSON.stringify({ kind: 'spirit', producer: 'Absolut', name: 'Absolut Vodka', category: 'Vodka', vintage: null, volume_ml: 700, alcohol: 40, ean: null })
+            return Response.json({ candidates: [{ content: { parts: [{ text }] } }] })
           }
           return new Response(`Unexpected outbound request in tests: ${request.url}`, { status: 503 })
         },

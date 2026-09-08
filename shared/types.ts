@@ -57,3 +57,35 @@ export type DrinkPatch = Partial<DrinkInput>
 
 /** Vad Workern svarar med när ett Systembolagsnummer hämtats: en rad utan id, redo att sparas. */
 export type Preview = DrinkInput
+
+/** Vad streckkoden eller etiketten sa om flaskan (BACKLOG 37). Bara det som gick att läsa, resten null. */
+export interface LabelGuess {
+  kind: Kind
+  name: string
+  producer: string | null
+  category: string | null
+  vintage: number | null
+  volume_ml: number | null
+  alcohol: number | null
+  ean: string | null
+}
+
+/** En träff i Systembolagets sök, nog för att välja rätt flaska. Hela raden hämtas sedan med GET /api/systembolaget. */
+export interface Candidate {
+  number: string
+  name: string
+  producer: string | null
+  category: string | null
+  volume_ml: number | null
+  price: number | null
+  vintage: number | null
+  image_url: string | null
+}
+
+/** Svaret på POST /api/scan: gissningen, upp till tre kandidater, och för vin utan träff Vivinos vinsida. */
+export interface ScanResult {
+  guess: LabelGuess
+  candidates: Candidate[]
+  vivino_url: string | null
+  via: 'barcode' | 'label'
+}

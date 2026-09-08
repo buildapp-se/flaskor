@@ -20,7 +20,7 @@ Status per 2026-09-05 kl. 21:20, efter v1-bygget. **beslutad** betyder att beslu
 | 12 | Pillerlogik | grå vänta, grön drick, gul sista 12 månaderna, röd förbi, streckad okänt | byggd |
 | 13 | Tumregeltabell | Kategori gånger prisband, från årgången, konstant i koden (tabellen i CONTEXT.md) | byggd |
 | 14 | Sprit i barskåpet | Antal oöppnade plus en öppnad med nivå i fjärdedelar, plus/minus-knapp | byggd |
-| 15 | Etikettskanning | Inte i v1: Systembolagets data saknar EAN, fotoskanning kräver AI-anrop. Hyllkantens nummer skrivs in. Backlog | uppskjuten |
+| 15 | Etikettskanning | Återöppnad och byggd 2026-09-08, se 37. Skälen föll: gratis EAN-uppslag finns (Open Food Facts) och ett AI-anrop kostar inget på Geminis gratisnivå | byggd |
 | 16 | "Drack en" | Bara minska antalet, ingen ruta, inget betyg. Drucken-logg med betyg i backlog som påminnelse | byggd |
 | 17 | Fälten från Excel | Källa (Systembolaget- eller CAV-nummer med länk), temp, karaffering, mat, inköpspris behålls. Blad 2 stryks | byggd |
 | 18 | Språk | Svenska nu, engelska senare; alla strängar i en ordbok från dag ett | byggd |
@@ -55,4 +55,4 @@ Begärda av Patrik i klartext 2026-09-06, inte grillade. Numren fortsätter seri
 | 40 | Bulkimport via egen AI | Grammat-modellen: prompt att kopiera, JSON tillbaka, uppslag hos Systembolaget, granskningstabell, ångra i tio minuter (bara i minnet). Kryssrutor och massåtgärder i tabellvyn med samma ångra | byggd |
 | 42 | Tabellen utan slut | Viner med noll flaskor döljs i tabellen tills "Visa slut" trycks; valet sparas | byggd |
 | 43 | Sorteringen bredvid sök | Sortera-select och riktningspil direkt efter sökrutan, Lista/Tabell längst till höger, chipsen på raden under | byggd |
-| 37 | Streckkod och etikett | Uppskjutet: Systembolagets data saknar EAN, etikett kräver AI (beslut 15). Lager per butik kräver frontendnyckeln, backlog P3 | uppskjuten |
+| 37 | Streckkod och etikett | Byggd 2026-09-08: streckkod via Open Food Facts, etikett via Gemini Flash-Lite, sedan tre Systembolagskandidater att välja bland. Systembolaget känner fortfarande inte till EAN, men behöver inte göra det när namnet räcker | byggd |
