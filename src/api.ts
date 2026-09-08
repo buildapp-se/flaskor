@@ -1,5 +1,5 @@
 import { FatalError, NotFoundError, TransientError, UnauthorizedError } from '../shared/errors.ts'
-import type { Drink, DrinkInput, DrinkPatch, Preview } from '../shared/types.ts'
+import type { Drink, DrinkInput, DrinkPatch, Preview, ScanResult } from '../shared/types.ts'
 
 const API_URL: string = import.meta.env.VITE_API_URL ?? 'http://localhost:8787'
 const GATE_KEY = 'flaskor.gate'
@@ -44,4 +44,6 @@ export const api = {
   deleteDrink: (id: number) => call<void>('DELETE', `/api/drinks/${id}`),
   preview: (q: string) => call<Preview>('GET', `/api/systembolaget?q=${encodeURIComponent(q)}`),
   previewVivino: (url: string) => call<Preview>('GET', `/api/vivino?q=${encodeURIComponent(url)}`),
+  /** Streckkod och/eller foto (data-URL). Svaret är kandidater att välja bland, se ScanResult. */
+  scan: (body: { image?: string; ean?: string }) => call<ScanResult>('POST', '/api/scan', body),
 }

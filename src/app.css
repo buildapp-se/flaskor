@@ -1548,6 +1548,44 @@ p {
   align-items: center;
 }
 
+/* ── Fota flaskan: kandidater ur Systembolagets sök (BACKLOG 37) ── */
+.fl-scan__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fl-s2);
+}
+.fl-scan__item {
+  display: grid;
+  grid-template-columns: 36px 1fr;
+  gap: var(--fl-s3);
+  align-items: center;
+  min-height: var(--fl-touch);
+  padding: 10px 12px;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  background: var(--fl-bg);
+  border: 1px solid var(--fl-line);
+  border-radius: var(--fl-r-sm);
+  cursor: pointer;
+}
+.fl-scan__item:hover {
+  border-color: var(--fl-accent);
+}
+.fl-scan__item:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.fl-scan__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.fl-scan__name {
+  font-weight: 500;
+}
+
 /* ── Bulkimport, ångra-rad, massåtgärder (BACKLOG 40) ── */
 .fl-import {
   display: flex;

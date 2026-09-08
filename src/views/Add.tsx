@@ -1,18 +1,21 @@
-import { useState, type FormEvent } from 'react'
+import { useRef, useState, type ChangeEvent, type FormEvent } from 'react'
 import { FatalError, NotFoundError } from '../../shared/errors.ts'
-import type { Drink, DrinkPatch, Kind, Preview } from '../../shared/types.ts'
+import type { Drink, DrinkPatch, Kind, LabelGuess, Preview, ScanResult } from '../../shared/types.ts'
 import { windowState } from '../../shared/window.ts'
 import { api } from '../api.ts'
 import { Pill } from '../components/Pill.tsx'
 import { Rating } from '../components/Rating.tsx'
 import { dateShort, kr, pct, volume } from '../format.ts'
 import { detailPath, navigate, PATHS } from '../hash.ts'
+import { findBarcode, looksLikeEan, shrink } from '../scan.ts'
 import { useStore } from '../store.tsx'
 import { S } from '../strings.ts'
 import { EditForm } from './Detail.tsx'
 
 // Lägg till (design §3 "Lägg till mobil"): fält, förhandsvisning, förifyllt fönster, två sparknappar.
-// Tre vägar in (2026-09-06): Systembolagets nummer eller länk, en Vivino-länk, eller "Skriv in själv" med formuläret från Ändra.
+// Vägar in: Systembolagets nummer eller länk, en Vivino-länk, "Skriv in själv" med formuläret från Ändra (2026-09-06),
+// och "Fota flaskan" eller streckkodens siffror (2026-09-08, BACKLOG 37): Workern gissar flaskan och ger upp till tre
+// Systembolagskandidater att välja bland, sedan samma förhandsvisning som för ett artikelnummer.
 // Desktop saknar artboard: samma innehåll i en kolumn på 560 px. Bokfört i HANDOFF §Val tagna åt Patrik.
 
 /** Tom rad att fylla i för hand. Formuläret vill ha en Drink; id och tider är låtsas och skalas bort vid sparandet. */
@@ -25,29 +28,51 @@ function blank(kind: Kind): Drink {
   }
 }
 
+/** Formuläret förifyllt med det som lästes från flaskan, när ingen Systembolagsträff passade. */
+function fromGuess(g: LabelGuess): Drink {
+  const base = blank(g.kind)
+  return { ...base, name: g.name, producer: g.producer, vintage: g.vintage, volume_ml: g.volume_ml, alcohol: g.alcohol, category: g.category ?? base.category }
+}
+
+/** "Producent Namn", utan att upprepa producenten när namnet redan bär den. */
+function describe(g: LabelGuess): string {
+  const name = g.producer && !g.name.toLowerCase().includes(g.producer.toLowerCase()) ? `${g.producer} ${g.name}` : g.name
+  return g.vintage ? `${name} ${g.vintage}` : name
+}
+
 function isVivino(q: string): boolean {
   return /vivino\.com\//i.test(q)
 }
 
 export function Add() {
   const { add } = useStore()
+  const fileInput = useRef<HTMLInputElement>(null)
   const [query, setQuery] = useState('')
   const [preview, setPreview] = useState<Preview | null>(null)
   const [fetchedAt, setFetchedAt] = useState<string | null>(null)
   const [editingWindow, setEditingWindow] = useState(false)
-  const [busy, setBusy] = useState<'fetch' | 'save' | null>(null)
+  const [busy, setBusy] = useState<'fetch' | 'scan' | 'save' | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [manual, setManual] = useState<Kind | null>(null)
+  /** "Skriv in själv": raden formuläret utgår från, tom eller förifylld från en skanning. */
+  const [manual, setManual] = useState<Drink | null>(null)
+  const [scan, setScan] = useState<ScanResult | null>(null)
 
-  async function fetchPreview(event: FormEvent) {
-    event.preventDefault()
-    if (query.trim() === '') return
-    setBusy('fetch')
+  function reset() {
     setError(null)
     setPreview(null)
     setManual(null)
+    setScan(null)
+  }
+
+  async function fetchPreview(event: FormEvent) {
+    event.preventDefault()
+    const q = query.trim()
+    if (q === '') return
+    if (looksLikeEan(q)) return runScan({ ean: q.replace(/\s/g, '') })
+    setBusy('fetch')
+    reset()
     try {
-      setPreview(isVivino(query) ? await api.previewVivino(query) : await api.preview(query))
+      setPreview(isVivino(q) ? await api.previewVivino(q) : await api.preview(q))
       setFetchedAt(new Date().toISOString())
       setEditingWindow(false)
     } catch (err) {
@@ -59,12 +84,72 @@ export function Add() {
     }
   }
 
+  /** Streckkod och/eller foto till Workern. Svaret blir kandidater att välja bland, ett Vivino-vin, eller ett förifyllt formulär. */
+  async function runScan(body: { image?: string; ean?: string }) {
+    setBusy('scan')
+    reset()
+    try {
+      const result = await api.scan(body)
+      if (result.candidates.length > 0) setScan(result)
+      else if (result.vivino_url) {
+        setPreview(await api.previewVivino(result.vivino_url))
+        setFetchedAt(new Date().toISOString())
+        setEditingWindow(false)
+      } else {
+        setManual(fromGuess(result.guess))
+        setError(S.scan.noHit)
+      }
+    } catch (err) {
+      if (err instanceof NotFoundError) setError(body.image ? S.scan.noBottle : S.scan.unknownEan)
+      else if (err instanceof FatalError && err.status === 400) setError(S.add.badInput)
+      else setError(S.scan.failed)
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  /** Fotot krymps i webbläsaren, streckkoden läses där webbläsaren kan (Android), sedan går allt till Workern. */
+  async function onPhoto(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (!file) return
+    setBusy('scan')
+    setError(null)
+    let image: string
+    let ean: string | null
+    try {
+      ;[image, ean] = await Promise.all([shrink(file), findBarcode(file)])
+    } catch {
+      setError(S.scan.failed)
+      setBusy(null)
+      return
+    }
+    await runScan(ean ? { image, ean } : { image })
+  }
+
+  /** Vald kandidat: hela raden hämtas från produktsidan, som för ett inskrivet artikelnummer. */
+  async function pick(number: string) {
+    setBusy('fetch')
+    setError(null)
+    try {
+      setPreview(await api.preview(number))
+      setFetchedAt(new Date().toISOString())
+      setEditingWindow(false)
+      setScan(null)
+    } catch {
+      setError(S.add.failed)
+    } finally {
+      setBusy(null)
+    }
+  }
+
   /** "Skriv in själv": formuläret ger en patch ovanpå den tomma raden, som sedan visas som vanlig förhandsvisning. */
   function manualDone(kind: Kind, patch: DrinkPatch) {
     const { id: _id, household_id: _h, created_at: _c, updated_at: _u, ...rest } = { ...blank(kind), ...patch }
     setPreview(rest)
     setFetchedAt(null)
     setManual(null)
+    setError(null)
     setEditingWindow(false)
   }
 
@@ -85,6 +170,7 @@ export function Add() {
   const state = preview ? (preview.kind === 'wine' ? windowState(preview.drink_from, preview.drink_to) : null) : null
   const windowManual = preview !== null && preview.source_kind === 'systembolaget' && state !== 'unknown' && !editingWindow
   const fromVivino = preview !== null && preview.source_kind === 'manual' && preview.vivino_url !== null && fetchedAt !== null
+  const idle = !preview && manual === null && scan === null && query.trim() === ''
 
   return (
     <div className="fl-add">
@@ -99,32 +185,65 @@ export function Add() {
         {error && <div className="fl-error">{error}</div>}
         {!preview && query.trim() !== '' && (
           <button className="fl-btn fl-btn--secondary" type="submit" disabled={busy !== null}>
-            {busy === 'fetch' ? S.add.fetching : S.add.fetch}
+            {busy === 'scan' ? S.scan.scanning : busy === 'fetch' ? S.add.fetching : S.add.fetch}
           </button>
         )}
-        {!preview && manual === null && query.trim() === '' && (
-          <a className="fl-link fl-small" href={PATHS.import}>
-            {S.import.link}
-          </a>
+        {idle && (
+          <>
+            <button className="fl-btn fl-btn--primary" type="button" disabled={busy !== null} onClick={() => fileInput.current?.click()}>
+              {busy === 'scan' ? S.scan.scanning : S.scan.button}
+            </button>
+            <input ref={fileInput} type="file" accept="image/*" capture="environment" hidden onChange={onPhoto} />
+            <div className="fl-small fl-muted">{S.scan.hint}</div>
+            <a className="fl-link fl-small" href={PATHS.import}>
+              {S.import.link}
+            </a>
+            <div className="fl-add__manual">
+              <span className="fl-small fl-muted">{S.add.manual}:</span>
+              {(['wine', 'spirit', 'beer'] as const).map((k) => (
+                <button key={k} type="button" className="fl-chip" onClick={() => setManual(blank(k))}>
+                  {S.add.manualKind[k]}
+                </button>
+              ))}
+            </div>
+          </>
         )}
-        {!preview && manual === null && query.trim() === '' && (
-          <div className="fl-add__manual">
-            <span className="fl-small fl-muted">{S.add.manual}:</span>
-            {(['wine', 'spirit', 'beer'] as const).map((k) => (
-              <button key={k} type="button" className="fl-chip" onClick={() => setManual(k)}>
-                {S.add.manualKind[k]}
+      </form>
+
+      {scan && (
+        <div className="fl-card fl-add__card">
+          <div className="fl-label">{S.scan.pick}</div>
+          <div className="fl-small fl-muted">{scan.via === 'barcode' && scan.guess.ean ? S.scan.readBarcode(scan.guess.ean, describe(scan.guess)) : S.scan.read(describe(scan.guess))}</div>
+          <div className="fl-scan__list">
+            {scan.candidates.map((c) => (
+              <button key={c.number} type="button" className="fl-scan__item" disabled={busy !== null} onClick={() => pick(c.number)}>
+                <Bottle url={c.image_url} size="md" />
+                <span className="fl-scan__text">
+                  <span className="fl-scan__name">{c.vintage ? `${c.name} ${c.vintage}` : c.name}</span>
+                  <span className="fl-small fl-muted">{[c.producer, c.category, c.volume_ml !== null ? volume(c.volume_ml) : null, c.price !== null ? kr(c.price) : null].filter(Boolean).join(' · ')}</span>
+                </span>
               </button>
             ))}
           </div>
-        )}
-      </form>
+          <button
+            type="button"
+            className="fl-textbtn"
+            onClick={() => {
+              setManual(fromGuess(scan.guess))
+              setScan(null)
+            }}
+          >
+            {S.scan.none}
+          </button>
+        </div>
+      )}
 
       {manual !== null && (
         <div className="fl-card fl-add__card">
           <div className="fl-label">
-            {S.add.manualTitle} · {S.add.manualKind[manual]}
+            {S.add.manualTitle} · {S.add.manualKind[manual.kind]}
           </div>
-          <EditForm drink={blank(manual)} onCancel={() => setManual(null)} onSave={(p) => manualDone(manual, p)} saveLabel={S.add.manualNext} />
+          <EditForm drink={manual} onCancel={() => setManual(null)} onSave={(p) => manualDone(manual.kind, p)} saveLabel={S.add.manualNext} />
         </div>
       )}
 

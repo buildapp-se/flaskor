@@ -44,7 +44,7 @@ Patriks önskelista 2026-09-06 (GRILL-STATUS 31 till 35) byggd i chunk-läge, co
 - [x] `[P1]` Bulkimport via egen AI (40): "Importera lista" under Lägg till, prompt att kopiera, JSON klistras in, artikelnummer slås upp hos Systembolaget, granskningstabell med mål och antal per rad, ångra i tio minuter. Kryssrutor i tabellvyn med Ta bort och Lägg på önskelistan igen, båda med ångra.
 - [x] `[P1]` Tabellen döljer viner med noll flaskor tills "Visa slut" trycks (42), så en sökning på "skaldjur" bara ger det som finns hemma.
 - [x] `[P2]` Sorteringen flyttad bredvid sökrutan, Lista/Tabell längst till höger på samma rad (43).
-- [ ] `[P3]` Streckkod eller etikett för att lägga till (37): Systembolagets data saknar EAN, så en streckkod kan inte bli ett artikelnummer; etikettfoto kräver AI-anrop (beslut 15). Öppnas igen om en EAN-källa dyker upp.
+- [x] `[P1]` Streckkod eller etikett för att lägga till (37, byggd 2026-09-08 på Patriks begäran, beslut 15 återöppnat): EAN-källan dök upp (Open Food Facts) och etikettläsningen blev billig (Gemini Flash-Lite på gratisnivån). Foto eller streckkod ger en gissning, Systembolagets sök ger tre kandidater att välja bland, sedan hela raden med pris och bakgrund som vanligt.
 - [ ] `[P3]` Lager i vald butik direkt i Flaskor: `stockbalance/store/{butik}/{produkt}/` hos `api-extern.systembolaget.se` med frontendnyckeln ur Systembolagets JS-bundle (metoden i `AlexGustafsson/systembolaget-api`, `credentials.go`). Nyckeln utvinns inte av Claude Code (klassificeraren stoppar det); Patrik kör i så fall skriptet själv. Tills dess: artikelnumret länkar till produktsidan där Systembolaget minns vald butik.
 
 ## Efter första molndeployen
@@ -67,7 +67,7 @@ Patriks önskelista 2026-09-06 (GRILL-STATUS 31 till 35) byggd i chunk-läge, co
 - [ ] `[P2]` Sipdeck-synk: mappa barskåpsrad till Sipdecks ingrediens-id, knapp som skriver eget skafferi via Sipdecks Worker (beslut 7).
 - [ ] `[P2]` Caviste-import via produktlänk (beslut 6).
 - [ ] `[P2]` Dagspris från fler källor än Systembolaget, inköpspris mot dagspris (beslut 4).
-- [ ] `[P3]` Etikettskanning med foto och AI i Workern (beslut 15).
+- [ ] `[P3]` Streckkodsläsning i kameran på iPhone: `BarcodeDetector` finns inte i WebKit, ett WASM-bibliotek på cirka 1 MB krävs. Tills dess läser Gemini siffrorna ur fotot, eller så skrivs de i rutan.
 - [ ] `[P3]` Drucken-logg per rad: datum, betyg 1 till 5, kommentar (beslut 16).
 - [ ] `[P3]` Engelska som andra språk (beslut 18).
 - [ ] `[P3]` Byt sidläsning mot Systembolagets sortimentsdump om användarantalet växer (beslut 23).
