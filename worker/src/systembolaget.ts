@@ -47,6 +47,8 @@ export interface Product {
   isTemporaryOutOfStock: boolean
   isCompletelyOutOfStock: boolean
   isDiscontinued: boolean
+  /** Falskt när Systembolaget saknar flaskfoto (`images: []`). Då finns ingen bild att gissa adressen till. */
+  hasImage: boolean
 }
 
 function findProduct(node: unknown): Record<string, unknown> | null {
@@ -94,6 +96,7 @@ export function parseProductPage(html: string): Product {
     isTemporaryOutOfStock: raw['isTemporaryOutOfStock'] === true,
     isCompletelyOutOfStock: raw['isCompletelyOutOfStock'] === true,
     isDiscontinued: raw['isDiscontinued'] === true,
+    hasImage: Array.isArray(raw['images']) && raw['images'].length > 0,
   }
 }
 
@@ -139,7 +142,7 @@ export function toPreview(p: Product, now = new Date()): Preview {
     source_kind: 'systembolaget',
     source_id: p.productNumber,
     source_url: productUrl(p.productNumber),
-    image_url: imageUrl(p.productId),
+    image_url: p.hasImage ? imageUrl(p.productId) : null,
     price_paid: null,
     price_current: p.priceInclVat,
     price_checked_at: now.toISOString(),
