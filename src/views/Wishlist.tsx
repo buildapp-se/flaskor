@@ -150,11 +150,15 @@ function WishRow({ drink, onBuy }: { drink: Drink; onBuy: () => void }) {
   // Numret är en länk till produktsidan: där minns Systembolaget din valda butik, så lagret för den syns direkt.
   const number = drink.source_id ? (drink.source_kind === 'systembolaget' ? `${S.wishlist.number} ${articleNo(drink.source_id)}` : drink.source_kind === 'caviste' ? `CAV ${drink.source_id}` : null) : null
   const name = drink.vintage ? `${drink.name} ${drink.vintage}` : drink.name
+  const category = drink.category ? (S.categoryShort[drink.category] ?? drink.category) : null
   return (
     <div className={gone ? 'fl-wish fl-wish--gone' : 'fl-wish'}>
       <Bottle url={drink.image_url} size="sm" />
       <div className="fl-wish__main" onClick={(e) => !(e.target as HTMLElement).closest('a') && navigate(detailPath(drink.id))}>
-        <div className="fl-wish__name">{name}</div>
+        <div className="fl-wish__name">
+          {name}
+          {category && <span className="fl-wish__cat">{category}</span>}
+        </div>
         <div className="fl-wish__line">
           {price !== null && <span className="fl-wish__price">{kr(price)}</span>}
           {price !== null && ' · '}
