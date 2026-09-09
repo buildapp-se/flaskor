@@ -89,8 +89,8 @@ export const S = {
   },
   add: {
     title: 'Lägg till',
-    placeholder: 'Artikelnummer, streckkod, Systembolagslänk eller Vivino-länk',
-    hint: 'Artikelnummer eller produktlänk från Systembolaget, streckkodens siffror, eller länken till ett vin på Vivino.',
+    placeholder: 'Namn, artikelnummer, streckkod eller länk',
+    hint: 'Skriv namnet på flaskan, eller klistra in artikelnummer, streckkodens siffror, en produktlänk från Systembolaget eller en Vivino-länk.',
     manual: 'Skriv in själv',
     manualTitle: 'Ny flaska',
     manualKind: { wine: 'Vin', spirit: 'Sprit', beer: 'Öl' },
@@ -184,6 +184,25 @@ export const S = {
       vivino_url: 'Vivino-länk',
       image_url: 'Bildlänk',
     },
+  },
+  stock: {
+    label: 'Lager i butik',
+    pick: 'Välj butik',
+    search: 'Sök butik eller ort',
+    change: 'Byt butik',
+    loading: 'Kollar lagret …',
+    check: 'Kolla lagret',
+    /** "48 st, hylla 14-04-03" */
+    count: (n: number, shelf: string | null) => (shelf ? `${n} st, hylla ${shelf}` : `${n} st`),
+    empty: 'Slut i butiken',
+    notCarried: 'Förs inte i butiken',
+    failed: 'Lagret gick inte att hämta.',
+    hint: 'Saldot kommer från Systembolaget och kan ligga någon timme efter.',
+  },
+  search: {
+    searching: 'Söker hos Systembolaget …',
+    hits: (n: number) => (n === 1 ? '1 träff' : `${n} träffar`),
+    none: 'Inga träffar hos Systembolaget. Prova färre ord, eller skriv in flaskan själv.',
   },
   import: {
     title: 'Importera lista',

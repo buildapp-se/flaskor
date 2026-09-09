@@ -26,6 +26,8 @@ export interface Drink {
   source_id: string | null
   source_url: string | null
   image_url: string | null
+  /** Systembolagets interna produkt-id, som lagersaldot per butik slås upp på. Inte artikelnumret. */
+  sb_product_id: string | null
   price_paid: number | null
   price_current: number | null
   price_checked_at: string | null
@@ -80,6 +82,14 @@ export interface Candidate {
   price: number | null
   vintage: number | null
   image_url: string | null
+}
+
+/** Svaret på GET /api/stock: saldot för en rad i en butik. `shelf` är Systembolagets hyllplats, "14-04-03". */
+export interface Stock {
+  store: string
+  stock: number
+  shelf: string | null
+  in_assortment: boolean
 }
 
 /** Svaret på POST /api/scan: gissningen, upp till tre kandidater, och för vin utan träff Vivinos vinsida. */

@@ -156,3 +156,54 @@ describe('systembolaget', () => {
     await expect(worker.scheduled({} as ScheduledController, env)).resolves.toBeUndefined()
   })
 })
+
+describe('sök på namn (BACKLOG P3)', () => {
+  it('ger kandidatlistan ur Systembolagets sök', async () => {
+    const res = await api('GET', '/api/search?q=absolut%20vodka')
+    expect(res.status, await res.clone().text()).toBe(200)
+    const { candidates } = await res.json<{ candidates: Array<{ number: string; name: string }> }>()
+    // Namnsöket rankar inte om och kapar inte till tre som skanningen: användaren skrev frågan själv.
+    expect(candidates.map((c) => c.number)).toEqual(['8801', '8802', '8804', '106304', '8650801'])
+    expect(candidates[0]!.name).toContain('Absolut')
+  })
+  it('tom fråga: 400', async () => {
+    expect((await api('GET', '/api/search?q=%20')).status).toBe(400)
+  })
+})
+
+describe('lager i butik (BACKLOG P3)', () => {
+  /** En rad med artikelnummer men utan sb_product_id, som alla rader före migrering 0004. */
+  async function row() {
+    return (await api('POST', '/api/drinks', { kind: 'spirit', name: 'Vanlig Vodka', owned: true, count: 1, source_kind: 'systembolaget', source_id: '1101' })).json<{ id: number; sb_product_id: string | null }>()
+  }
+
+  it('hämtar saldo och hyllplats, och fyller i produkt-id:t på vägen', async () => {
+    const drink = await row()
+    expect(drink.sb_product_id).toBeNull()
+
+    const res = await api('GET', `/api/stock?drink=${drink.id}&store=2401`)
+    expect(res.status, await res.clone().text()).toBe(200)
+    expect(await res.json()).toEqual({ store: '2401', stock: 48, shelf: '14-04-03', in_assortment: true })
+
+    // Andra anropet behöver ingen produktsida: id:t ligger på raden nu.
+    const after = await (await api('GET', '/api/drinks')).json<{ drinks: Array<{ sb_product_id: string | null }> }>()
+    expect(after.drinks[0]!.sb_product_id).toBe('21955733')
+  })
+
+  it('butik utan varan ger noll och in_assortment false', async () => {
+    const drink = await row()
+    const body = await (await api('GET', `/api/stock?drink=${drink.id}&store=2402`)).json<{ stock: number; in_assortment: boolean; shelf: string | null }>()
+    expect(body).toMatchObject({ stock: 0, in_assortment: false, shelf: null })
+  })
+
+  it('okänd butik hos Systembolaget: 404, felformat butiksnummer: 400', async () => {
+    const drink = await row()
+    expect((await api('GET', `/api/stock?drink=${drink.id}&store=9999`)).status).toBe(404)
+    expect((await api('GET', `/api/stock?drink=${drink.id}&store=24`)).status).toBe(400)
+  })
+
+  it('rad utan artikelnummer har inget saldo: 400', async () => {
+    const manual = await (await api('POST', '/api/drinks', { kind: 'wine', name: 'Egen', owned: true, count: 1 })).json<{ id: number }>()
+    expect((await api('GET', `/api/stock?drink=${manual.id}&store=2401`)).status).toBe(400)
+  })
+})

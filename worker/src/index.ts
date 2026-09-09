@@ -1,7 +1,8 @@
 import { FatalError, NotFoundError, TransientError, UnauthorizedError } from '../../shared/errors.ts'
-import type { Drink, DrinkPatch, LabelGuess, Preview, ScanResult } from '../../shared/types.ts'
+import type { Candidate, Drink, DrinkPatch, LabelGuess, Preview, ScanResult, Stock } from '../../shared/types.ts'
 import { deleteDrink, getDrink, insertDrink, listDrinks, sanitize, updateDrink } from './db.ts'
-import { findByEan, normalizeEan, rank, readLabel, searchProducts, validEan } from './scan.ts'
+import { findByEan, normalizeEan, rank, readLabel, searchOnce, searchProducts, validEan } from './scan.ts'
+import { fetchStock } from './stock.ts'
 import { fetchProduct, parseProductNumber, toPreview } from './systembolaget.ts'
 import { fetchWine, findVivino, parseVivinoUrl, parseWinePage, queryFor, refreshVivino, vivinoDue, vivinoPatch, vivinoToPreview } from './vivino.ts'
 
@@ -67,6 +68,24 @@ async function route(request: Request, env: GateEnv): Promise<unknown> {
   if (method === 'GET' && path === '/api/systembolaget') {
     const number = parseProductNumber(url.searchParams.get('q') ?? '')
     return toPreview(await fetchProduct(number))
+  }
+
+  // Sök på namn hos Systembolaget (BACKLOG P3, 2026-09-09). Samma sök som skanningen använder, men med användarens
+  // egna ord och utan rankning: hen skrev frågan själv, så sökmotorns ordning är den bästa gissningen vi har.
+  if (method === 'GET' && path === '/api/search') {
+    const q = (url.searchParams.get('q') ?? '').trim()
+    if (q === '') throw new FatalError('q is required')
+    if (!env.SB_API_KEY) throw new FatalError('SB_API_KEY is not configured', 500)
+    return { candidates: await searchOnce(q, env.SB_API_KEY) satisfies Candidate[] }
+  }
+
+  // Lagersaldo i en butik (BACKLOG P3, 2026-09-09). Slås upp på Systembolagets interna produkt-id, inte artikelnumret;
+  // gamla rader saknar det och fyller i det ur produktsidan vid första förfrågan.
+  if (method === 'GET' && path === '/api/stock') {
+    const store = url.searchParams.get('store') ?? ''
+    const drink = await getDrink(env.DB, Number(url.searchParams.get('drink') ?? ''))
+    if (!env.SB_API_KEY) throw new FatalError('SB_API_KEY is not configured', 500)
+    return { store, ...(await fetchStock(store, await productIdOf(env.DB, drink), env.SB_API_KEY)) } satisfies Stock
   }
 
   if (method === 'GET' && path === '/api/vivino') {
@@ -160,6 +179,16 @@ async function refreshDrink(db: D1Database, drink: Drink): Promise<Drink> {
   return updateDrink(db, drink.id, patch)
 }
 
+/** Radens Systembolags-id, hämtat ur produktsidan och sparat första gången det behövs. Kastar för rader utan artikelnummer. */
+async function productIdOf(db: D1Database, drink: Drink): Promise<string> {
+  if (drink.sb_product_id) return drink.sb_product_id
+  if (drink.source_kind !== 'systembolaget' || !drink.source_id) throw new FatalError('drink has no systembolaget number')
+  const sb_product_id = toPreview(await fetchProduct(drink.source_id)).sb_product_id
+  if (!sb_product_id) throw new FatalError('systembolaget gave no product id', 502)
+  await updateDrink(db, drink.id, { sb_product_id })
+  return sb_product_id
+}
+
 type Fresh = { gone: true } | { gone: false; preview: Preview }
 
 async function fetchFresh(number: string): Promise<Fresh> {
@@ -176,7 +205,8 @@ function refreshPatch(fresh: Fresh, drink: Drink): DrinkPatch {
   const price_checked_at = new Date().toISOString()
   if (fresh.gone) return { availability: 'discontinued', price_checked_at }
   const { preview } = fresh
-  const patch: DrinkPatch = { price_current: preview.price_current, price_checked_at, availability: preview.availability }
+  // sb_product_id kom till 2026-09-09: nattens körning fyller i det på gamla rader, så lagersaldot funkar utan extra hämtning.
+  const patch: DrinkPatch = { price_current: preview.price_current, price_checked_at, availability: preview.availability, sb_product_id: preview.sb_product_id }
   // Ägda flaskor behåller sin årgång: Systembolaget säljer den nya, källaren har den gamla.
   if (!drink.owned) patch.vintage = preview.vintage
   return patch

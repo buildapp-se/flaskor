@@ -143,6 +143,7 @@ export function toPreview(p: Product, now = new Date()): Preview {
     source_id: p.productNumber,
     source_url: productUrl(p.productNumber),
     image_url: p.hasImage ? imageUrl(p.productId) : null,
+    sb_product_id: p.productId,
     price_paid: null,
     price_current: p.priceInclVat,
     price_checked_at: now.toISOString(),
