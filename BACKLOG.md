@@ -45,7 +45,7 @@ Patriks önskelista 2026-09-06 (GRILL-STATUS 31 till 35) byggd i chunk-läge, co
 - [x] `[P1]` Tabellen döljer viner med noll flaskor tills "Visa slut" trycks (42), så en sökning på "skaldjur" bara ger det som finns hemma.
 - [x] `[P2]` Sorteringen flyttad bredvid sökrutan, Lista/Tabell längst till höger på samma rad (43).
 - [x] `[P1]` Streckkod eller etikett för att lägga till (37, byggd 2026-09-08 på Patriks begäran, beslut 15 återöppnat): EAN-källan dök upp (Open Food Facts) och etikettläsningen blev billig (Gemini Flash-Lite på gratisnivån). Foto eller streckkod ger en gissning, Systembolagets sök ger tre kandidater att välja bland, sedan hela raden med pris och bakgrund som vanligt.
-- [ ] `[P3]` Lager i vald butik direkt i Flaskor: `stockbalance/store/{butik}/{produkt}/` hos `api-extern.systembolaget.se` med frontendnyckeln ur Systembolagets JS-bundle (metoden i `AlexGustafsson/systembolaget-api`, `credentials.go`). Nyckeln utvinns inte av Claude Code (klassificeraren stoppar det); Patrik kör i så fall skriptet själv. Tills dess: artikelnumret länkar till produktsidan där Systembolaget minns vald butik.
+- [x] `[P3]` Lager i vald butik: byggt 2026-09-09. Blockeringen föll när nyckeln kom in i repot för skanningen 2026-09-08, den behövde aldrig grävas ur deras bundle. Svaret ger både saldo och hyllplats.
 
 ## Efter första molndeployen
 
@@ -68,6 +68,13 @@ Patriks önskelista 2026-09-06 (GRILL-STATUS 31 till 35) byggd i chunk-läge, co
 - [x] `[P2]` `npm run seed -- --remote` kräver nu `--force`: den raderar alla caviste-rader och skriver om dem, så antal och kommentarer i molnet försvann utan varning.
 - [x] `[P3]` Ölkategorin verifierad mot skarpa data: Systembolagets `categoryLevel1` är exakt `"Öl"`, som gissat 2026-09-07. Ingen kodändring behövdes.
 
+## Lager och namnsök 2026-09-09
+
+- [x] `[P1]` Lagersaldo i vald butik, med hyllplats. `GET /api/stock?drink=&store=`, butiken vald en gång och sparad i `localStorage`, saldot hämtat på knapptryck i detaljvyn. Migrering 0004 lade till `sb_product_id`: lagret slås upp på Systembolagets interna produkt-id, och artikelnumret ger tyst 0 på varje butik.
+- [x] `[P1]` Butikslistan, 455 butiker, genererad ur Systembolagets sitemap med `npm run stores`. Namnen tas ur varje butikssidas titel eftersom slugen tappat å, ä och ö. Ligger i bundeln (27 kB), inte hämtad vid körning: appen är en PWA.
+- [x] `[P1]` Sök på namn i Lägg till. Samma ruta som artikelnummer och länkar: rena bokstäver går direkt till söket, en fråga med siffror provar artikelnumret först och faller tillbaka på söket. Träffarna visas i skanningens kandidatlista.
+- [ ] `[P3]` Lagersaldo per rad i Önskelistan. Medvetet inte byggt: det hade blivit ett anrop per rad mot Systembolaget vid varje sidladdning. Kräver köhantering eller cache innan det är rimligt.
+
 ## Senare, beslutat uppskjutet
 
 - [ ] `[P2]` Firebase Auth som Beefcake, användare kopplade till `household_id` (beslut 2).
@@ -78,4 +85,4 @@ Patriks önskelista 2026-09-06 (GRILL-STATUS 31 till 35) byggd i chunk-läge, co
 - [ ] `[P3]` Drucken-logg per rad: datum, betyg 1 till 5, kommentar (beslut 16).
 - [ ] `[P3]` Engelska som andra språk (beslut 18).
 - [ ] `[P3]` Byt sidläsning mot Systembolagets sortimentsdump om användarantalet växer (beslut 23).
-- [ ] `[P3]` Namnsökning hos Systembolaget om nyckeln i deras JS-bundle går att återanvända.
+- [x] `[P3]` Namnsökning hos Systembolaget: byggt 2026-09-09, samma nyckel och samma sök som skanningen redan använde.
