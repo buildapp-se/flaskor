@@ -2,31 +2,38 @@
 //   npm run seed            lokal D1 (wrangler dev)
 //   npm run seed -- --remote  molnets D1
 // Körs om utan dubbletter: alla rader med source_kind = 'caviste' tas bort först och skrivs på nytt.
-// Bilden hämtas från Caviste-sidans första wp-content/uploads/...CAV<nr>...jpg om den finns.
+// Bilden väljs ur Caviste-sidan med pickCavisteImage (flaskan, inte bannern eller gruppbilden).
+// OBS: skriptet raderar alla caviste-rader först. Mot molnet krävs --force, se nedan.
 import { execSync } from 'node:child_process'
 import { readFileSync, writeFileSync } from 'node:fs'
+import { pickCavisteImage } from './caviste.ts'
 
 const remote = process.argv.includes('--remote')
+// Seeden är destruktiv: den raderar alla caviste-rader och skriver om dem, så antal, kommentarer och
+// rättade betyg på de raderna går förlorade. Mot molnet, där Patriks riktiga källare ligger, krävs --force.
+if (remote && !process.argv.includes('--force')) {
+  console.error('seed --remote raderar och skriver om alla caviste-rader i molnet. Lägg till --force om det är meningen.')
+  process.exit(1)
+}
 const tsv = readFileSync('seed/vinlista.tsv', 'utf8').trim().split(/\r?\n/)
 const header = tsv[0]!.split('\t')
 const rows = tsv.slice(1).map((line) => Object.fromEntries(line.split('\t').map((v, i) => [header[i]!, v.trim()])) as Record<string, string>)
 
 const CATEGORY: Record<string, string> = { 'Torrt vitt vin': 'Vitt vin', 'Rött vin': 'Rött vin', 'Vitt vin': 'Vitt vin', 'Mousserande vin': 'Mousserande vin', 'Rosévin': 'Rosévin' }
 
-const imageCache = new Map<string, string | null>()
-async function cavisteImage(url: string, cavNr: string): Promise<string | null> {
-  if (imageCache.has(url)) return imageCache.get(url)!
-  let image: string | null = null
+const htmlCache = new Map<string, string>()
+async function cavisteImage(url: string, cavNr: string, name: string): Promise<string | null> {
   try {
-    const html = await (await fetch(url, { headers: { 'user-agent': 'Mozilla/5.0' } })).text()
-    const re = new RegExp(`https?://[^"'\\s]*wp-content/uploads/[^"'\\s]*CAV0*${cavNr}[^"'\\s]*\\.jpe?g`, 'i')
-    // WordPress länkar tumnageln (-100x100.jpg); utan suffixet fås originalet.
-    image = html.match(re)?.[0]?.replace(/-\d+x\d+(\.jpe?g)$/i, '$1') ?? null
+    let html = htmlCache.get(url)
+    if (html === undefined) {
+      html = await (await fetch(url, { headers: { 'user-agent': 'Mozilla/5.0' } })).text()
+      htmlCache.set(url, html)
+    }
+    return pickCavisteImage(html, cavNr, name)
   } catch (error) {
     console.error(`  bild misslyckades för ${url}: ${String(error)}`)
+    return null
   }
-  imageCache.set(url, image)
-  return image
 }
 
 function sql(value: string | number | null): string {
@@ -38,7 +45,7 @@ function sql(value: string | number | null): string {
 const statements: string[] = ["DELETE FROM drink WHERE source_kind = 'caviste';"]
 for (const r of rows) {
   const [from, to] = (r['drickes'] ?? '').split('-').map((y) => (y ? Number(y) : null))
-  const image = await cavisteImage(r['lank']!, r['cav_nr']!)
+  const image = await cavisteImage(r['lank']!, r['cav_nr']!, r['namn']!)
   const decant = Number(r['karaff_h'])
   const values: Record<string, string | number | null> = {
     household_id: 1,
