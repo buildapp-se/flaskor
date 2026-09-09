@@ -1,15 +1,34 @@
 ---
 schemaVersion: 1
 status: active
-currentGoal: Vivino-länken pinnad och redigerbar, Caviste-bilderna rättade (2026-09-09, live). Distiller-importen väntar fortfarande på ett uttryckligt ja.
-nextAction: Patrik skannar om samma flaskor som missade i första omgången (matchningen rättad 2026-09-08). Rätta de tre Caviste-bilderna i Ändra (Chianti Classico, Côtes du Rhône, La Butte 'O'), adresserna står nedan. Sedan ja eller nej på Distiller-importen.
+currentGoal: Backloggens sista två P3-punkter byggda 2026-09-09: lagersaldo i vald butik (med hyllplats) och sök på namn hos Systembolaget. Live. Distiller-importen väntar fortfarande på ett uttryckligt ja.
+nextAction: Prova lagersaldot i telefonen (välj butik i en flaskas detaljvy) och sök på namn i Lägg till. Rätta de tre Caviste-bildlänkarna i Ändra, adresserna står nedan. Skanna om flaskorna som missade 2026-09-08. Sedan ja eller nej på Distiller-importen.
 blockers: []
 reviewedAt: 2026-09-09
 ---
 
 # Handoff: Flaskor
 
-Senast uppdaterad: 2026-09-09. Två fixar byggda, verifierade och live (commits `57e2fc9` och `9288665`, Worker `bddd8cb2`, Pages-körning 34334402505 grön):
+Senast uppdaterad: 2026-09-09, andra omgången. **Backloggens två sista P3-punkter byggda och live** (commit `fc396b5`, migrering 0004 körd i molnet, Worker `676db653`, Pages-körning 34338316835 grön, bundeln `index-DHb9O-IJ.js`). Båda stod som blockerade av att Systembolagets frontendnyckel inte gick att få tag på. Den kom in i repot 2026-09-08 för skanningen och räcker till båda; den behövde aldrig grävas ur deras JS-bundle.
+
+1. **Lagersaldo i vald butik, med hyllplats.** `GET /api/stock?drink=&store=` svarar `{store, stock, shelf, in_assortment}`, och detaljvyn visar "5 st, hylla 18-03-02". Butiken väljs en gång med en sökruta över alla 455 butiker och sparas i `localStorage`; saldot hämtas på knapptryck.
+   - **Fällan, och varför migrering 0004 finns:** uppslaget sker på Systembolagets interna `productId`, inte artikelnumret. Artikelnumret svarar 200 med `stock: 0` och `isInStoreAssortment: false` på varje butik, alltså ett tyst fel svar. Raden bär nu `sb_product_id`, satt vid import, vid nattens uppdatering och vid första lagerfrågan på en gammal rad.
+   - **Butikslistan** genereras med `npm run stores` ur `sitemap-butiker.xml` (butiksnumret står sist i sökvägen) plus varje butikssidas titel, eftersom slugen tappat å, ä och ö ("umea"). 455 butiker, 27 kB, i bundeln: appen är en PWA. Skriptet gör 455 sidhämtningar, åtta i taget, och tar ett par minuter. Kör om det när en butik öppnar eller stänger.
+2. **Sök på namn hos Systembolaget.** `GET /api/search?q=` ger samma kandidatlista som skanningen, utan omrankning. I Lägg till delar namnet ruta med artikelnummer, streckkod och länkar: rena bokstäver går direkt till söket, en fråga med siffror provar artikelnumret först och faller tillbaka på söket när det svarar 400.
+
+Verifierat: `npm run check` (tsc, 52 enhetstester, 44 Worker-tester, `wrangler deploy --dry-run`), båda routerna mot skarpa Systembolagsdata i `wrangler dev`, hela flödet i Chromium på 390 och 1 280 px mot `vite dev` (sökte "Kahlua", valde kandidat, sparade, valde butiken Umeå Rådhusesplanaden, fick 5 st och hyllplats), och efter deploy mot molnet: `/api/search?q=Barolo` gav 10 träffar, `/api/stock` gav 9 st och hylla 08-12-01 och sparade `sb_product_id` på raden.
+
+**Medvetet inte byggt:** lagersaldo per rad i Önskelistan. Det hade blivit ett anrop per rad mot Systembolaget vid varje sidladdning, och kräver köhantering eller cache först. Backlog P3.
+
+## Val tagna åt Patrik, 2026-09-09 (lager och namnsök)
+
+- **Butiken sparas per webbläsare, inte i databasen.** Patrik och Julia handlar inte nödvändigtvis i samma butik, och det är ett vyval som allt annat i `localStorage`.
+- **Saldot hämtas på knapptryck**, inte när detaljvyn öppnas. Ett anrop när du faktiskt undrar, i stället för ett per sidvisning.
+- **Hela butikslistan följer med**, inte bara Umeås fyra. Samma kod, och den är rätt även när ni är någon annanstans.
+- **Namnsöket rankar inte om träffarna.** Skanningen rankar för att den gissar åt användaren; här har användaren skrivit frågan själv, och då är sökmotorns ordning bättre än vår.
+- **`sb_product_id` fylls i vid behov i stället för genom en engångsbackfill.** Nattens uppdatering tar ändå alla Systembolagsrader inom några dygn, och en rad du frågar om fyller i sig direkt.
+
+Tidigare samma dag: Två fixar byggda, verifierade och live (commits `57e2fc9` och `9288665`, Worker `bddd8cb2`, Pages-körning 34334402505 grön):
 
 1. **Vivino-länken är pinnad.** En rad med sparad `vivino_url` hämtar betyget från just den vinsidan; bara rader utan länk söker på namnet. Förut sökte nattens cron alltid om på namnet och kunde skriva tillbaka fel vin över en länk rättad för hand. `refreshVivino()` i `worker/src/vivino.ts`, använd av både `refreshDrink` och `refreshAll`. Vinsidan är dessutom en bråkdel av söksidans 1,7 MB. Verifierat live: `POST /api/drinks/1/refresh` behöll länken och svarade på 1 sekund, `id 2` (Buondonno) gav 3,9 av 3 350 röster.
 2. **Vivino-länk och bildlänk går att ändra i Ändra.** Ändrad Vivino-länk hämtar betyget direkt i stället för att vänta till natten. Förut krävdes ett PATCH-anrop för hand.
