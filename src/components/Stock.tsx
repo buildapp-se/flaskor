@@ -6,11 +6,11 @@ import { usePersisted } from '../persist.ts'
 import { S } from '../strings.ts'
 import stores from '../stores.json'
 
-// Lager i vald butik (BACKLOG P3, 2026-09-09). Butiken väljs en gång och sparas i localStorage; saldot hämtas på
-// knapptryck, inte automatiskt. ponytail: ett anrop per tryck i stället för ett per rad i en lista, så Systembolaget
-// aldrig får en skur av anrop och vi slipper köhantering. Listan i önskelistan finns inte av samma skäl.
+// Lager i vald butik (BACKLOG P3, 2026-09-09). Butiken väljs en gång och sparas i localStorage.
+// Saldot hämtas alltid på ett uttryckligt tryck, aldrig när en vy öppnas: annars hade Önskelistan
+// skickat ett anrop per rad mot Systembolaget vid varje sidladdning.
 
-interface Store {
+export interface Store {
   id: string
   city: string
   address: string
@@ -19,55 +19,87 @@ interface Store {
 const ALL = stores as Store[]
 const KEY = 'flaskor.store'
 
-export function findStore(id: string | null): Store | null {
-  return ALL.find((s) => s.id === id) ?? null
+/** Den valda butiken, delad av detaljvyn och Önskelistan. `pick` sparar den i webbläsaren. */
+export function useSavedStore(): [Store | null, (id: string) => void] {
+  const [saved, setSaved] = usePersisted<{ id: string | null }>(KEY, { id: null })
+  return [ALL.find((s) => s.id === saved.id) ?? null, (id: string) => setSaved({ id })]
 }
 
-/** Butiksväljare plus saldo för en rad. Visas bara för rader med artikelnummer: bara de har lagersaldo. */
-export function Stock({ drink }: { drink: Drink }) {
-  const [saved, setSaved] = usePersisted<{ id: string | null }>(KEY, { id: null })
-  const [picking, setPicking] = useState(false)
+/** Sökruta över alla butiker. Visar träffar först när något är skrivet: 455 rader hjälper ingen. */
+export function StorePicker({ onPick, autoFocus = false }: { onPick: (id: string) => void; autoFocus?: boolean }) {
   const [query, setQuery] = useState('')
+  const q = query.trim().toLowerCase()
+  const hits = q === '' ? [] : ALL.filter((s) => s.city.toLowerCase().includes(q) || s.address.toLowerCase().includes(q)).slice(0, 8)
+  return (
+    <>
+      <input className="fl-input" placeholder={S.stock.search} value={query} onChange={(e) => setQuery(e.target.value)} autoFocus={autoFocus} />
+      {hits.map((s) => (
+        <button key={s.id} type="button" className="fl-stock__hit" onClick={() => onPick(s.id)}>
+          {s.city} · {s.address}
+        </button>
+      ))}
+    </>
+  )
+}
+
+/** Saldot i klartext: "5 st, hylla 18-03-02", "Slut i butiken" eller "Förs inte i butiken". */
+export function stockText(value: StockValue): string {
+  if (!value.in_assortment) return S.stock.notCarried
+  return value.stock === 0 ? S.stock.empty : S.stock.count(value.stock, value.shelf)
+}
+
+/** En rad har lagersaldo bara om den finns hos Systembolaget. */
+export function hasStock(drink: Drink): boolean {
+  return drink.source_kind === 'systembolaget' && drink.source_id !== null
+}
+
+/**
+ * Saldot för en rad, hämtat på knapptryck. Systembolaget svarar 404 för varor butiken aldrig fört,
+ * vilket är ett svar och inte ett fel: det visas som "Förs inte i butiken".
+ */
+export async function checkStock(drinkId: number, storeId: string): Promise<StockValue> {
+  try {
+    return await api.stock(drinkId, storeId)
+  } catch (error) {
+    if (error instanceof NotFoundError) return { store: storeId, stock: 0, shelf: null, in_assortment: false }
+    throw error
+  }
+}
+
+/** Butiksväljare plus saldo för en rad. Visas bara för rader med artikelnummer. */
+export function Stock({ drink }: { drink: Drink }) {
+  const [store, pickStore] = useSavedStore()
+  const [picking, setPicking] = useState(false)
   const [value, setValue] = useState<StockValue | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const store = findStore(saved.id)
 
-  if (drink.source_kind !== 'systembolaget' || !drink.source_id) return null
+  if (!hasStock(drink)) return null
 
   async function check(id: string) {
     setBusy(true)
     setError(null)
     try {
-      setValue(await api.stock(drink.id, id))
-    } catch (err) {
-      // Systembolaget svarar 404 för varor butiken aldrig fört. Det är ett svar, inte ett fel.
-      if (err instanceof NotFoundError) setValue({ store: id, stock: 0, shelf: null, in_assortment: false })
-      else setError(S.stock.failed)
+      setValue(await checkStock(drink.id, id))
+    } catch {
+      setError(S.stock.failed)
     } finally {
       setBusy(false)
     }
   }
 
-  function pick(id: string) {
-    setSaved({ id })
-    setPicking(false)
-    setQuery('')
-    void check(id)
-  }
-
   if (picking || !store) {
-    const q = query.trim().toLowerCase()
-    const hits = q === '' ? [] : ALL.filter((s) => s.city.toLowerCase().includes(q) || s.address.toLowerCase().includes(q)).slice(0, 8)
     return (
       <div className="fl-stock">
         <div className="fl-label">{S.stock.pick}</div>
-        <input className="fl-input" placeholder={S.stock.search} value={query} onChange={(e) => setQuery(e.target.value)} autoFocus={picking} />
-        {hits.map((s) => (
-          <button key={s.id} type="button" className="fl-stock__hit" onClick={() => pick(s.id)}>
-            {s.city} · {s.address}
-          </button>
-        ))}
+        <StorePicker
+          autoFocus={picking}
+          onPick={(id) => {
+            pickStore(id)
+            setPicking(false)
+            void check(id)
+          }}
+        />
       </div>
     )
   }
@@ -88,7 +120,7 @@ export function Stock({ drink }: { drink: Drink }) {
           {busy ? S.stock.loading : S.stock.check}
         </button>
       ) : (
-        <div className="fl-stock__value">{!value.in_assortment ? S.stock.notCarried : value.stock === 0 ? S.stock.empty : S.stock.count(value.stock, value.shelf)}</div>
+        <div className="fl-stock__value">{stockText(value)}</div>
       )}
       {error && <div className="fl-error">{error}</div>}
       <div className="fl-small fl-muted">{S.stock.hint}</div>
