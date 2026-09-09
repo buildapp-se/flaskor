@@ -1,15 +1,34 @@
 ---
 schemaVersion: 1
 status: active
-currentGoal: Backloggens sista två P3-punkter byggda 2026-09-09: lagersaldo i vald butik (med hyllplats) och sök på namn hos Systembolaget. Live. Distiller-importen väntar fortfarande på ett uttryckligt ja.
-nextAction: Prova lagersaldot i telefonen (välj butik i en flaskas detaljvy) och sök på namn i Lägg till. Rätta de tre Caviste-bildlänkarna i Ändra, adresserna står nedan. Skanna om flaskorna som missade 2026-09-08. Sedan ja eller nej på Distiller-importen.
+currentGoal: Tre omgångar 2026-09-09, alla live: Vivino-länken pinnad, Caviste-bilderna rättade, lagersaldo i vald butik, sök på namn, Caviste-import via produktlänk och drucken-logg. Distiller-importen väntar fortfarande på ett uttryckligt ja.
+nextAction: Ägar-QA av dagens tre omgångar: lagersaldot och namnsöket i telefonen, en Caviste-länk i Lägg till, en anteckning i Drucket. Rätta de tre Caviste-bildlänkarna i Ändra, adresserna står nedan. Skanna om flaskorna som missade 2026-09-08. Sedan ja eller nej på Distiller-importen.
 blockers: []
 reviewedAt: 2026-09-09
 ---
 
 # Handoff: Flaskor
 
-Senast uppdaterad: 2026-09-09, andra omgången. **Backloggens två sista P3-punkter byggda och live** (commit `fc396b5`, migrering 0004 körd i molnet, Worker `676db653`, Pages-körning 34338316835 grön, bundeln `index-DHb9O-IJ.js`). Båda stod som blockerade av att Systembolagets frontendnyckel inte gick att få tag på. Den kom in i repot 2026-09-08 för skanningen och räcker till båda; den behövde aldrig grävas ur deras JS-bundle.
+Senast uppdaterad: 2026-09-09, tredje omgången. **Caviste-import via produktlänk (beslut 6) och drucken-logg (beslut 16)**, båda byggda, verifierade och live (commits `358f532` och `d8e7e74`, migrering 0005 körd i molnet, Worker `ab709a53`, Pages-körning 34340681913 grön, bundeln `index-DUDPN5ca.js`). Båda stod som "senare" i backloggen, ingendera var bortvald.
+
+1. **Caviste-import.** Klistra in lådans länk i Lägg till, välj vinet, spara. Sidan bär hela raden per vin i en tabell längst ner, så antal, årgång, namn, pris, typ, ursprung, druvor, alkohol, drickfönster, serveringstemperatur, karaffering, smaknot och matförslag kommer med. Det är samma fält som Excel-raderna hade, utan att någon skriver av dem. Varje vin får sin egen flaskbild ur radens cell, så bildvalsgissningen från i morse (`scripts/caviste.ts`) behövs inte här.
+   - **Sidformatet varierar mellan lådor.** CAV0143 har en extra `<em>` runt faktarutan, CAV0179 inte. Första versionen läste den inre taggen och gav tomma fält på CAV0179. Nu plockas fälten ur hela specen. Båda sidorna är verifierade mot skarpa anrop, och CAV0143 ligger som fixtur.
+   - **"Direkt till källaren" sparar lådans antal** (2 flaskor Brouilly blir 2), inte alltid 1 som förut. Övriga vägar ger fortfarande 1.
+2. **Drucken-logg.** Detaljvyn har ett block "Drucket": datum, betyg 1 till 5 och kommentar, senast druckna först. Egen tabell (migrering 0005) eftersom en rad kan drickas många gånger.
+   - **"Drack en" är oförändrad.** Beslut 16 säger uttryckligen ingen ruta och inget betyg vid nedräkningen. Friktion vid fel tillfälle är precis varför loggar slutar användas, så anteckningen skrivs när man faktiskt har en åsikt, gärna i efterhand.
+   - Loggen syns bara i detaljvyn. Att visa den i listan eller som ett "senast druckna"-flöde kräver att den följer med i `GET /api/drinks`; backlog P3.
+
+Verifierat: `npm run check` (tsc, 64 enhetstester, 51 Worker-tester, torrdeploy), Caviste-importen mot två riktiga sidor i `wrangler dev`, hela flödet i Chromium (klistrade in CAV0179, valde Brouilly, sparade till källaren med 2 flaskor, antecknade betyg 4 med kommentar och såg den i listan), och efter deploy mot molnet: CAV0143 gav lådans tre viner med druvor och pris, och en anteckning skrevs, lästes och togs bort igen på rad 22.
+
+## Val tagna åt Patrik, 2026-09-09 (Caviste-import och drucken-logg)
+
+- **En låda visas som en vallista, inte som en rad.** Lådorna innehåller olika viner i olika antal, och en sammanslagen rad hade varit fel i källaren. Ett vin i taget, med lådans antal.
+- **Loggen kopplas inte till "Drack en".** Se ovan; beslut 16 är uttryckligt.
+- **Loggen hämtas per rad när detaljvyn öppnas**, inte i den globala listan. Den syns bara där.
+- **Betyget är ett heltal 1 till 5**, inte halvor, och kontrolleras i Workern. Vivinos snitt är decimaltal, men ett eget betyg satt med fem knappar ska inte vara det.
+- **Fältet `taste` heter "Smak enligt Caviste"** på caviste-rader. Etiketten sa "Smak enligt Systembolaget" på allt, vilket blev synligt fel så fort importen fanns.
+
+Tidigare samma dag: andra omgången. **Backloggens två sista P3-punkter byggda och live** (commit `fc396b5`, migrering 0004 körd i molnet, Worker `676db653`, Pages-körning 34338316835 grön, bundeln `index-DHb9O-IJ.js`). Båda stod som blockerade av att Systembolagets frontendnyckel inte gick att få tag på. Den kom in i repot 2026-09-08 för skanningen och räcker till båda; den behövde aldrig grävas ur deras JS-bundle.
 
 1. **Lagersaldo i vald butik, med hyllplats.** `GET /api/stock?drink=&store=` svarar `{store, stock, shelf, in_assortment}`, och detaljvyn visar "5 st, hylla 18-03-02". Butiken väljs en gång med en sökruta över alla 455 butiker och sparas i `localStorage`; saldot hämtas på knapptryck.
    - **Fällan, och varför migrering 0004 finns:** uppslaget sker på Systembolagets interna `productId`, inte artikelnumret. Artikelnumret svarar 200 med `stock: 0` och `isInStoreAssortment: false` på varje butik, alltså ett tyst fel svar. Raden bär nu `sb_product_id`, satt vid import, vid nattens uppdatering och vid första lagerfrågan på en gammal rad.
