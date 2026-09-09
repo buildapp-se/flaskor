@@ -1,5 +1,5 @@
 import { FatalError, NotFoundError, TransientError, UnauthorizedError } from '../shared/errors.ts'
-import type { Candidate, Drink, DrinkInput, DrinkPatch, Preview, ScanResult, Stock } from '../shared/types.ts'
+import type { Candidate, Drink, DrinkInput, DrinkPatch, Preview, ScanResult, Stock, Tasting, TastingInput } from '../shared/types.ts'
 
 const API_URL: string = import.meta.env.VITE_API_URL ?? 'http://localhost:8787'
 const GATE_KEY = 'flaskor.gate'
@@ -44,10 +44,16 @@ export const api = {
   deleteDrink: (id: number) => call<void>('DELETE', `/api/drinks/${id}`),
   preview: (q: string) => call<Preview>('GET', `/api/systembolaget?q=${encodeURIComponent(q)}`),
   previewVivino: (url: string) => call<Preview>('GET', `/api/vivino?q=${encodeURIComponent(url)}`),
+  /** Vinerna i en Caviste-låda ur produktlänken. En låda innehåller flera, så svaret är en lista. */
+  previewCaviste: (url: string) => call<{ wines: Preview[] }>('GET', `/api/caviste?q=${encodeURIComponent(url)}`).then((r) => r.wines),
   /** Streckkod och/eller foto (data-URL). Svaret är kandidater att välja bland, se ScanResult. */
   scan: (body: { image?: string; ean?: string }) => call<ScanResult>('POST', '/api/scan', body),
   /** Fritextsök hos Systembolaget: samma kandidatlista som skanningen ger. */
   search: (q: string) => call<{ candidates: Candidate[] }>('GET', `/api/search?q=${encodeURIComponent(q)}`).then((r) => r.candidates),
+  /** Drucken-loggen för en rad, senast druckna först (beslut 16). */
+  listTastings: (id: number) => call<{ tastings: Tasting[] }>('GET', `/api/drinks/${id}/tastings`).then((r) => r.tastings),
+  addTasting: (id: number, input: TastingInput) => call<Tasting>('POST', `/api/drinks/${id}/tastings`, input),
+  deleteTasting: (id: number, tastingId: number) => call<void>('DELETE', `/api/drinks/${id}/tastings/${tastingId}`),
   /** Lagersaldot för en rad i en butik. Kastar NotFoundError när varan inte förs alls. */
   stock: (id: number, store: string) => call<Stock>('GET', `/api/stock?drink=${id}&store=${store}`),
 }

@@ -24,6 +24,15 @@ export default defineConfig({
               return new Response('not found', { status: 404 })
             }
           }
+          // Caviste (beslut 6): produktsidan för CAV0143 ur fixtur, andra CAV-nummer finns inte.
+          if (url.hostname === 'www.caviste.se' || url.hostname === 'caviste.se') {
+            const nr = url.pathname.match(/\/cav0*(\d+)/i)?.[1]
+            try {
+              return new Response(await readFile(`worker/test/fixtures/caviste-cav0${nr}.html`, 'utf8'), { headers: { 'content-type': 'text/html' } })
+            } catch {
+              return new Response('not found', { status: 404 })
+            }
+          }
           // Vivino svarar alltid med Le Grappin-fixturen; rimlighetskontrollen avgör om betyget tas.
           if (url.hostname === 'www.vivino.com') {
             // Vinsidor: bara 2379181 finns som fixtur, andra id:n ger 404. Söksidan svarar alltid Le Grappin.

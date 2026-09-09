@@ -3,6 +3,7 @@ import type { Drink, DrinkPatch } from '../../shared/types.ts'
 import { windowState } from '../../shared/window.ts'
 import { Pill } from '../components/Pill.tsx'
 import { Stock } from '../components/Stock.tsx'
+import { Tastings } from '../components/Tastings.tsx'
 import { articleNo, dateShort, kr, pct, temp } from '../format.ts'
 import { navigate, PATHS } from '../hash.ts'
 import { IconExternal, IconMinus, IconPlus } from '../icons.tsx'
@@ -108,7 +109,7 @@ export function Detail({ id }: { id: number }) {
 
           {drink.taste && (
             <div className="fl-stack-8">
-              <span className="fl-label">{S.detail.taste}</span>
+              <span className="fl-label">{S.detail.taste(drink.source_kind)}</span>
               <p className="fl-detail__taste">{drink.taste}</p>
             </div>
           )}
@@ -179,6 +180,8 @@ export function Detail({ id }: { id: number }) {
         </div>
 
         <Stock drink={drink} />
+
+        <Tastings drinkId={drink.id} />
 
         <button
           className="fl-textbtn fl-detail__remove"

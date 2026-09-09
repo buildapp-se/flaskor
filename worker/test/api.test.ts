@@ -207,3 +207,67 @@ describe('lager i butik (BACKLOG P3)', () => {
     expect((await api('GET', `/api/stock?drink=${manual.id}&store=2401`)).status).toBe(400)
   })
 })
+
+describe('caviste-import (beslut 6)', () => {
+  it('ger lådans tre viner med hela raden ur produktsidan', async () => {
+    const res = await api('GET', '/api/caviste?q=https%3A%2F%2Fwww.caviste.se%2Fcav%2Fcav0143-colombera-garella%2F')
+    expect(res.status, await res.clone().text()).toBe(200)
+    const { wines } = await res.json<{ wines: Array<{ name: string; count: number; drink_to: number | null; source_kind: string; grapes: string | null }> }>()
+    expect(wines).toHaveLength(3)
+    expect(wines[0]).toMatchObject({ name: 'Colombera & Garella Coste della Sesia', count: 3, drink_to: 2026, source_kind: 'caviste', grapes: 'nebbiolo, vespolina, croatina' })
+  })
+
+  it('ett valt vin sparas som vanligt, med lådans antal', async () => {
+    const { wines } = await (await api('GET', '/api/caviste?q=https%3A%2F%2Fwww.caviste.se%2Fcav%2Fcav0143-colombera-garella%2F')).json<{ wines: unknown[] }>()
+    const saved = await (await api('POST', '/api/drinks', { ...(wines[1] as object), owned: true })).json<{ name: string; count: number; decant_hours: number }>()
+    expect(saved).toMatchObject({ name: 'Colombera & Garella Bramaterra', count: 2, decant_hours: 1 })
+  })
+
+  it('okänd låda: 404, annan sajt: 400', async () => {
+    expect((await api('GET', '/api/caviste?q=https%3A%2F%2Fwww.caviste.se%2Fcav%2Fcav0999-inget%2F')).status).toBe(404)
+    expect((await api('GET', '/api/caviste?q=https%3A%2F%2Fexample.com%2F')).status).toBe(400)
+  })
+})
+
+describe('drucken-logg (beslut 16)', () => {
+  async function drink() {
+    return (await api('POST', '/api/drinks', { kind: 'wine', name: 'Barolo', owned: true, count: 2 })).json<{ id: number }>()
+  }
+
+  it('skriver, listar senast först och tar bort', async () => {
+    const d = await drink()
+    expect(await (await api('GET', `/api/drinks/${d.id}/tastings`)).json()).toEqual({ tastings: [] })
+
+    await api('POST', `/api/drinks/${d.id}/tastings`, { drunk_on: '2026-01-05', rating: 4, note: 'till oxfilé' })
+    const second = await (await api('POST', `/api/drinks/${d.id}/tastings`, { drunk_on: '2026-06-20', rating: 5 })).json<{ id: number; note: string | null }>()
+    expect(second.note).toBeNull()
+
+    const { tastings } = await (await api('GET', `/api/drinks/${d.id}/tastings`)).json<{ tastings: Array<{ id: number; drunk_on: string; rating: number | null }> }>()
+    expect(tastings.map((t) => t.drunk_on)).toEqual(['2026-06-20', '2026-01-05'])
+
+    expect((await api('DELETE', `/api/drinks/${d.id}/tastings/${second.id}`)).status).toBe(204)
+    const after = await (await api('GET', `/api/drinks/${d.id}/tastings`)).json<{ tastings: unknown[] }>()
+    expect(after.tastings).toHaveLength(1)
+  })
+
+  it('avvisar datum och betyg som inte håller', async () => {
+    const d = await drink()
+    expect((await api('POST', `/api/drinks/${d.id}/tastings`, { drunk_on: 'i fredags' })).status).toBe(400)
+    expect((await api('POST', `/api/drinks/${d.id}/tastings`, {})).status).toBe(400)
+    expect((await api('POST', `/api/drinks/${d.id}/tastings`, { drunk_on: '2026-06-20', rating: 6 })).status).toBe(400)
+    expect((await api('POST', `/api/drinks/${d.id}/tastings`, { drunk_on: '2026-06-20', rating: 3.5 })).status).toBe(400)
+  })
+
+  it('loggen försvinner med raden, ingen föräldralös rad blir kvar', async () => {
+    const d = await drink()
+    await api('POST', `/api/drinks/${d.id}/tastings`, { drunk_on: '2026-06-20', rating: 5 })
+    await api('DELETE', `/api/drinks/${d.id}`)
+    const left = await env.DB.prepare('SELECT count(*) AS n FROM tasting WHERE drink_id = ?').bind(d.id).first<{ n: number }>()
+    expect(left?.n).toBe(0)
+  })
+
+  it('okänd rad ger 404, inte en logg på ett främmande id', async () => {
+    expect((await api('GET', '/api/drinks/99999/tastings')).status).toBe(404)
+    expect((await api('POST', '/api/drinks/99999/tastings', { drunk_on: '2026-06-20' })).status).toBe(404)
+  })
+})
