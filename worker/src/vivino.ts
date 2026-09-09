@@ -238,3 +238,23 @@ export function vivinoToPreview(wine: VivinoWine, wineId: string, year: number |
     rating_url: null,
   }
 }
+
+/**
+ * Betyget till en rad som redan finns. Har raden en sparad Vivino-länk hämtas betyget från just den vinsidan,
+ * annars görs namnsökningen som vanligt. Så överlever en länk rättad för hand nattens omhämtning: förut sökte
+ * cronen på namnet igen och skrev tillbaka fel vin. Vinsidan är dessutom en bråkdel av söksidans 1,7 MB.
+ * En sparad länk som inte går att läsa (någon har klistrat in något annat) faller tillbaka på sökningen.
+ */
+export async function refreshVivino(drink: Pick<Drink, 'name' | 'producer' | 'vivino_url'>, now = new Date()): Promise<DrinkPatch> {
+  if (drink.vivino_url) {
+    try {
+      const { wineId } = parseVivinoUrl(drink.vivino_url)
+      const wine = parseWinePage(await fetchWine(wineId), wineId)
+      return { vivino_rating: wine.rating, vivino_count: wine.count, vivino_url: drink.vivino_url, vivino_checked_at: now.toISOString() }
+    } catch (error) {
+      if (error instanceof TransientError) throw error
+      console.error(`vivino_url ${drink.vivino_url} går inte att läsa, söker på namnet i stället`, error)
+    }
+  }
+  return vivinoPatch(await findVivino(queryFor(drink)), now)
+}

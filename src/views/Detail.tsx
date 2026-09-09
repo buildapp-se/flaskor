@@ -74,6 +74,8 @@ export function Detail({ id }: { id: number }) {
           onSave={async (p) => {
             setEditing(false)
             await patch(drink.id, p)
+            // Rättad Vivino-länk: hämta betyget från den nya vinsidan direkt, annars står det gamla kvar till natten.
+            if (p.vivino_url !== undefined && p.vivino_url !== drink.vivino_url) await refresh(drink.id)
           }}
         />
       ) : (
@@ -242,7 +244,7 @@ function Timeline({ from, to }: { from: number; to: number }) {
 type Field = keyof typeof S.detail.fields
 const TEXTAREAS: ReadonlyArray<Field> = ['food', 'note', 'taste']
 const NUMBERS: ReadonlyArray<Field> = ['vintage', 'alcohol', 'volume', 'drink_from', 'drink_to', 'decant_hours', 'price_paid', 'rating']
-const WINE_ONLY: ReadonlyArray<Field> = ['drink_from', 'drink_to', 'decant_hours', 'grapes', 'vintage']
+const WINE_ONLY: ReadonlyArray<Field> = ['drink_from', 'drink_to', 'decant_hours', 'grapes', 'vintage', 'vivino_url']
 /** Vivino täcker vinets betyg, så det egna betygsfältet är bara till för sprit och öl. */
 const RATING_ONLY: ReadonlyArray<Field> = ['rating', 'rating_url']
 
@@ -268,6 +270,8 @@ export function EditForm({ drink, onCancel, onSave, saveLabel = S.detail.save }:
     taste: drink.taste ?? '',
     rating: drink.rating?.toString() ?? '',
     rating_url: drink.rating_url ?? '',
+    vivino_url: drink.vivino_url ?? '',
+    image_url: drink.image_url ?? '',
   }
   const [values, setValues] = useState(initial)
   const fields = (Object.keys(S.detail.fields) as Field[]).filter((f) => (drink.kind === 'wine' || !WINE_ONLY.includes(f)) && (drink.kind !== 'wine' || !RATING_ONLY.includes(f)))

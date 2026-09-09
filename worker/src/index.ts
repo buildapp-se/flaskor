@@ -3,7 +3,7 @@ import type { Drink, DrinkPatch, LabelGuess, Preview, ScanResult } from '../../s
 import { deleteDrink, getDrink, insertDrink, listDrinks, sanitize, updateDrink } from './db.ts'
 import { findByEan, normalizeEan, rank, readLabel, searchProducts, validEan } from './scan.ts'
 import { fetchProduct, parseProductNumber, toPreview } from './systembolaget.ts'
-import { fetchWine, findVivino, parseVivinoUrl, parseWinePage, queryFor, vivinoDue, vivinoPatch, vivinoToPreview } from './vivino.ts'
+import { fetchWine, findVivino, parseVivinoUrl, parseWinePage, queryFor, refreshVivino, vivinoDue, vivinoPatch, vivinoToPreview } from './vivino.ts'
 
 // Grindkoden (beslut 2): en delad kod, skickad som Bearer, jämförd mot secreten GATE_CODE. Sitter här, aldrig bara i klienten.
 // GEMINI_API_KEY och SB_API_KEY (2026-09-08) är secrets för skanningen: saknas Gemini svarar /api/scan 500 på foton,
@@ -155,7 +155,7 @@ async function scan(body: unknown, env: GateEnv): Promise<ScanResult> {
 async function refreshDrink(db: D1Database, drink: Drink): Promise<Drink> {
   const patch: DrinkPatch = {}
   if (drink.source_kind === 'systembolaget' && drink.source_id) Object.assign(patch, refreshPatch(await fetchFresh(drink.source_id), drink))
-  if (drink.kind === 'wine') Object.assign(patch, vivinoPatch(await findVivino(queryFor(drink))))
+  if (drink.kind === 'wine') Object.assign(patch, await refreshVivino(drink))
   if (Object.keys(patch).length === 0) throw new FatalError('nothing to refresh for this drink')
   return updateDrink(db, drink.id, patch)
 }
@@ -206,7 +206,7 @@ export async function refreshAll(db: D1Database): Promise<{ refreshed: number; f
   let vivino = 0
   for (const row of drinks.filter((d) => vivinoDue(d)).slice(0, VIVINO_CAP)) {
     try {
-      await updateDrink(db, row.id, vivinoPatch(await findVivino(queryFor(row))))
+      await updateDrink(db, row.id, await refreshVivino(row))
       vivino++
     } catch (error) {
       failed++

@@ -181,6 +181,8 @@ export const S = {
       taste: 'Smak',
       rating: 'Eget betyg, 1-5',
       rating_url: 'Länk till betyget',
+      vivino_url: 'Vivino-länk',
+      image_url: 'Bildlänk',
     },
   },
   import: {
