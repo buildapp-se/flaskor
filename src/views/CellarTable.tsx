@@ -4,6 +4,7 @@ import { windowState } from '../../shared/window.ts'
 import { Highlight } from '../components/Highlight.tsx'
 import { Pill } from '../components/Pill.tsx'
 import { Rating } from '../components/Rating.tsx'
+import { LastDrunk } from '../components/Tastings.tsx'
 import { articleNo, kr, yearRange } from '../format.ts'
 import { detailPath, navigate } from '../hash.ts'
 import { IconArrow } from '../icons.tsx'
@@ -53,6 +54,7 @@ const COLUMNS: ReadonlyArray<Column> = [
   { key: 'vivino', numeric: true, render: (d) => <Rating drink={d} count /> },
   { key: 'food', wide: true, render: (d, q) => text(d.food, q) },
   { key: 'open_level', render: (d) => (d.open_level === null ? '' : S.bar.level[d.open_level]) },
+  { key: 'lastDrunk', render: (d) => <LastDrunk drink={d} /> },
   { key: 'note', wide: true, render: (d, q) => text(d.note, q) },
   {
     key: 'source',
@@ -67,10 +69,10 @@ const COLUMNS: ReadonlyArray<Column> = [
   },
 ]
 
-const SORTABLE = new Set<ColumnKey>(['name', 'vintage', 'category', 'country', 'region', 'grapes', 'count', 'price', 'total', 'windowEnd', 'serve_temp', 'decant', 'vivino', 'food', 'open_level'])
+const SORTABLE = new Set<ColumnKey>(['name', 'vintage', 'category', 'country', 'region', 'grapes', 'count', 'price', 'total', 'windowEnd', 'serve_temp', 'decant', 'vivino', 'food', 'open_level', 'lastDrunk'])
 
 /** Kolumner dolda från start: de som sällan avgör något vid en blick. */
-const HIDDEN_AT_START: ColumnKey[] = ['region', 'grapes', 'decant', 'note', 'source']
+const HIDDEN_AT_START: ColumnKey[] = ['region', 'grapes', 'decant', 'note', 'source', 'lastDrunk']
 
 /** Källarens kolumner, oförändrat: alla utom open_level (sprit-fältet). */
 const WINE_COLUMNS: ColumnKey[] = COLUMNS.map((c) => c.key).filter((k) => k !== 'open_level')

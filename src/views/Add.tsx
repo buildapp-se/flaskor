@@ -24,7 +24,7 @@ function blank(kind: Kind): Drink {
     id: 0, household_id: 0, kind, owned: false, name: '', producer: null, vintage: null, country: null, region: null, category: kind === 'wine' ? 'Rött vin' : null,
     style: null, grapes: null, volume_ml: null, alcohol: null, source_kind: 'manual', source_id: null, source_url: null, image_url: null, sb_product_id: null, price_paid: null,
     price_current: null, price_checked_at: null, availability: 'unknown', count: 0, open_level: null, drink_from: null, drink_to: null, serve_temp: null,
-    decant_hours: null, food: null, note: null, taste: null, vivino_rating: null, vivino_count: null, vivino_url: null, vivino_checked_at: null, rating: null, rating_url: null, created_at: '', updated_at: '',
+    decant_hours: null, food: null, note: null, taste: null, vivino_rating: null, vivino_count: null, vivino_url: null, vivino_checked_at: null, rating: null, rating_url: null, last_drunk_on: null, last_rating: null, tasting_count: 0, created_at: '', updated_at: '',
   }
 }
 
@@ -324,7 +324,7 @@ export function Add() {
                 <div className="fl-small fl-muted">{[preview.producer, [preview.region, preview.country].filter(Boolean).join(', ')].filter(Boolean).join(' · ')}</div>
                 <div className="fl-small fl-muted">
                   {[preview.grapes, preview.category, preview.volume_ml !== null ? volume(preview.volume_ml) : null, preview.alcohol !== null ? pct(preview.alcohol) : null].filter(Boolean).join(' · ')}
-                  {preview.vivino_rating !== null && <Rating drink={{ ...preview, id: 0, household_id: 0, created_at: '', updated_at: '' }} count />}
+                  {preview.vivino_rating !== null && <Rating drink={{ ...preview, id: 0, household_id: 0, last_drunk_on: null, last_rating: null, tasting_count: 0, created_at: '', updated_at: '' }} count />}
                 </div>
                 {(preview.price_current ?? preview.price_paid) !== null && <div className="fl-add__price">{kr((preview.price_current ?? preview.price_paid)!)}</div>}
                 {fromVivino && <div className="fl-small fl-muted">{S.add.fromVivino}</div>}

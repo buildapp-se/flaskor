@@ -266,6 +266,19 @@ describe('drucken-logg (beslut 16)', () => {
     expect(left?.n).toBe(0)
   })
 
+  it('listan bär senaste avsmakningen, betyget från just den raden och antalet', async () => {
+    const d = await drink()
+    const other = await drink()
+    await api('POST', `/api/drinks/${d.id}/tastings`, { drunk_on: '2026-01-05', rating: 2 })
+    await api('POST', `/api/drinks/${d.id}/tastings`, { drunk_on: '2026-06-20', rating: 5 })
+
+    const { drinks } = await (await api('GET', '/api/drinks')).json<{ drinks: Array<{ id: number; last_drunk_on: string | null; last_rating: number | null; tasting_count: number }> }>()
+    const mine = drinks.find((x) => x.id === d.id)
+    expect(mine).toMatchObject({ last_drunk_on: '2026-06-20', last_rating: 5, tasting_count: 2 })
+    // En rad utan logg får nollvärden, inte undefined: klienten sorterar och renderar på dem.
+    expect(drinks.find((x) => x.id === other.id)).toMatchObject({ last_drunk_on: null, last_rating: null, tasting_count: 0 })
+  })
+
   it('okänd rad ger 404, inte en logg på ett främmande id', async () => {
     expect((await api('GET', '/api/drinks/99999/tastings')).status).toBe(404)
     expect((await api('POST', '/api/drinks/99999/tastings', { drunk_on: '2026-06-20' })).status).toBe(404)

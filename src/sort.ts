@@ -1,7 +1,7 @@
 import type { Drink } from '../shared/types.ts'
 
 // En sorteringsmekanism för listan och tabellen: nyckel plus riktning, tomma värden alltid sist (beslut 28).
-export type SortKey = 'name' | 'vintage' | 'category' | 'country' | 'region' | 'grapes' | 'count' | 'price' | 'total' | 'windowEnd' | 'serve_temp' | 'decant' | 'food' | 'vivino' | 'open_level'
+export type SortKey = 'name' | 'vintage' | 'category' | 'country' | 'region' | 'grapes' | 'count' | 'price' | 'total' | 'windowEnd' | 'serve_temp' | 'decant' | 'food' | 'vivino' | 'open_level' | 'lastDrunk'
 export type SortDir = 'asc' | 'desc'
 
 /** Priset en rad räknas på: inköpspris, annars dagspris. */
@@ -30,10 +30,12 @@ export const SORT_VALUE: Record<SortKey, (d: Drink) => number | string | null> =
   food: (d) => d.food,
   vivino: (d) => d.vivino_rating ?? d.rating,
   open_level: (d) => d.open_level,
+  // Datum som YYYY-MM-DD sorterar rätt som text, så ingen parsning behövs. Aldrig drucken hamnar sist.
+  lastDrunk: (d) => d.last_drunk_on,
 }
 
 /** Riktningen man vill ha först när nyckeln väljs: dyrast, flest, bäst betyg; annars stigande. */
-export const DEFAULT_DIR: Partial<Record<SortKey, SortDir>> = { price: 'desc', total: 'desc', count: 'desc', vivino: 'desc' }
+export const DEFAULT_DIR: Partial<Record<SortKey, SortDir>> = { price: 'desc', total: 'desc', count: 'desc', vivino: 'desc', lastDrunk: 'desc' }
 
 export function compare(key: SortKey, dir: SortDir): (a: Drink, b: Drink) => number {
   const value = SORT_VALUE[key]

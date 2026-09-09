@@ -14,7 +14,7 @@ import { CellarTable, type ColumnKey } from './CellarTable.tsx'
 // Barskåpet: samma mönster som Källaren (sök, chips, sorterbar tabell, kryssrutor, massåtgärder),
 // men filtrerat på spritsort istället för drick-år, som saknar mening för sprit.
 
-const BAR_COLUMNS: ColumnKey[] = ['name', 'category', 'count', 'price', 'total', 'open_level', 'vivino', 'note', 'source']
+const BAR_COLUMNS: ColumnKey[] = ['name', 'category', 'count', 'price', 'total', 'open_level', 'vivino', 'lastDrunk', 'note', 'source']
 const BAR_HIDDEN_AT_START: ColumnKey[] = ['note', 'source']
 const BAR_SORTS = Object.keys(S.bar.sort) as ReadonlyArray<keyof typeof S.bar.sort>
 
