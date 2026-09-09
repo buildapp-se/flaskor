@@ -1335,6 +1335,17 @@ p {
   color: var(--fl-ink-2);
   text-wrap: pretty;
 }
+/* Senaste avsmakningen på raden: samma diskreta storlek som söketräffen, betyget i accentfärgen. */
+.fl-row__drunk,
+.fl-drunk {
+  font-size: 13px;
+  color: var(--fl-ink-2);
+}
+.fl-drunk__rating {
+  color: var(--fl-accent);
+  letter-spacing: 1px;
+  margin-left: 6px;
+}
 .fl-row__hit mark,
 .fl-table mark {
   background: var(--fl-soon-tint);

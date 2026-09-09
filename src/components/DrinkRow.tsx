@@ -9,6 +9,7 @@ import { Bottle } from '../views/Add.tsx'
 import { Highlight, hits } from './Highlight.tsx'
 import { Pill } from './Pill.tsx'
 import { Rating } from './Rating.tsx'
+import { LastDrunk } from './Tastings.tsx'
 
 /** Raden i Källaren (design §3): foto, namn och ursprung, piller, pris, antal, knappar. Mobilen visar pris och "N fl" till höger.
  * Träffar sökningen maten eller kommentaren visas det fältet som en extra rad med träffen markerad. */
@@ -43,6 +44,11 @@ export function DrinkRow({ drink, actions, query = '', muted = false }: { drink:
           {range}
           <Rating drink={drink} />
         </div>
+        {drink.last_drunk_on !== null && (
+          <div className="fl-row__drunk">
+            <LastDrunk drink={drink} />
+          </div>
+        )}
         {hit !== null && (
           <div className="fl-row__hit">
             <Highlight text={hit} query={query} />

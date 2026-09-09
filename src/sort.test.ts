@@ -3,7 +3,7 @@ import type { Drink } from '../shared/types.ts'
 import { compare, valueOf } from './sort.ts'
 
 function drink(over: Partial<Drink>): Drink {
-  return { id: 0, household_id: 1, kind: 'wine', owned: true, name: '', producer: null, vintage: null, country: null, region: null, category: null, style: null, grapes: null, volume_ml: null, alcohol: null, source_kind: 'manual', source_id: null, source_url: null, image_url: null, sb_product_id: null, price_paid: null, price_current: null, price_checked_at: null, availability: 'unknown', count: 0, open_level: null, drink_from: null, drink_to: null, serve_temp: null, decant_hours: null, food: null, note: null, taste: null, vivino_rating: null, vivino_count: null, vivino_url: null, vivino_checked_at: null, rating: null, rating_url: null, created_at: '', updated_at: '', ...over }
+  return { id: 0, household_id: 1, kind: 'wine', owned: true, name: '', producer: null, vintage: null, country: null, region: null, category: null, style: null, grapes: null, volume_ml: null, alcohol: null, source_kind: 'manual', source_id: null, source_url: null, image_url: null, sb_product_id: null, price_paid: null, price_current: null, price_checked_at: null, availability: 'unknown', count: 0, open_level: null, drink_from: null, drink_to: null, serve_temp: null, decant_hours: null, food: null, note: null, taste: null, vivino_rating: null, vivino_count: null, vivino_url: null, vivino_checked_at: null, rating: null, rating_url: null, last_drunk_on: null, last_rating: null, tasting_count: 0, created_at: '', updated_at: '', ...over }
 }
 
 describe('sortering (beslut 28)', () => {
@@ -20,6 +20,11 @@ describe('sortering (beslut 28)', () => {
     expect([...rows].sort(compare('vintage', 'asc')).map((d) => d.name)).toEqual(['Örjan', 'Anna', 'Ärla'])
     const withYear = [drink({ name: 'a', vintage: 2019 }), drink({ name: 'b' }), drink({ name: 'c', vintage: 2022 })]
     expect(withYear.sort(compare('vintage', 'desc')).map((d) => d.name)).toEqual(['c', 'a', 'b'])
+  })
+  it('senast drucken sorterar på datum, aldrig druckna sist', () => {
+    const drunk = [drink({ name: 'a', last_drunk_on: '2026-01-05' }), drink({ name: 'b' }), drink({ name: 'c', last_drunk_on: '2026-09-09' })]
+    expect([...drunk].sort(compare('lastDrunk', 'desc')).map((d) => d.name)).toEqual(['c', 'a', 'b'])
+    expect([...drunk].sort(compare('lastDrunk', 'asc')).map((d) => d.name)).toEqual(['a', 'c', 'b'])
   })
   it('värde är antal gånger pris, saknat pris räknas som noll', () => {
     expect(rows.map(valueOf)).toEqual([200, 300, 0])

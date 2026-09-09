@@ -3,10 +3,12 @@ import type { Drink, DrinkInput, DrinkPatch, Tasting, TastingInput } from '../..
 
 export const HOUSEHOLD_ID = 1
 
-type Row = Omit<Drink, 'owned'> & { owned: 0 | 1 }
+type Derived = 'last_drunk_on' | 'last_rating' | 'tasting_count'
+// Aggregaten kommer bara med i listan; en enskild rad läses med SELECT * och saknar dem.
+type Row = Omit<Drink, 'owned' | Derived> & { owned: 0 | 1 } & Partial<Pick<Drink, Derived>>
 
 function rowToDrink(row: Row): Drink {
-  return { ...row, owned: row.owned === 1 }
+  return { ...row, owned: row.owned === 1, last_drunk_on: row.last_drunk_on ?? null, last_rating: row.last_rating ?? null, tasting_count: row.tasting_count ?? 0 }
 }
 
 const WRITABLE: ReadonlyArray<keyof DrinkInput> = [
@@ -47,8 +49,22 @@ export function sanitize(body: unknown): DrinkPatch {
   return out as DrinkPatch
 }
 
+/**
+ * Alla rader med senaste avsmakningen påhängd (backlog P3), så listan kan visa "senast drucken" utan ett
+ * anrop per rad. `rating` i undergruppen hör till raden med `MAX(drunk_on)`: SQLite lovar det för en enda
+ * min/max-aggregat, vilket sparar en fönsterfunktion.
+ */
 export async function listDrinks(db: D1Database): Promise<Drink[]> {
-  const { results } = await db.prepare('SELECT * FROM drink WHERE household_id = ? ORDER BY id').bind(HOUSEHOLD_ID).all<Row>()
+  const { results } = await db
+    .prepare(
+      `SELECT d.*, t.last_drunk_on, t.last_rating, COALESCE(t.tasting_count, 0) AS tasting_count
+       FROM drink d
+       LEFT JOIN (SELECT drink_id, MAX(drunk_on) AS last_drunk_on, rating AS last_rating, COUNT(*) AS tasting_count FROM tasting GROUP BY drink_id) t
+         ON t.drink_id = d.id
+       WHERE d.household_id = ? ORDER BY d.id`,
+    )
+    .bind(HOUSEHOLD_ID)
+    .all<Row>()
   return results.map(rowToDrink)
 }
 

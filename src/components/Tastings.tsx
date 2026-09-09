@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import type { Tasting } from '../../shared/types.ts'
+import type { Drink, Tasting } from '../../shared/types.ts'
 import { api } from '../api.ts'
 import { dateShort } from '../format.ts'
 import { S } from '../strings.ts'
@@ -8,7 +8,20 @@ import { S } from '../strings.ts'
 // "Drack en" rör inte loggen. Beslut 16 säger uttryckligen ingen ruta och inget betyg vid nedräkningen, och
 // friktion vid fel tillfälle är precis varför loggar slutar användas. Här skrivs den när man faktiskt har en
 // åsikt, i efterhand om man vill.
-// ponytail: hämtas per rad när detaljvyn öppnas, inte i den globala listan. Loggen syns bara här.
+// ponytail: hela loggen hämtas per rad när detaljvyn öppnas. Listan får bara senaste avsmakningen, som följer
+// med i GET /api/drinks som aggregat (backlog P3), så inget flöde behöver ett anrop per rad.
+
+/** Senaste avsmakningen som en rad text: "Drucken 3 sep 2026 ★★★★ · 2 ggr". Inget alls när raden aldrig druckits. */
+export function LastDrunk({ drink }: { drink: Drink }) {
+  if (drink.last_drunk_on === null) return null
+  return (
+    <span className="fl-drunk">
+      {S.tasting.drunkOn(dateShort(drink.last_drunk_on))}
+      {drink.last_rating !== null && <span className="fl-drunk__rating">{'★'.repeat(drink.last_rating)}</span>}
+      {S.tasting.times(drink.tasting_count)}
+    </span>
+  )
+}
 
 /** Dagens datum som YYYY-MM-DD i lokal tid. `toISOString` ger UTC och blir fel datum sent på kvällen. */
 function today(): string {

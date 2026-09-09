@@ -49,12 +49,19 @@ export interface Drink {
   /** Eget eller importerat betyg för sprit och öl (Vivino täcker bara vin), 1 till 5, med länk till källan. */
   rating: number | null
   rating_url: string | null
+  /**
+   * Härlett ur `tasting` i GET /api/drinks, inte kolumner på raden: senaste avsmakningens datum och betyg samt
+   * antalet anteckningar. Finns för att listan ska kunna visa "senast drucken" utan ett anrop per rad (backlog P3).
+   */
+  last_drunk_on: string | null
+  last_rating: number | null
+  tasting_count: number
   created_at: string
   updated_at: string
 }
 
-/** Fälten klienten får skriva. Allt annat sätter servern. */
-export type DrinkInput = Omit<Drink, 'id' | 'household_id' | 'created_at' | 'updated_at'>
+/** Fälten klienten får skriva. Allt annat sätter servern, och de härledda fälten räknas fram vid läsning. */
+export type DrinkInput = Omit<Drink, 'id' | 'household_id' | 'created_at' | 'updated_at' | 'last_drunk_on' | 'last_rating' | 'tasting_count'>
 export type DrinkPatch = Partial<DrinkInput>
 
 /** Vad Workern svarar med när ett Systembolagsnummer hämtats: en rad utan id, redo att sparas. */
