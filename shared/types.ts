@@ -84,6 +84,21 @@ export interface Candidate {
   image_url: string | null
 }
 
+/**
+ * En avsmakning (beslut 16, backlog P3): en rad kan drickas många gånger, så loggen är egna rader.
+ * `drunk_on` är ett datum, `YYYY-MM-DD`, inte en tidsstämpel: ingen minns klockslaget.
+ */
+export interface Tasting {
+  id: number
+  drink_id: number
+  drunk_on: string
+  rating: number | null
+  note: string | null
+  created_at: string
+}
+
+export type TastingInput = Omit<Tasting, 'id' | 'drink_id' | 'created_at'>
+
 /** Svaret på GET /api/stock: saldot för en rad i en butik. `shelf` är Systembolagets hyllplats, "14-04-03". */
 export interface Stock {
   store: string

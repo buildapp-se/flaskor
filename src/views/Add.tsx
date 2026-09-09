@@ -44,6 +44,10 @@ function isVivino(q: string): boolean {
   return /vivino\.com\//i.test(q)
 }
 
+function isCaviste(q: string): boolean {
+  return /caviste\.se\//i.test(q)
+}
+
 export function Add() {
   const { add } = useStore()
   const fileInput = useRef<HTMLInputElement>(null)
@@ -58,6 +62,8 @@ export function Add() {
   const [scan, setScan] = useState<ScanResult | null>(null)
   /** Träffar på ett fritextnamn hos Systembolaget (BACKLOG P3, 2026-09-09). */
   const [found, setFound] = useState<Candidate[] | null>(null)
+  /** Vinerna i en Caviste-låda, att välja ur (beslut 6). */
+  const [box, setBox] = useState<Preview[] | null>(null)
 
   function reset() {
     setError(null)
@@ -65,6 +71,7 @@ export function Add() {
     setManual(null)
     setScan(null)
     setFound(null)
+    setBox(null)
   }
 
   async function fetchPreview(event: FormEvent) {
@@ -78,7 +85,12 @@ export function Add() {
     setBusy('fetch')
     reset()
     try {
-      setPreview(isVivino(q) ? await api.previewVivino(q) : await api.preview(q))
+      if (isCaviste(q)) {
+        const wines = await api.previewCaviste(q)
+        // En låda med ett enda vin behöver ingen valruta.
+        if (wines.length === 1) setPreview(wines[0]!)
+        else setBox(wines)
+      } else setPreview(isVivino(q) ? await api.previewVivino(q) : await api.preview(q))
       setFetchedAt(new Date().toISOString())
       setEditingWindow(false)
     } catch (err) {
@@ -186,7 +198,8 @@ export function Add() {
     setError(null)
     try {
       // Direkt till källaren: en flaska, inköpspris = dagens pris om det finns. Ändras sedan i detaljvyn.
-      const row = await add(owned ? { ...preview, owned: true, count: 1, price_paid: preview.price_paid ?? preview.price_current } : preview)
+      // Caviste-lådan säger hur många flaskor av vinet den innehåller; övriga vägar ger 0 och blir en flaska.
+      const row = await add(owned ? { ...preview, owned: true, count: preview.count > 0 ? preview.count : 1, price_paid: preview.price_paid ?? preview.price_current } : { ...preview, count: 0 })
       navigate(owned ? detailPath(row.id) : PATHS.wishlist)
     } catch {
       setError(S.error.generic)
@@ -197,7 +210,7 @@ export function Add() {
   const state = preview ? (preview.kind === 'wine' ? windowState(preview.drink_from, preview.drink_to) : null) : null
   const windowManual = preview !== null && preview.source_kind === 'systembolaget' && state !== 'unknown' && !editingWindow
   const fromVivino = preview !== null && preview.source_kind === 'manual' && preview.vivino_url !== null && fetchedAt !== null
-  const idle = !preview && manual === null && scan === null && found === null && query.trim() === ''
+  const idle = !preview && manual === null && scan === null && found === null && box === null && query.trim() === ''
 
   return (
     <div className="fl-add">
@@ -263,6 +276,35 @@ export function Add() {
         </div>
       )}
 
+      {box && (
+        <div className="fl-card fl-add__card">
+          <div className="fl-label">{S.caviste.pick}</div>
+          <div className="fl-small fl-muted">{S.caviste.lead(box.length)}</div>
+          <div className="fl-scan__list">
+            {box.map((w) => (
+              <button
+                key={w.name}
+                type="button"
+                className="fl-scan__item"
+                disabled={busy !== null}
+                onClick={() => {
+                  setPreview(w)
+                  setBox(null)
+                  setFetchedAt(new Date().toISOString())
+                  setEditingWindow(false)
+                }}
+              >
+                <Bottle url={w.image_url} size="md" />
+                <span className="fl-scan__text">
+                  <span className="fl-scan__name">{w.vintage ? `${w.name} ${w.vintage}` : w.name}</span>
+                  <span className="fl-small fl-muted">{[S.caviste.bottles(w.count), w.category, w.price_current !== null ? kr(w.price_current) : null].filter(Boolean).join(' · ')}</span>
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {manual !== null && (
         <div className="fl-card fl-add__card">
           <div className="fl-label">
@@ -325,7 +367,7 @@ export function Add() {
             )}
             {preview.taste && (
               <div className="fl-stack-8">
-                <span className="fl-label">{S.add.taste}</span>
+                <span className="fl-label">{S.add.taste(preview.source_kind)}</span>
                 <p className="fl-add__taste">{preview.taste}</p>
               </div>
             )}

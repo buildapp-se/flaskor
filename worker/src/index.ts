@@ -1,6 +1,7 @@
 import { FatalError, NotFoundError, TransientError, UnauthorizedError } from '../../shared/errors.ts'
-import type { Candidate, Drink, DrinkPatch, LabelGuess, Preview, ScanResult, Stock } from '../../shared/types.ts'
-import { deleteDrink, getDrink, insertDrink, listDrinks, sanitize, updateDrink } from './db.ts'
+import type { Candidate, Drink, DrinkPatch, LabelGuess, Preview, ScanResult, Stock, Tasting } from '../../shared/types.ts'
+import { fetchCaviste, parseCavistePage, parseCavisteUrl } from './caviste.ts'
+import { deleteDrink, deleteTasting, getDrink, insertDrink, insertTasting, listDrinks, listTastings, sanitize, sanitizeTasting, updateDrink } from './db.ts'
 import { findByEan, normalizeEan, rank, readLabel, searchOnce, searchProducts, validEan } from './scan.ts'
 import { fetchStock } from './stock.ts'
 import { fetchProduct, parseProductNumber, toPreview } from './systembolaget.ts'
@@ -62,6 +63,21 @@ async function route(request: Request, env: GateEnv): Promise<unknown> {
     return null
   }
 
+  // Drucken-logg (beslut 16). getDrink först, så en logg aldrig hamnar på ett id som inte är hushållets.
+  const tastings = path.match(/^\/api\/drinks\/(\d+)\/tastings$/)
+  if (tastings?.[1]) {
+    const drink = await getDrink(env.DB, Number(tastings[1]))
+    if (method === 'GET') return { tastings: (await listTastings(env.DB, drink.id)) satisfies Tasting[] }
+    if (method === 'POST') return insertTasting(env.DB, drink.id, sanitizeTasting(await request.json()))
+  }
+
+  const tasting = path.match(/^\/api\/drinks\/(\d+)\/tastings\/(\d+)$/)
+  if (tasting?.[1] && tasting[2] && method === 'DELETE') {
+    const drink = await getDrink(env.DB, Number(tasting[1]))
+    await deleteTasting(env.DB, drink.id, Number(tasting[2]))
+    return null
+  }
+
   const refresh = path.match(/^\/api\/drinks\/(\d+)\/refresh$/)
   if (refresh?.[1] && method === 'POST') return refreshDrink(env.DB, await getDrink(env.DB, Number(refresh[1])))
 
@@ -86,6 +102,12 @@ async function route(request: Request, env: GateEnv): Promise<unknown> {
     const drink = await getDrink(env.DB, Number(url.searchParams.get('drink') ?? ''))
     if (!env.SB_API_KEY) throw new FatalError('SB_API_KEY is not configured', 500)
     return { store, ...(await fetchStock(store, await productIdOf(env.DB, drink), env.SB_API_KEY)) } satisfies Stock
+  }
+
+  // Caviste-import via produktlänk (beslut 6). En låda innehåller flera viner, så svaret är en lista att välja ur.
+  if (method === 'GET' && path === '/api/caviste') {
+    const { number, url: page } = parseCavisteUrl(url.searchParams.get('q') ?? '')
+    return { wines: parseCavistePage(await fetchCaviste(page), number, page) satisfies Preview[] }
   }
 
   if (method === 'GET' && path === '/api/vivino') {
