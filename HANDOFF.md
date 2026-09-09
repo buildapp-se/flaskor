@@ -1,15 +1,22 @@
 ---
 schemaVersion: 1
 status: active
-currentGoal: Tre omgångar 2026-09-09, alla live: Vivino-länken pinnad, Caviste-bilderna rättade, lagersaldo i vald butik, sök på namn, Caviste-import via produktlänk och drucken-logg. Distiller-importen väntar fortfarande på ett uttryckligt ja.
-nextAction: Ägar-QA av dagens tre omgångar: lagersaldot och namnsöket i telefonen, en Caviste-länk i Lägg till, en anteckning i Drucket. Rätta de tre Caviste-bildlänkarna i Ändra, adresserna står nedan. Skanna om flaskorna som missade 2026-09-08. Sedan ja eller nej på Distiller-importen.
+currentGoal: Fyra omgångar 2026-09-09, alla live: Vivino-länken pinnad och Caviste-bilderna rättade; lagersaldo i vald butik och sök på namn; Caviste-import via produktlänk och drucken-logg; lagerkoll för hela Önskelistan. Distiller-importen väntar fortfarande på ett uttryckligt ja.
+nextAction: Ägar-QA av dagens fyra omgångar: namnsöket i Lägg till, en Caviste-länk, en anteckning i Drucket, och framför allt "Kolla lagret för alla" i Önskelistan med din butik vald. Rätta de tre Caviste-bildlänkarna i Ändra, adresserna står nedan. Skanna om flaskorna som missade 2026-09-08. Sedan ja eller nej på Distiller-importen.
 blockers: []
 reviewedAt: 2026-09-09
 ---
 
 # Handoff: Flaskor
 
-Senast uppdaterad: 2026-09-09, tredje omgången. **Caviste-import via produktlänk (beslut 6) och drucken-logg (beslut 16)**, båda byggda, verifierade och live (commits `358f532` och `d8e7e74`, migrering 0005 körd i molnet, Worker `ab709a53`, Pages-körning 34340681913 grön, bundeln `index-DUDPN5ca.js`). Båda stod som "senare" i backloggen, ingendera var bortvald.
+Senast uppdaterad: 2026-09-09, fjärde omgången. **Kolla lagret för hela Önskelistan i vald butik** (commit `7a45a81`, Pages-körning 34353704189 grön, bundeln `index-CD0y5EKs.js`; ingen Worker-ändring, ingen migrering). Det är hela poängen med lagersaldot: vad av det jag vill ha kan jag köpa i dag. Punkten låg som P3 i morse med motiveringen att ett anrop per rad vid varje sidladdning var för mycket. Invändningen gällde automatiken, inte funktionen: nu sker det på en knapp, fyra åt gången, samma mönster som bulkimportens uppslag av artikelnummer, och utan ny route.
+
+- Önskelistan har en butiksrad (samma sparade butik som detaljvyn), knappen "Kolla lagret för alla N", en summering ("3 av 5 finns i butiken") och en saldorad med hyllplats per vara.
+- **Resultatet lever i minnet, inte i databasen.** Saldot åldras på timmar och ska inte se ut som ett faktum efter en omladdning.
+- En rad som misslyckas hoppas över i stället för att sänka hela körningen.
+- Verifierat i Chromium mot skarpa Systembolagsdata: fem varor, tre i lager med hyllplats, två som butiken inte för.
+
+Tidigare samma dag: tredje omgången. **Caviste-import via produktlänk (beslut 6) och drucken-logg (beslut 16)**, båda byggda, verifierade och live (commits `358f532` och `d8e7e74`, migrering 0005 körd i molnet, Worker `ab709a53`, Pages-körning 34340681913 grön, bundeln `index-DUDPN5ca.js`). Båda stod som "senare" i backloggen, ingendera var bortvald.
 
 1. **Caviste-import.** Klistra in lådans länk i Lägg till, välj vinet, spara. Sidan bär hela raden per vin i en tabell längst ner, så antal, årgång, namn, pris, typ, ursprung, druvor, alkohol, drickfönster, serveringstemperatur, karaffering, smaknot och matförslag kommer med. Det är samma fält som Excel-raderna hade, utan att någon skriver av dem. Varje vin får sin egen flaskbild ur radens cell, så bildvalsgissningen från i morse (`scripts/caviste.ts`) behövs inte här.
    - **Sidformatet varierar mellan lådor.** CAV0143 har en extra `<em>` runt faktarutan, CAV0179 inte. Första versionen läste den inre taggen och gav tomma fält på CAV0179. Nu plockas fälten ur hela specen. Båda sidorna är verifierade mot skarpa anrop, och CAV0143 ligger som fixtur.

@@ -72,8 +72,9 @@ Patriks önskelista 2026-09-06 (GRILL-STATUS 31 till 35) byggd i chunk-läge, co
 
 - [x] `[P1]` Lagersaldo i vald butik, med hyllplats. `GET /api/stock?drink=&store=`, butiken vald en gång och sparad i `localStorage`, saldot hämtat på knapptryck i detaljvyn. Migrering 0004 lade till `sb_product_id`: lagret slås upp på Systembolagets interna produkt-id, och artikelnumret ger tyst 0 på varje butik.
 - [x] `[P1]` Butikslistan, 455 butiker, genererad ur Systembolagets sitemap med `npm run stores`. Namnen tas ur varje butikssidas titel eftersom slugen tappat å, ä och ö. Ligger i bundeln (27 kB), inte hämtad vid körning: appen är en PWA.
+- [x] `[P1]` Kolla lagret för hela Önskelistan i vald butik: butiksrad, knappen "Kolla lagret för alla N", summering ("3 av 5 finns i butiken") och en saldorad med hyllplats per vara. Fyra anrop i taget via den vanliga routen, ingen ny Worker-route, inget automatiskt.
 - [x] `[P1]` Sök på namn i Lägg till. Samma ruta som artikelnummer och länkar: rena bokstäver går direkt till söket, en fråga med siffror provar artikelnumret först och faller tillbaka på söket. Träffarna visas i skanningens kandidatlista.
-- [ ] `[P3]` Lagersaldo per rad i Önskelistan. Medvetet inte byggt: det hade blivit ett anrop per rad mot Systembolaget vid varje sidladdning. Kräver köhantering eller cache innan det är rimligt.
+- [x] `[P3]` Lagersaldo för hela Önskelistan, byggt 2026-09-09 senare samma dag. Invändningen gällde automatiska anrop vid sidladdning, inte funktionen: nu sker det på en knapp, fyra åt gången, och resultatet lever i minnet.
 
 ## Caviste-import och drucken-logg 2026-09-09
 
