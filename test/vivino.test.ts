@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
-import { describe, expect, it } from 'vitest'
-import { findHit, parseVivinoUrl, parseWinePage, plausible, queryFor, vivinoDue } from '../worker/src/vivino.ts'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { findHit, parseVivinoUrl, parseWinePage, plausible, queryFor, refreshVivino, vivinoDue } from '../worker/src/vivino.ts'
 
 const page = readFileSync('worker/test/fixtures/vivino-le-grappin.html', 'utf8')
 
@@ -62,5 +62,32 @@ describe('vivino-länk', () => {
   })
   it('fel id på sidan kastar NotFound', () => {
     expect(() => parseWinePage(wine, '1')).toThrow(/not on page/)
+  })
+
+  // En Vivino-länk rättad för hand ska överleva nattens omhämtning: förut sökte cronen på namnet igen
+  // och skrev tillbaka fel vin. Nu hämtas betyget från just den sparade vinsidan.
+  describe('refreshVivino', () => {
+    afterEach(() => vi.unstubAllGlobals())
+
+    it('hämtar från den sparade länken i stället för att söka på namnet', async () => {
+      const calls: string[] = []
+      vi.stubGlobal('fetch', async (url: string) => {
+        calls.push(url)
+        return new Response(wine)
+      })
+      const patch = await refreshVivino({ name: 'Helt fel namn', producer: null, vivino_url: 'https://www.vivino.com/w/2379181' })
+      expect(calls).toEqual(['https://www.vivino.com/w/2379181'])
+      expect(patch).toMatchObject({ vivino_rating: 3.9, vivino_count: 1877, vivino_url: 'https://www.vivino.com/w/2379181' })
+    })
+
+    it('utan sparad länk söker den på namnet som förut', async () => {
+      const calls: string[] = []
+      vi.stubGlobal('fetch', async (url: string) => {
+        calls.push(url)
+        return new Response(page)
+      })
+      await refreshVivino({ name: 'Le Grappin Bourgogne', producer: null, vivino_url: null })
+      expect(calls[0]).toContain('search_term=')
+    })
   })
 })
