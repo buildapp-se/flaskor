@@ -1747,3 +1747,58 @@ p {
 .fl-stock__hit:hover {
   border-color: var(--fl-accent);
 }
+
+/* ── Drucken-logg (beslut 16, 2026-09-09) ─────────────── */
+.fl-tasting {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fl-s2);
+  padding: var(--fl-s3);
+  background: var(--fl-surface);
+  border-radius: var(--fl-r-md);
+  box-shadow: var(--fl-shadow);
+}
+.fl-tasting__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--fl-s2);
+}
+.fl-tasting__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fl-s3);
+  padding-bottom: var(--fl-s2);
+  border-bottom: 1px solid var(--fl-line);
+}
+.fl-tasting__stars {
+  display: flex;
+  gap: var(--fl-s1);
+}
+.fl-tasting__row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-top: var(--fl-s2);
+  border-top: 1px solid var(--fl-line);
+}
+.fl-tasting__row .fl-textbtn {
+  align-self: flex-start;
+}
+.fl-tasting__meta {
+  display: flex;
+  align-items: baseline;
+  gap: var(--fl-s2);
+}
+.fl-tasting__date {
+  font-family: var(--fl-font-serif);
+  font-size: 16px;
+}
+.fl-tasting__rating {
+  color: var(--fl-accent);
+  letter-spacing: 1px;
+}
+.fl-tasting__note {
+  margin: 0;
+  font-style: italic;
+}

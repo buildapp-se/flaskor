@@ -1,5 +1,5 @@
 import { FatalError, NotFoundError } from '../../shared/errors.ts'
-import type { Drink, DrinkInput, DrinkPatch } from '../../shared/types.ts'
+import type { Drink, DrinkInput, DrinkPatch, Tasting, TastingInput } from '../../shared/types.ts'
 
 export const HOUSEHOLD_ID = 1
 
@@ -70,10 +70,13 @@ export async function insertDrink(db: D1Database, input: DrinkPatch): Promise<Dr
   return rowToDrink(row)
 }
 
-/** Tar bort raden. Kastar NotFoundError när den inte finns. */
+/** Tar bort raden och dess avsmakningar. Kastar NotFoundError när raden inte finns. */
 export async function deleteDrink(db: D1Database, id: number): Promise<void> {
   const result = await db.prepare('DELETE FROM drink WHERE id = ? AND household_id = ?').bind(id, HOUSEHOLD_ID).run()
   if (result.meta.changes === 0) throw new NotFoundError(`drink ${id} not found`)
+  // Tabellen har ON DELETE CASCADE, men den kräver att PRAGMA foreign_keys är på. En rad till är billigare
+  // än en föräldralös logg som ingen upptäcker.
+  await db.prepare('DELETE FROM tasting WHERE drink_id = ?').bind(id).run()
 }
 
 export async function updateDrink(db: D1Database, id: number, patch: DrinkPatch): Promise<Drink> {
@@ -84,4 +87,40 @@ export async function updateDrink(db: D1Database, id: number, patch: DrinkPatch)
   const row = await db.prepare(`UPDATE drink SET ${sets} WHERE id = ? AND household_id = ? RETURNING *`).bind(...values).first<Row>()
   if (!row) throw new NotFoundError(`drink ${id} not found`)
   return rowToDrink(row)
+}
+
+
+// ── Drucken-logg (beslut 16) ─────────────────────────────────────────────────
+
+/** Avsmakningarna för en rad, senast druckna först. Tom lista är ett giltigt svar: raden är inte drucken än. */
+export async function listTastings(db: D1Database, drinkId: number): Promise<Tasting[]> {
+  const { results } = await db.prepare('SELECT * FROM tasting WHERE drink_id = ? ORDER BY drunk_on DESC, id DESC').bind(drinkId).all<Tasting>()
+  return results
+}
+
+/** Läser och kontrollerar en avsmakning ur ett anrop. Kastar på datum eller betyg som inte håller. */
+export function sanitizeTasting(body: unknown): TastingInput {
+  if (typeof body !== 'object' || body === null) throw new FatalError('body must be an object')
+  const { drunk_on, rating, note } = body as Record<string, unknown>
+  if (typeof drunk_on !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(drunk_on)) throw new FatalError('drunk_on must be a date, YYYY-MM-DD')
+  if (rating !== undefined && rating !== null && (typeof rating !== 'number' || !Number.isInteger(rating) || rating < 1 || rating > 5)) {
+    throw new FatalError('rating must be a whole number 1 to 5')
+  }
+  if (note !== undefined && note !== null && typeof note !== 'string') throw new FatalError('note must be text')
+  return { drunk_on, rating: (rating as number | null | undefined) ?? null, note: (note as string | null | undefined) ?? null }
+}
+
+export async function insertTasting(db: D1Database, drinkId: number, input: TastingInput): Promise<Tasting> {
+  const row = await db
+    .prepare('INSERT INTO tasting (drink_id, drunk_on, rating, note) VALUES (?, ?, ?, ?) RETURNING *')
+    .bind(drinkId, input.drunk_on, input.rating, input.note)
+    .first<Tasting>()
+  if (!row) throw new FatalError('insert returned no tasting', 500)
+  return row
+}
+
+/** Tar bort en avsmakning. Kastar NotFoundError när den inte finns på den raden. */
+export async function deleteTasting(db: D1Database, drinkId: number, id: number): Promise<void> {
+  const result = await db.prepare('DELETE FROM tasting WHERE id = ? AND drink_id = ?').bind(id, drinkId).run()
+  if (result.meta.changes === 0) throw new NotFoundError(`tasting ${id} not found`)
 }
