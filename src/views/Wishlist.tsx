@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
-import type { Drink, Kind } from '../../shared/types.ts'
+import type { Drink, Kind, Stock } from '../../shared/types.ts'
 import { articleNo, kr } from '../format.ts'
 import { detailPath, navigate } from '../hash.ts'
 import { Rating } from '../components/Rating.tsx'
+import { checkStock, hasStock, StorePicker, stockText, useSavedStore } from '../components/Stock.tsx'
 import { IconArrow, IconExternal, IconMinus, IconPlus, IconSearch } from '../icons.tsx'
 import { usePersisted } from '../persist.ts'
 import { compare, DEFAULT_DIR, type SortDir, type SortKey } from '../sort.ts'
@@ -37,6 +38,12 @@ export function Wishlist() {
   const [state, set] = usePersisted<WishlistState>('flaskor.wishlist', INITIAL)
   const { query, kind, category, sort, dir, view } = state
   const [buying, setBuying] = useState<Drink | null>(null)
+  // Lagerkollen (BACKLOG P3): en ögonblicksbild i minnet, inte i databasen. Saldot åldras på timmar och
+  // ska inte se ut som ett faktum efter en omladdning.
+  const [store, pickStore] = useSavedStore()
+  const [pickingStore, setPickingStore] = useState(false)
+  const [stock, setStock] = useState<Record<number, Stock>>({})
+  const [checking, setChecking] = useState(false)
 
   if (drinks === null) return <div className="fl-muted">{S.loading}</div>
   const wished = drinks.filter((d) => !d.owned)
@@ -47,6 +54,26 @@ export function Wishlist() {
   const q = query.trim().toLowerCase()
   const keep = (d: Drink) => matches(d, q) && (kind === null || d.kind === kind) && (category === null || d.category === category)
   const visible = wished.filter(keep).sort(compare(sort, dir))
+
+  /**
+   * Lagret för hela listan i vald butik, fyra åt gången. Samma mönster som bulkimportens uppslag av
+   * artikelnummer: klienten anropar den vanliga routen flera gånger, ingen ny Worker-route, ingen kö.
+   * En rad som misslyckas hoppas över i stället för att sänka hela körningen.
+   */
+  async function checkAll(storeId: string) {
+    const rows = wished.filter(hasStock)
+    setChecking(true)
+    setStock({})
+    for (let i = 0; i < rows.length; i += 4) {
+      const batch = await Promise.allSettled(rows.slice(i, i + 4).map(async (d) => [d.id, await checkStock(d.id, storeId)] as const))
+      const done = batch.filter((r): r is PromiseFulfilledResult<readonly [number, Stock]> => r.status === 'fulfilled')
+      if (done.length > 0) setStock((prev) => ({ ...prev, ...Object.fromEntries(done.map((r) => r.value)) }))
+    }
+    setChecking(false)
+  }
+
+  const checkable = wished.filter(hasStock).length
+  const inStore = Object.values(stock).filter((v) => v.in_assortment && v.stock > 0).length
 
   function pickSort(key: SortKey) {
     set({ sort: key, dir: DEFAULT_DIR[key] ?? 'asc' })
@@ -107,6 +134,39 @@ export function Wishlist() {
         </div>
       </div>
 
+      {checkable > 0 && (
+        <div className="fl-stockbar">
+          {pickingStore || !store ? (
+            <>
+              <span className="fl-label">{S.stock.pick}</span>
+              <StorePicker
+                autoFocus={pickingStore}
+                onPick={(id) => {
+                  pickStore(id)
+                  setPickingStore(false)
+                  void checkAll(id)
+                }}
+              />
+            </>
+          ) : (
+            <>
+              <div className="fl-stockbar__row">
+                <span className="fl-stockbar__store">
+                  {store.city} · {store.address}
+                </span>
+                <button type="button" className="fl-textbtn" onClick={() => setPickingStore(true)}>
+                  {S.stock.change}
+                </button>
+              </div>
+              <button type="button" className="fl-btn fl-btn--secondary" disabled={checking} onClick={() => void checkAll(store.id)}>
+                {checking ? S.stock.loading : S.stock.checkAll(checkable)}
+              </button>
+              {Object.keys(stock).length > 0 && <div className="fl-small fl-muted">{S.stock.summary(inStore, Object.keys(stock).length)}</div>}
+            </>
+          )}
+        </div>
+      )}
+
       {view === 'table' &&
         wished.length > 0 &&
         (visible.length === 0 ? (
@@ -122,7 +182,7 @@ export function Wishlist() {
         {visible.length > 0 && (
           <div className="fl-card fl-list">
             {visible.map((d) => (
-              <WishRow key={d.id} drink={d} onBuy={() => setBuying(d)} />
+              <WishRow key={d.id} drink={d} stock={stock[d.id] ?? null} onBuy={() => setBuying(d)} />
             ))}
           </div>
         )}
@@ -143,7 +203,7 @@ export function Wishlist() {
   )
 }
 
-function WishRow({ drink, onBuy }: { drink: Drink; onBuy: () => void }) {
+function WishRow({ drink, stock, onBuy }: { drink: Drink; stock: Stock | null; onBuy: () => void }) {
   const gone = drink.availability === 'discontinued'
   const price = drink.price_current ?? drink.price_paid
   const source = drink.source_kind === 'systembolaget' ? S.wishlist.availability[drink.availability] : drink.source_kind === 'caviste' ? S.wishlist.availability.unknown : null
@@ -175,6 +235,7 @@ function WishRow({ drink, onBuy }: { drink: Drink; onBuy: () => void }) {
             ))}
           <Rating drink={drink} count />
         </div>
+        {stock && <div className={stock.in_assortment && stock.stock > 0 ? 'fl-wish__stock' : 'fl-wish__stock fl-wish__stock--out'}>{stockText(stock)}</div>}
       </div>
       <button className={gone ? 'fl-btn fl-btn--sm fl-btn--secondary' : 'fl-btn fl-btn--sm fl-btn--primary'} onClick={onBuy}>
         {S.wishlist.bought}

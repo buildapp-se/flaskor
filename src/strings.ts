@@ -207,6 +207,8 @@ export const S = {
     change: 'Byt butik',
     loading: 'Kollar lagret …',
     check: 'Kolla lagret',
+    checkAll: (n: number) => (n === 1 ? 'Kolla lagret för varan' : `Kolla lagret för alla ${n}`),
+    summary: (found: number, of: number) => (found === 0 ? `Inget av de ${of} finns i butiken just nu.` : `${found} av ${of} finns i butiken.`),
     /** "48 st, hylla 14-04-03" */
     count: (n: number, shelf: string | null) => (shelf ? `${n} st, hylla ${shelf}` : `${n} st`),
     empty: 'Slut i butiken',

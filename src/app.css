@@ -1802,3 +1802,31 @@ p {
   margin: 0;
   font-style: italic;
 }
+
+/* ── Lagerkoll för hela önskelistan (2026-09-09) ──────── */
+.fl-stockbar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fl-s2);
+  padding: var(--fl-s3);
+  background: var(--fl-surface);
+  border-radius: var(--fl-r-md);
+  box-shadow: var(--fl-shadow);
+}
+.fl-stockbar__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--fl-s2);
+}
+.fl-stockbar__store {
+  font-family: var(--fl-font-serif);
+  font-size: 16px;
+}
+.fl-wish__stock {
+  font-size: 13px;
+  color: var(--fl-accent);
+}
+.fl-wish__stock--out {
+  color: var(--fl-ink-2);
+}
