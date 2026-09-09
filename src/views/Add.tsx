@@ -1,6 +1,6 @@
 import { useRef, useState, type ChangeEvent, type FormEvent } from 'react'
 import { FatalError, NotFoundError } from '../../shared/errors.ts'
-import type { Drink, DrinkPatch, Kind, LabelGuess, Preview, ScanResult } from '../../shared/types.ts'
+import type { Candidate, Drink, DrinkPatch, Kind, LabelGuess, Preview, ScanResult } from '../../shared/types.ts'
 import { windowState } from '../../shared/window.ts'
 import { api } from '../api.ts'
 import { Pill } from '../components/Pill.tsx'
@@ -22,7 +22,7 @@ import { EditForm } from './Detail.tsx'
 function blank(kind: Kind): Drink {
   return {
     id: 0, household_id: 0, kind, owned: false, name: '', producer: null, vintage: null, country: null, region: null, category: kind === 'wine' ? 'Rött vin' : null,
-    style: null, grapes: null, volume_ml: null, alcohol: null, source_kind: 'manual', source_id: null, source_url: null, image_url: null, price_paid: null,
+    style: null, grapes: null, volume_ml: null, alcohol: null, source_kind: 'manual', source_id: null, source_url: null, image_url: null, sb_product_id: null, price_paid: null,
     price_current: null, price_checked_at: null, availability: 'unknown', count: 0, open_level: null, drink_from: null, drink_to: null, serve_temp: null,
     decant_hours: null, food: null, note: null, taste: null, vivino_rating: null, vivino_count: null, vivino_url: null, vivino_checked_at: null, rating: null, rating_url: null, created_at: '', updated_at: '',
   }
@@ -51,17 +51,20 @@ export function Add() {
   const [preview, setPreview] = useState<Preview | null>(null)
   const [fetchedAt, setFetchedAt] = useState<string | null>(null)
   const [editingWindow, setEditingWindow] = useState(false)
-  const [busy, setBusy] = useState<'fetch' | 'scan' | 'save' | null>(null)
+  const [busy, setBusy] = useState<'fetch' | 'scan' | 'search' | 'save' | null>(null)
   const [error, setError] = useState<string | null>(null)
   /** "Skriv in själv": raden formuläret utgår från, tom eller förifylld från en skanning. */
   const [manual, setManual] = useState<Drink | null>(null)
   const [scan, setScan] = useState<ScanResult | null>(null)
+  /** Träffar på ett fritextnamn hos Systembolaget (BACKLOG P3, 2026-09-09). */
+  const [found, setFound] = useState<Candidate[] | null>(null)
 
   function reset() {
     setError(null)
     setPreview(null)
     setManual(null)
     setScan(null)
+    setFound(null)
   }
 
   async function fetchPreview(event: FormEvent) {
@@ -69,6 +72,9 @@ export function Add() {
     const q = query.trim()
     if (q === '') return
     if (looksLikeEan(q)) return runScan({ ean: q.replace(/\s/g, '') })
+    // Rena bokstäver är ett namn: sök direkt. Med siffror i får /api/systembolaget försöka först och
+    // namnsöket ta vid på 400, så "Absolut 100" fungerar utan att vi bygger en egen gissning på klienten.
+    if (!/\d/.test(q) && !/^https?:/i.test(q)) return searchByName(q)
     setBusy('fetch')
     reset()
     try {
@@ -76,9 +82,29 @@ export function Add() {
       setFetchedAt(new Date().toISOString())
       setEditingWindow(false)
     } catch (err) {
+      // 400 betyder att frågan varken är ett artikelnummer eller en länk. Då är det ett namn: sök på det i stället
+      // för att be användaren skriva om sig. ponytail: ingen egen gissning på klienten om vad som är ett namn.
+      if (err instanceof FatalError && err.status === 400) {
+        await searchByName(q)
+        return
+      }
       if (err instanceof NotFoundError) setError(S.add.notFound)
-      else if (err instanceof FatalError && err.status === 400) setError(S.add.badInput)
       else setError(S.add.failed)
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  /** Fritextsök hos Systembolaget. Träffarna väljs som skanningens kandidater, med samma lista. */
+  async function searchByName(q: string) {
+    setBusy('search')
+    reset()
+    try {
+      const candidates = await api.search(q)
+      if (candidates.length === 0) setError(S.search.none)
+      else setFound(candidates)
+    } catch {
+      setError(S.add.failed)
     } finally {
       setBusy(null)
     }
@@ -136,6 +162,7 @@ export function Add() {
       setFetchedAt(new Date().toISOString())
       setEditingWindow(false)
       setScan(null)
+      setFound(null)
     } catch {
       setError(S.add.failed)
     } finally {
@@ -170,7 +197,7 @@ export function Add() {
   const state = preview ? (preview.kind === 'wine' ? windowState(preview.drink_from, preview.drink_to) : null) : null
   const windowManual = preview !== null && preview.source_kind === 'systembolaget' && state !== 'unknown' && !editingWindow
   const fromVivino = preview !== null && preview.source_kind === 'manual' && preview.vivino_url !== null && fetchedAt !== null
-  const idle = !preview && manual === null && scan === null && query.trim() === ''
+  const idle = !preview && manual === null && scan === null && found === null && query.trim() === ''
 
   return (
     <div className="fl-add">
@@ -185,7 +212,7 @@ export function Add() {
         {error && <div className="fl-error">{error}</div>}
         {!preview && query.trim() !== '' && (
           <button className="fl-btn fl-btn--secondary" type="submit" disabled={busy !== null}>
-            {busy === 'scan' ? S.scan.scanning : busy === 'fetch' ? S.add.fetching : S.add.fetch}
+            {busy === 'scan' ? S.scan.scanning : busy === 'search' ? S.search.searching : busy === 'fetch' ? S.add.fetching : S.add.fetch}
           </button>
         )}
         {idle && (
@@ -214,17 +241,7 @@ export function Add() {
         <div className="fl-card fl-add__card">
           <div className="fl-label">{S.scan.pick}</div>
           <div className="fl-small fl-muted">{scan.via === 'barcode' && scan.guess.ean ? S.scan.readBarcode(scan.guess.ean, describe(scan.guess)) : S.scan.read(describe(scan.guess))}</div>
-          <div className="fl-scan__list">
-            {scan.candidates.map((c) => (
-              <button key={c.number} type="button" className="fl-scan__item" disabled={busy !== null} onClick={() => pick(c.number)}>
-                <Bottle url={c.image_url} size="md" />
-                <span className="fl-scan__text">
-                  <span className="fl-scan__name">{c.vintage ? `${c.name} ${c.vintage}` : c.name}</span>
-                  <span className="fl-small fl-muted">{[c.producer, c.category, c.volume_ml !== null ? volume(c.volume_ml) : null, c.price !== null ? kr(c.price) : null].filter(Boolean).join(' · ')}</span>
-                </span>
-              </button>
-            ))}
-          </div>
+          <CandidateList candidates={scan.candidates} disabled={busy !== null} onPick={pick} />
           <button
             type="button"
             className="fl-textbtn"
@@ -235,6 +252,14 @@ export function Add() {
           >
             {S.scan.none}
           </button>
+        </div>
+      )}
+
+      {found && (
+        <div className="fl-card fl-add__card">
+          <div className="fl-label">{S.scan.pick}</div>
+          <div className="fl-small fl-muted">{S.search.hits(found.length)}</div>
+          <CandidateList candidates={found} disabled={busy !== null} onPick={pick} />
         </div>
       )}
 
@@ -315,6 +340,23 @@ export function Add() {
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+/** Träfflistan, delad av skanningens tre kandidater och namnsökets träffar. Ett tryck hämtar hela raden. */
+function CandidateList({ candidates, disabled, onPick }: { candidates: Candidate[]; disabled: boolean; onPick: (number: string) => void }) {
+  return (
+    <div className="fl-scan__list">
+      {candidates.map((c) => (
+        <button key={c.number} type="button" className="fl-scan__item" disabled={disabled} onClick={() => onPick(c.number)}>
+          <Bottle url={c.image_url} size="md" />
+          <span className="fl-scan__text">
+            <span className="fl-scan__name">{c.vintage ? `${c.name} ${c.vintage}` : c.name}</span>
+            <span className="fl-small fl-muted">{[c.producer, c.category, c.volume_ml !== null ? volume(c.volume_ml) : null, c.price !== null ? kr(c.price) : null].filter(Boolean).join(' · ')}</span>
+          </span>
+        </button>
+      ))}
     </div>
   )
 }

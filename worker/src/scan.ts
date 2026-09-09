@@ -256,7 +256,7 @@ export function hasImage(images: unknown): boolean {
   return Array.isArray(images) && images.length > 0
 }
 
-async function searchOnce(query: string, apiKey: string): Promise<Candidate[]> {
+export async function searchOnce(query: string, apiKey: string): Promise<Candidate[]> {
   let response: Response
   try {
     response = await fetch(searchUrl(query), { headers: { 'ocp-apim-subscription-key': apiKey, accept: 'application/json' } })

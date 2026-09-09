@@ -49,6 +49,15 @@ export default defineConfig({
           }
           if (url.hostname === 'api-extern.systembolaget.se') {
             if (request.headers.get('ocp-apim-subscription-key') !== 'test-sb') return new Response('no key', { status: 401 })
+            // Lagersaldo (BACKLOG P3): produkt-id 21955733 är fixturens Vanliga Vodka och finns i butik 2401,
+            // allt annat är slut. Butik 9999 för inte varan alls och svarar 404 som Systembolaget gör.
+            const stock = url.pathname.match(/\/stockbalance\/store\/(\d+)\/(\d+)/)
+            if (stock) {
+              const [, store, product] = stock
+              if (store === '9999') return new Response('not found', { status: 404 })
+              const carried = product === '21955733' && store === '2401'
+              return Response.json({ productId: product, storeId: store, shelf: carried ? '14-04-03' : null, stock: carried ? 48 : 0, isInStoreAssortment: carried })
+            }
             return new Response(await readFile('worker/test/fixtures/sb-search-absolut.json', 'utf8'), { headers: { 'content-type': 'application/json' } })
           }
           if (url.hostname === 'generativelanguage.googleapis.com') {

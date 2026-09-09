@@ -3,7 +3,7 @@ import type { Drink } from '../shared/types.ts'
 import { compare, valueOf } from './sort.ts'
 
 function drink(over: Partial<Drink>): Drink {
-  return { id: 0, household_id: 1, kind: 'wine', owned: true, name: '', producer: null, vintage: null, country: null, region: null, category: null, style: null, grapes: null, volume_ml: null, alcohol: null, source_kind: 'manual', source_id: null, source_url: null, image_url: null, price_paid: null, price_current: null, price_checked_at: null, availability: 'unknown', count: 0, open_level: null, drink_from: null, drink_to: null, serve_temp: null, decant_hours: null, food: null, note: null, taste: null, vivino_rating: null, vivino_count: null, vivino_url: null, vivino_checked_at: null, rating: null, rating_url: null, created_at: '', updated_at: '', ...over }
+  return { id: 0, household_id: 1, kind: 'wine', owned: true, name: '', producer: null, vintage: null, country: null, region: null, category: null, style: null, grapes: null, volume_ml: null, alcohol: null, source_kind: 'manual', source_id: null, source_url: null, image_url: null, sb_product_id: null, price_paid: null, price_current: null, price_checked_at: null, availability: 'unknown', count: 0, open_level: null, drink_from: null, drink_to: null, serve_temp: null, decant_hours: null, food: null, note: null, taste: null, vivino_rating: null, vivino_count: null, vivino_url: null, vivino_checked_at: null, rating: null, rating_url: null, created_at: '', updated_at: '', ...over }
 }
 
 describe('sortering (beslut 28)', () => {

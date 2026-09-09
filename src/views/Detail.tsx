@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { Drink, DrinkPatch } from '../../shared/types.ts'
 import { windowState } from '../../shared/window.ts'
 import { Pill } from '../components/Pill.tsx'
+import { Stock } from '../components/Stock.tsx'
 import { articleNo, dateShort, kr, pct, temp } from '../format.ts'
 import { navigate, PATHS } from '../hash.ts'
 import { IconExternal, IconMinus, IconPlus } from '../icons.tsx'
@@ -176,6 +177,8 @@ export function Detail({ id }: { id: number }) {
             </button>
           )}
         </div>
+
+        <Stock drink={drink} />
 
         <button
           className="fl-textbtn fl-detail__remove"

@@ -11,7 +11,7 @@ function rowToDrink(row: Row): Drink {
 
 const WRITABLE: ReadonlyArray<keyof DrinkInput> = [
   'kind', 'owned', 'name', 'producer', 'vintage', 'country', 'region', 'category', 'style', 'grapes',
-  'volume_ml', 'alcohol', 'source_kind', 'source_id', 'source_url', 'image_url', 'price_paid',
+  'volume_ml', 'alcohol', 'source_kind', 'source_id', 'source_url', 'image_url', 'sb_product_id', 'price_paid',
   'price_current', 'price_checked_at', 'availability', 'count', 'open_level', 'drink_from', 'drink_to',
   'serve_temp', 'decant_hours', 'food', 'note', 'taste', 'vivino_rating', 'vivino_count', 'vivino_url', 'vivino_checked_at', 'rating', 'rating_url',
 ]

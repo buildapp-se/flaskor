@@ -1708,3 +1708,42 @@ p {
     justify-content: space-between;
   }
 }
+
+/* ── Lager i vald butik (BACKLOG P3, 2026-09-09) ───────── */
+.fl-stock {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fl-s2);
+  padding: var(--fl-s3);
+  background: var(--fl-surface);
+  border-radius: var(--fl-r-md);
+  box-shadow: var(--fl-shadow);
+}
+.fl-stock__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--fl-s2);
+}
+.fl-stock__store {
+  font-family: var(--fl-font-serif);
+  font-size: 16px;
+}
+.fl-stock__value {
+  font-family: var(--fl-font-serif);
+  font-size: 20px;
+}
+.fl-stock__hit {
+  min-height: var(--fl-touch);
+  padding: 10px 12px;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  background: var(--fl-bg);
+  border: 1px solid var(--fl-line);
+  border-radius: var(--fl-r-sm);
+  cursor: pointer;
+}
+.fl-stock__hit:hover {
+  border-color: var(--fl-accent);
+}

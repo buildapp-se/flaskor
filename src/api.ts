@@ -1,5 +1,5 @@
 import { FatalError, NotFoundError, TransientError, UnauthorizedError } from '../shared/errors.ts'
-import type { Drink, DrinkInput, DrinkPatch, Preview, ScanResult } from '../shared/types.ts'
+import type { Candidate, Drink, DrinkInput, DrinkPatch, Preview, ScanResult, Stock } from '../shared/types.ts'
 
 const API_URL: string = import.meta.env.VITE_API_URL ?? 'http://localhost:8787'
 const GATE_KEY = 'flaskor.gate'
@@ -46,4 +46,8 @@ export const api = {
   previewVivino: (url: string) => call<Preview>('GET', `/api/vivino?q=${encodeURIComponent(url)}`),
   /** Streckkod och/eller foto (data-URL). Svaret är kandidater att välja bland, se ScanResult. */
   scan: (body: { image?: string; ean?: string }) => call<ScanResult>('POST', '/api/scan', body),
+  /** Fritextsök hos Systembolaget: samma kandidatlista som skanningen ger. */
+  search: (q: string) => call<{ candidates: Candidate[] }>('GET', `/api/search?q=${encodeURIComponent(q)}`).then((r) => r.candidates),
+  /** Lagersaldot för en rad i en butik. Kastar NotFoundError när varan inte förs alls. */
+  stock: (id: number, store: string) => call<Stock>('GET', `/api/stock?drink=${id}&store=${store}`),
 }
