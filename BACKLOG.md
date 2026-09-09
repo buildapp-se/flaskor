@@ -75,14 +75,20 @@ Patriks önskelista 2026-09-06 (GRILL-STATUS 31 till 35) byggd i chunk-läge, co
 - [x] `[P1]` Sök på namn i Lägg till. Samma ruta som artikelnummer och länkar: rena bokstäver går direkt till söket, en fråga med siffror provar artikelnumret först och faller tillbaka på söket. Träffarna visas i skanningens kandidatlista.
 - [ ] `[P3]` Lagersaldo per rad i Önskelistan. Medvetet inte byggt: det hade blivit ett anrop per rad mot Systembolaget vid varje sidladdning. Kräver köhantering eller cache innan det är rimligt.
 
+## Caviste-import och drucken-logg 2026-09-09
+
+- [x] `[P1]` Caviste-import via produktlänk (beslut 6). En CAV-låda innehåller flera viner, och sidan bär hela raden för vart och ett: antal, årgång, namn, pris, typ, ursprung, druvor, alkohol, drickfönster, serveringstemperatur, karaffering, smaknot och matförslag. Klistra in lådans länk i Lägg till, välj vinet, spara. Varje vin får sin egen flaskbild ur radens cell. Verifierat mot CAV0143 och CAV0179, som har olika taggning.
+- [x] `[P1]` Drucken-logg per rad (beslut 16), migrering 0005: datum, betyg 1 till 5 och kommentar, senast druckna först, i detaljvyns block "Drucket". **"Drack en" är oförändrad**, beslut 16 säger uttryckligen ingen ruta och inget betyg vid nedräkningen.
+- [ ] `[P3]` Loggen syns bara i detaljvyn. Ett "senast druckna"-flöde över hela källaren, eller betyget på raden i listan, kräver att loggen följer med i `GET /api/drinks` eller en egen route. Inte byggt förrän det finns något att titta på.
+
 ## Senare, beslutat uppskjutet
 
 - [ ] `[P2]` Firebase Auth som Beefcake, användare kopplade till `household_id` (beslut 2).
 - [ ] `[P2]` Sipdeck-synk: mappa barskåpsrad till Sipdecks ingrediens-id, knapp som skriver eget skafferi via Sipdecks Worker (beslut 7).
-- [ ] `[P2]` Caviste-import via produktlänk (beslut 6).
+- [x] `[P2]` Caviste-import via produktlänk (beslut 6): byggd 2026-09-09, se nedan.
 - [ ] `[P2]` Dagspris från fler källor än Systembolaget, inköpspris mot dagspris (beslut 4).
 - [ ] `[P3]` Streckkodsläsning i kameran på iPhone: `BarcodeDetector` finns inte i WebKit, ett WASM-bibliotek på cirka 1 MB krävs. Tills dess läser Gemini siffrorna ur fotot, eller så skrivs de i rutan.
-- [ ] `[P3]` Drucken-logg per rad: datum, betyg 1 till 5, kommentar (beslut 16).
+- [x] `[P3]` Drucken-logg per rad: byggd 2026-09-09, se nedan.
 - [ ] `[P3]` Engelska som andra språk (beslut 18).
 - [ ] `[P3]` Byt sidläsning mot Systembolagets sortimentsdump om användarantalet växer (beslut 23).
 - [x] `[P3]` Namnsökning hos Systembolaget: byggt 2026-09-09, samma nyckel och samma sök som skanningen redan använde.
