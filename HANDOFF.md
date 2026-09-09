@@ -1,15 +1,34 @@
 ---
 schemaVersion: 1
 status: active
-currentGoal: Streckkod och etikettfoto för att lägga till (backlog 37), byggt och deployat 2026-09-08. Distiller-importen väntar fortfarande på ett uttryckligt ja.
-nextAction: Patrik skannar om samma flaskor som missade i första omgången (matchningen rättad, 12 av 12 rätt bland kandidaterna i mätning mot skarpa data). Sedan ja eller nej på Distiller-importen.
+currentGoal: Vivino-länken pinnad och redigerbar, Caviste-bilderna rättade (2026-09-09, live). Distiller-importen väntar fortfarande på ett uttryckligt ja.
+nextAction: Patrik skannar om samma flaskor som missade i första omgången (matchningen rättad 2026-09-08). Rätta de tre Caviste-bilderna i Ändra (Chianti Classico, Côtes du Rhône, La Butte 'O'), adresserna står nedan. Sedan ja eller nej på Distiller-importen.
 blockers: []
-reviewedAt: 2026-09-08
+reviewedAt: 2026-09-09
 ---
 
 # Handoff: Flaskor
 
-Senast uppdaterad: 2026-09-08 (andra omgången), matchningen mot Systembolaget rättad efter Patriks första skanning: streckkod träffade 2 av 3, foto 0 av 3, och en träff saknade flaskbild. Fyra rotorsaker, alla belagda med riktiga anrop och fixade i `worker/src/scan.ts` (commit `c4e1149`, Worker `eb848030`):
+Senast uppdaterad: 2026-09-09. Två fixar byggda, verifierade och live (commits `57e2fc9` och `9288665`, Worker `bddd8cb2`, Pages-körning 34334402505 grön):
+
+1. **Vivino-länken är pinnad.** En rad med sparad `vivino_url` hämtar betyget från just den vinsidan; bara rader utan länk söker på namnet. Förut sökte nattens cron alltid om på namnet och kunde skriva tillbaka fel vin över en länk rättad för hand. `refreshVivino()` i `worker/src/vivino.ts`, använd av både `refreshDrink` och `refreshAll`. Vinsidan är dessutom en bråkdel av söksidans 1,7 MB. Verifierat live: `POST /api/drinks/1/refresh` behöll länken och svarade på 1 sekund, `id 2` (Buondonno) gav 3,9 av 3 350 röster.
+2. **Vivino-länk och bildlänk går att ändra i Ändra.** Ändrad Vivino-länk hämtar betyget direkt i stället för att vänta till natten. Förut krävdes ett PATCH-anrop för hand.
+3. **Caviste-bilderna rättade.** Seeden tog sidans första `CAV<nr>`-bild, vilket blev den liggande bannern eller gruppbilden på hela paketet. `pickCavisteImage()` i `scripts/caviste.ts` rankar på ord ur vinnamnet i filnamnet (diakriter borttagna, så "Forêts" hittar `-Forets`) och därefter på höjd genom bredd, läst ur WordPress storlekssuffix. `npm run fix:caviste` (torrkörning som standard, `--write` sparar) ändrade alla 21 rader i molnet via API:t, utan att röra något annat fält. **18 av 21 fick rätt flaska.** De tre kvarvarande går inte att härleda, Caviste förkortar dem:
+
+   | Vin | Rätt bildlänk |
+   |---|---|
+   | Buondonno Chianti Classico | `https://www.caviste.se/wp-content/uploads/2021/09/CAV0139-webb-CC.jpg` |
+   | Domaine de Marcoux Côtes du Rhône | `https://www.caviste.se/wp-content/uploads/2021/09/CAV0140-webb-CDR.jpg` |
+   | Patrick Piuze Chablis La Butte 'O' | `https://www.caviste.se/wp-content/uploads/2021/12/CAV0144-webb-ButteO.jpg` |
+
+   Klistra in dem i Ändra, fältet Bildlänk. Alla tre svarar 200 (kontrollerat), men vilken flaska de visar är tolkat ur Cavistes förkortningar, inte sett: titta på bilden innan du sparar. (Chianti Classico Riserva, Châteauneuf du Pape och de andra på samma sidor är redan rätt.)
+
+4. **`npm run seed -- --remote` kräver nu `--force`.** Seeden raderar alla caviste-rader och skriver om dem, så antal, kommentarer och rättade länkar i molnet försvann utan varning. `fix:caviste` finns just för att slippa den vägen.
+5. **Ölkategorin verifierad**, ingen kodändring: Systembolagets `categoryLevel1` är exakt `"Öl"` (sök på "Norrlands Guld" mot deras sök-API). Gissningen från 2026-09-07 stämde.
+
+Verifierat: `tsc -b`, 46 enhetstester, 38 Worker-tester, `wrangler deploy --dry-run`, torrkörning av `fix:caviste` mot molnet före skrivningen, `/health` 200 efter deploy, två riktiga refresh-anrop mot molnet, och de nya strängarna i den live-byggda bundeln `index-EHr9hNLi.js`. **Ogjort:** ingen webbläsarkontroll av Ändra-formulärets två nya fält, bara typcheck och bundelsträngar.
+
+Tidigare: 2026-09-08 (andra omgången), matchningen mot Systembolaget rättad efter Patriks första skanning: streckkod träffade 2 av 3, foto 0 av 3, och en träff saknade flaskbild. Fyra rotorsaker, alla belagda med riktiga anrop och fixade i `worker/src/scan.ts` (commit `c4e1149`, Worker `eb848030`):
 
 1. **Söket kräver att alla ord matchar.** Ett fullständigt etikettnamn ger därför noll träffar ("Jack Daniel's Old No. 7 Tennessee Whiskey": 0, "Jack Daniel's": 13). Nu körs tre frågor samtidigt, från hela namnet till bara märket, och träffarna slås ihop. En ratad fråga (429, vanligt när flera flaskor skannas tätt) sänker inte längre hela skanningen.
 2. **Diakriter bryter söket.** "Kahlúa" ger noll träffar, "Kahlua" ger åtta. Sökfrågan skickas utan dem.
@@ -73,6 +92,14 @@ Chunk-läge 2026-09-06 (önskelistan). Säg till om något ska ändras.
 - **CellarTable fick två nya valfria props** (`onShowZero`, `onRewish`) i stället för required: Önskelistan återanvänder samma tabellkomponent för sin tabellvy men har varken "Visa slut" (allt där har alltid 0 flaskor) eller "Lägg på önskelistan igen" (det är redan listan). Utelämnas propen döljs kontrollen.
 - **Migrering 0003 bygger om `drink`-tabellen** (SQLite kan inte ändra en `CHECK`), inte bara `ALTER TABLE ADD COLUMN`. Kör `npm run db:migrate:remote` innan Workern deployas, annars svarar `POST /api/drinks` med `kind: beer` 500 (CHECK-krock) mot molnets gamla schema.
 - **Distiller-skrapningen är medvetet inte byggd än**, väntar på ett uttryckligt ja (se BACKLOG §Öl och betyg 2026-09-07 och research-svaret i chatten): ToS-risk och underhållsbörda för en scraper mot en sajt utan officiellt API.
+
+## Val tagna åt Patrik, 2026-09-09 (Vivino-länk och Caviste-bilder)
+
+- **En sparad `vivino_url` vinner alltid över namnsökningen**, inte bara en som satts för hand. Att skilja "manuell" från "hittad" hade krävt en kolumn till, och att hämta om från en redan hittad länk är ändå det rätta: det är samma vin, och vinsidan är mycket billigare än söksidan. Går länken inte att läsa loggas det och namnsökningen tar över.
+- **Bildlänk och Vivino-länk som vanliga fält i Ändra**, inte egna knappar. Formuläret är generiskt, så det kostade två rader; en "rätta Vivino-träffen"-dialog hade kostat en vy.
+- **`fix:caviste` är ett skript, inte en Worker-route.** Det är en engångsrättning av gamla rader, och den ska inte gå att råka trigga från appen. Torrkörning som standard.
+- **Ingen gissning på Cavistes förkortningar.** `CC`, `CDR`, `CNP`, `VDF` går inte att härleda ur vinnamnet ("CNP" är inte ens initialerna i Châteauneuf du Pape), och en aliaslista hade varit tre rader data som ruttnar. De tre rättas för hand i stället, en gång.
+- **Bilden hämtas aldrig för att mätas.** Formatet läses ur WordPress storlekssuffix i filnamnet, så valet kostar en sidhämtning per produkt och noll bildhämtningar.
 
 ## Val tagna åt Patrik, 2026-09-08 (streckkod och etikett)
 

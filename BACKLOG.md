@@ -50,7 +50,7 @@ Patriks önskelista 2026-09-06 (GRILL-STATUS 31 till 35) byggd i chunk-läge, co
 ## Efter första molndeployen
 
 - [ ] `[P1]` Verifiera live som användare: logga in på https://buildapp.se/flaskor, lägg till ett Systembolagsvin, cron-körningen morgonen efter, PWA-installation på Patriks och Julias telefoner. (D1, Worker, secret, Pages och seed gjorda 2026-09-05; grinden ger 401 på fel kod.)
-- [ ] `[P2]` Caviste-bilden: sidans första `CAV<nr>`-bild är paketets liggande banner, inte en flaska (upptäckt vid seed 2026-09-05). Antingen `object-fit: cover`, en annan bild från sidan, eller ingen bild för Caviste-rader.
+- [x] `[P2]` Caviste-bilden: rätt flaska väljs nu ur sidan (2026-09-09). `scripts/caviste.ts` rankar på ord ur vinnamnet i filnamnet och därefter på höjd genom bredd ur WordPress storlekssuffix; `npm run fix:caviste` rättade alla 21 rader i molnet. 18 blev rätt flaska, 3 (Chianti Classico, Côtes du Rhône, La Butte 'O') fick fel eftersom Caviste förkortar dem `CC`, `CDR` och `CNP`. De rättas för hand i Ändra, som nu har både bildlänk och Vivino-länk.
 - [ ] `[P2]` Grindkoden ligger i localStorage i klartext på delad dator; räcker tills Firebase Auth (beslut 2).
 - [x] `[P2]` Ta bort en rad: knapp längst ner i detaljvyn, två tryck utan dialogruta (2026-09-06, Patrik saknade den efter en felinläggning).
 
@@ -60,6 +60,13 @@ Patriks önskelista 2026-09-06 (GRILL-STATUS 31 till 35) byggd i chunk-läge, co
 - [x] `[P1]` Eget betygsfält (`rating`, `rating_url`) för sprit och öl, som Vivino inte täcker; `Rating`-komponenten visar det när Vivino-betyget saknas, samma stjärnformat.
 - [x] `[P1]` Önskelistan ombyggd i samma stil som Källaren/Barskåpet: sök, sortering (billigast först som standard), kind- och kategorichips, lista/tabell-växel.
 - [x] `[P2]` Distiller-import utredd och avfärdad som helautomatisk lösning (2026-09-07): Cloudflares utmaningssida blockerar all vanlig HTTP-hämtning, bara en riktig webbläsarflik tar sig igenom, så en Worker/cron kan aldrig göra det. Att först hämta "alla vanligaste spritprodukter" från Systembolaget är dessutom redan blockerat (se P3-raden om sortimentsdumpen nedan). Byggt istället: en "Sök på Distiller"-länk i detaljvyn för sprit och öl (`distiller.com/search?term=<namn>`), samma mönster som "Sök på Vivino" för vin. Manuell, en i taget, men funkar för alla flaskor för alltid utan skrapningsrisk.
+
+## Vivino och bilder 2026-09-09
+
+- [x] `[P1]` Vivino-länken går att rätta i Ändra, och en rad med sparad `vivino_url` hämtar betyget från just den vinsidan i stället för att söka om på namnet. Förut skrev nattens cron tillbaka fel vin. Bildlänken är också redigerbar.
+- [x] `[P2]` Caviste-bilden, se ovan.
+- [x] `[P2]` `npm run seed -- --remote` kräver nu `--force`: den raderar alla caviste-rader och skriver om dem, så antal och kommentarer i molnet försvann utan varning.
+- [x] `[P3]` Ölkategorin verifierad mot skarpa data: Systembolagets `categoryLevel1` är exakt `"Öl"`, som gissat 2026-09-07. Ingen kodändring behövdes.
 
 ## Senare, beslutat uppskjutet
 
