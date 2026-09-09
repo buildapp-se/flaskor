@@ -49,7 +49,7 @@ Patriks önskelista 2026-09-06 (GRILL-STATUS 31 till 35) byggd i chunk-läge, co
 
 ## Efter första molndeployen
 
-- [ ] `[P1]` Verifiera live som användare: logga in på https://buildapp.se/flaskor, lägg till ett Systembolagsvin, cron-körningen morgonen efter, PWA-installation på Patriks och Julias telefoner. (D1, Worker, secret, Pages och seed gjorda 2026-09-05; grinden ger 401 på fel kod.)
+- [ ] `[P1]` Verifiera live som användare: logga in på https://buildapp.se/flaskor, lägg till ett Systembolagsvin, PWA-installation på Patriks och Julias telefoner. (D1, Worker, secret, Pages och seed gjorda 2026-09-05; grinden ger 401 på fel kod.) **Cronen är avbockad 2026-09-09**: 19 rader i molnet bär `price_checked_at` 2026-09-09 kl. 04:00 och 04:01 svensk tid (02:00 UTC), vilket är exakt schemat `0 2 * * *`. Beslut 23 är därmed inte längre overifierat i molnet.
 - [x] `[P2]` Caviste-bilden: rätt flaska väljs nu ur sidan (2026-09-09). `scripts/caviste.ts` rankar på ord ur vinnamnet i filnamnet och därefter på höjd genom bredd ur WordPress storlekssuffix; `npm run fix:caviste` rättade alla 21 rader i molnet. 18 blev rätt flaska, 3 (Chianti Classico, Côtes du Rhône, La Butte 'O') fick fel eftersom Caviste förkortar dem `CC`, `CDR` och `CNP`. De rättas för hand i Ändra, som nu har både bildlänk och Vivino-länk.
 - [ ] `[P2]` Grindkoden ligger i localStorage i klartext på delad dator; räcker tills Firebase Auth (beslut 2).
 - [x] `[P2]` Ta bort en rad: knapp längst ner i detaljvyn, två tryck utan dialogruta (2026-09-06, Patrik saknade den efter en felinläggning).
@@ -80,7 +80,7 @@ Patriks önskelista 2026-09-06 (GRILL-STATUS 31 till 35) byggd i chunk-läge, co
 
 - [x] `[P1]` Caviste-import via produktlänk (beslut 6). En CAV-låda innehåller flera viner, och sidan bär hela raden för vart och ett: antal, årgång, namn, pris, typ, ursprung, druvor, alkohol, drickfönster, serveringstemperatur, karaffering, smaknot och matförslag. Klistra in lådans länk i Lägg till, välj vinet, spara. Varje vin får sin egen flaskbild ur radens cell. Verifierat mot CAV0143 och CAV0179, som har olika taggning.
 - [x] `[P1]` Drucken-logg per rad (beslut 16), migrering 0005: datum, betyg 1 till 5 och kommentar, senast druckna först, i detaljvyns block "Drucket". **"Drack en" är oförändrad**, beslut 16 säger uttryckligen ingen ruta och inget betyg vid nedräkningen.
-- [ ] `[P3]` Loggen syns bara i detaljvyn. Ett "senast druckna"-flöde över hela källaren, eller betyget på raden i listan, kräver att loggen följer med i `GET /api/drinks` eller en egen route. Inte byggt förrän det finns något att titta på.
+- [x] `[P3]` Loggen syns i listan, byggt 2026-09-09 (femte omgången). `GET /api/drinks` bär senaste avsmakningens datum och betyg samt antalet, hämtade i samma fråga med en LEFT JOIN, så inget anrop per rad behövs. Raden visar "Drucken 30 aug 2026 ★★★★★ · 2 ggr", tabellen får kolumnen Drucken (dold från start) och sorteringen nyckeln "Senast drucken". **Flödet blev sorteringen**, inte en ny vy: fallande på senast drucken är samma sak, och kostade ingen route och ingen nav-plats.
 
 ## Senare, beslutat uppskjutet
 

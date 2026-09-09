@@ -1,15 +1,28 @@
 ---
 schemaVersion: 1
 status: active
-currentGoal: Fyra omgångar 2026-09-09, alla live: Vivino-länken pinnad och Caviste-bilderna rättade; lagersaldo i vald butik och sök på namn; Caviste-import via produktlänk och drucken-logg; lagerkoll för hela Önskelistan. Distiller-importen väntar fortfarande på ett uttryckligt ja.
-nextAction: Ägar-QA av dagens fyra omgångar: namnsöket i Lägg till, en Caviste-länk, en anteckning i Drucket, och framför allt "Kolla lagret för alla" i Önskelistan med din butik vald. Rätta de tre Caviste-bildlänkarna i Ändra, adresserna står nedan. Skanna om flaskorna som missade 2026-09-08. Sedan ja eller nej på Distiller-importen.
+currentGoal: Fem omgångar 2026-09-09, alla live: Vivino-länken pinnad och Caviste-bilderna rättade; lagersaldo i vald butik och sök på namn; Caviste-import via produktlänk och drucken-logg; lagerkoll för hela Önskelistan; senast drucken i listan och som sortering. Backloggen har inget fritt kvar som inte kräver ett ja från Patrik. Distiller-importen väntar fortfarande på ett uttryckligt ja.
+nextAction: Ägar-QA av dagens fem omgångar: namnsöket i Lägg till, en Caviste-länk, en anteckning i Drucket (som nu också syns på raden i Källaren och under sorteringen "Senast drucken"), och framför allt "Kolla lagret för alla" i Önskelistan med din butik vald. Rätta de tre Caviste-bildlänkarna i Ändra, adresserna står nedan. Skanna om flaskorna som missade 2026-09-08. Sedan ja eller nej på Distiller-importen, och på de fyra punkter som ligger som beslutat uppskjutna (se nedan, §Vad som är kvar).
 blockers: []
 reviewedAt: 2026-09-09
 ---
 
 # Handoff: Flaskor
 
-Senast uppdaterad: 2026-09-09, fjärde omgången. **Kolla lagret för hela Önskelistan i vald butik** (commit `7a45a81`, Pages-körning 34353704189 grön, bundeln `index-CD0y5EKs.js`; ingen Worker-ändring, ingen migrering). Det är hela poängen med lagersaldot: vad av det jag vill ha kan jag köpa i dag. Punkten låg som P3 i morse med motiveringen att ett anrop per rad vid varje sidladdning var för mycket. Invändningen gällde automatiken, inte funktionen: nu sker det på en knapp, fyra åt gången, samma mönster som bulkimportens uppslag av artikelnummer, och utan ny route.
+Senast uppdaterad: 2026-09-09, femte omgången. **Senast drucken i listan och som sortering** (commit `7438253`, Worker `e84feecd`, Pages-körning 34358196558 grön, bundeln `index-g4ZeS_U2.js`; ingen migrering, ingen schemaändring). Backloggens sista fria punkt: loggen syntes bara i detaljvyn, och den byggdes i morse med noteringen att ett flöde kräver att loggen följer med i `GET /api/drinks`.
+
+- **Listfrågan bär aggregatet.** En LEFT JOIN ger `last_drunk_on`, `last_rating` och `tasting_count` per rad, alltså ett anrop för hela listan i stället för ett per rad. Fälten är läsfält: de finns inte som kolumner på `drink` och går inte att skriva.
+- **Raden visar "Drucken 30 aug 2026 ★★★★★ · 2 ggr"** i Källaren och Barskåpet. Tabellen har kolumnen Drucken, dold från start. Önskelistan har egen radmarkup och visar inget: en vara du inte äger har sällan en logg.
+- **Flödet blev sorteringen.** "Senast drucken" fallande *är* "vad drack vi sist", och kostade varken route, vy eller plats i navigeringen.
+- **Betyget hör till rätt rad.** `MAX(drunk_on)` med `rating` som naken kolumn ger SQLite-garanterat betyget från just den raden. Verifierat med två anteckningar på samma vin: 3 den 5 januari och 5 den 30 augusti gav 5, inte 3.
+- **Cronen är verifierad i molnet** (beslut 23, öppen sedan 2026-09-05): 19 rader bär `price_checked_at` kl. 04:00 och 04:01 svensk tid i dag (02:00 UTC), vilket är schemat `0 2 * * *`. Ingen kodändring, bara belägget.
+- **Ändra-formulärets Vivino-länk och bildlänk är nu kontrollerade i webbläsaren**, det som stod som ogjort efter förmiddagens omgång: bildlänken ändrades i formuläret och lästes tillbaka ur databasen.
+
+Verifierat: `npm run check` (tsc, 65 enhetstester, 52 Worker-tester, torrdeploy), hela flödet i Chromium på 1 280 och 390 px mot `vite dev` + `wrangler dev` med två riktiga anteckningar, och efter deploy mot molnet: en anteckning skriven på rad 1, sedd på raden i Källaren live under sorteringen "Senast drucken", och borttagen igen tillsammans med testraden på rad 22. Databasen är tillbaka utan avsmakningar.
+
+**Sidofynd, inte åtgärdat:** ett 404 i konsolen live på `product-cdn.systembolaget.se/productimages/516/516_200.webp`. En seedad rad bär en gissad bildadress för en produkt utan bild. Samma klass av fel som `Product.hasImage` löste för skanningen 2026-09-08, men på en gammal rad. Rättas med en bildlänk i Ändra, eller genom att nollställa `image_url` på rader vars bild svarar 404.
+
+Tidigare samma dag: fjärde omgången. **Kolla lagret för hela Önskelistan i vald butik** (commit `7a45a81`, Pages-körning 34353704189 grön, bundeln `index-CD0y5EKs.js`; ingen Worker-ändring, ingen migrering). Det är hela poängen med lagersaldot: vad av det jag vill ha kan jag köpa i dag. Punkten låg som P3 i morse med motiveringen att ett anrop per rad vid varje sidladdning var för mycket. Invändningen gällde automatiken, inte funktionen: nu sker det på en knapp, fyra åt gången, samma mönster som bulkimportens uppslag av artikelnummer, och utan ny route.
 
 - Önskelistan har en butiksrad (samma sparade butik som detaljvyn), knappen "Kolla lagret för alla N", en summering ("3 av 5 finns i butiken") och en saldorad med hyllplats per vara.
 - **Resultatet lever i minnet, inte i databasen.** Saldot åldras på timmar och ska inte se ut som ett faktum efter en omladdning.
@@ -26,6 +39,14 @@ Tidigare samma dag: tredje omgången. **Caviste-import via produktlänk (beslut 
    - Loggen syns bara i detaljvyn. Att visa den i listan eller som ett "senast druckna"-flöde kräver att den följer med i `GET /api/drinks`; backlog P3.
 
 Verifierat: `npm run check` (tsc, 64 enhetstester, 51 Worker-tester, torrdeploy), Caviste-importen mot två riktiga sidor i `wrangler dev`, hela flödet i Chromium (klistrade in CAV0179, valde Brouilly, sparade till källaren med 2 flaskor, antecknade betyg 4 med kommentar och såg den i listan), och efter deploy mot molnet: CAV0143 gav lådans tre viner med druvor och pris, och en anteckning skrevs, lästes och togs bort igen på rad 22.
+
+## Val tagna åt Patrik, 2026-09-09 (senast drucken)
+
+- **Sorteringen i stället för en egen vy.** Backloggen skrev "ett senast druckna-flöde över hela källaren"; Källaren har redan sök, chips och sortering, så flödet är en nyckel till i selecten. En vy till hade betytt en nav-plats till för något som visas en gång i veckan.
+- **Aggregat i listfrågan, inte hela loggen.** Listan får senaste raden och antalet, inte varje anteckning. Hela loggen är fortfarande detaljvyns, och `GET /api/drinks` svarar lika snabbt som förut.
+- **Tre läsfält på `Drink`, inga nya kolumner.** De räknas fram vid läsning, så de kan aldrig bli inaktuella, och `DrinkInput` utesluter dem så ingen kan råka skriva dem.
+- **Kolumnen Drucken är dold från start.** Tabellen har redan tolv kolumner; den som vill se loggen slår på den, som Region och Druvor.
+- **Önskelistan fick inget.** Den har egen radmarkup, och en vara man inte äger har sällan druckits.
 
 ## Val tagna åt Patrik, 2026-09-09 (Caviste-import och drucken-logg)
 
@@ -156,6 +177,14 @@ Chunk-läge 2026-09-06 (önskelistan). Säg till om något ska ändras.
 - **`BarcodeDetector` bara där den finns.** Android Chrome läser koden ur fotot direkt i webbläsaren, iPhone saknar den (trasig i WebKit sedan iOS 18) och får i stället Geminis läsning av siffrorna, eller inskrivning i rutan. Ingen WASM-läsare på 1 MB för det.
 - **Fotot krymps till 1 280 px JPEG i webbläsaren** innan det skickas, roterat enligt EXIF. En telefonbild på 4 MB blir cirka 200 kB, och Workern avvisar allt över 3 MB base64.
 - **`SB_API_KEY` är Systembolagets publika frontendnyckel**, hittad i klartext i det publika repot `oliverlevay/barcode-to-kcal`, inte utgrävd ur deras bundle. Den ligger som secret eftersom repot är publikt. Saknas den svarar skanningen ändå, men utan kandidater.
+
+## Vad som är kvar
+
+Backloggen har **inget fritt kvar att bygga**. Det som står öppet är antingen ditt eller väntar på ditt ja:
+
+- **Ditt:** ägar-QA av dagens fem omgångar, de tre Caviste-bildlänkarna, PWA-installation på telefonerna, koden till Julia.
+- **Väntar på ett ja, med skäl som fortfarande håller:** Firebase Auth (beslut 2), Sipdeck-synk (beslut 7, dessutom blockerad: Claude Code får inte läsa Sipdecks D1), dagspris från fler källor (beslut 4), engelska (beslut 18), sortimentsdumpen (beslut 23), Distiller-importen.
+- **Kvar som blockerad, prövad på nytt 2026-09-09:** streckkodsläsning i kameran på iPhone. Den kräver ett WASM-bibliotek på cirka 1 MB i bundeln eftersom WebKit saknar `BarcodeDetector`, och det går inte att pröva om härifrån: det kräver en riktig iPhone. Skälet står kvar tills du testat skanningen på din telefon, vilket ändå ligger i ägar-QA:n.
 
 ## Fällor
 
