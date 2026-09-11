@@ -93,3 +93,7 @@ Patriks önskelista 2026-09-06 (GRILL-STATUS 31 till 35) byggd i chunk-läge, co
 - [ ] `[P3]` Engelska som andra språk (beslut 18).
 - [ ] `[P3]` Byt sidläsning mot Systembolagets sortimentsdump om användarantalet växer (beslut 23).
 - [x] `[P3]` Namnsökning hos Systembolaget: byggt 2026-09-09, samma nyckel och samma sök som skanningen redan använde.
+
+## Captured
+
+- [ ] [P0] [Wish] + - även i tabellen på antal flaskor (före och efter siffran blir nog bra?) låt claude design göra nya ikoner som syns till vänster (de är inte snygga nog för release)
