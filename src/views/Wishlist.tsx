@@ -65,6 +65,9 @@ export function Wishlist() {
     setChecking(true)
     setStock({})
     for (let i = 0; i < rows.length; i += 4) {
+      // Paus mellan batcharna (2026-09-11): utan den gick alla anrop inom samma sekund och
+      // Systembolaget stängde av stockbalance-scopet på frontendnyckeln, se HANDOFF.md.
+      if (i > 0) await new Promise((r) => setTimeout(r, 400))
       const batch = await Promise.allSettled(rows.slice(i, i + 4).map(async (d) => [d.id, await checkStock(d.id, storeId)] as const))
       const done = batch.filter((r): r is PromiseFulfilledResult<readonly [number, Stock]> => r.status === 'fulfilled')
       if (done.length > 0) setStock((prev) => ({ ...prev, ...Object.fromEntries(done.map((r) => r.value)) }))
