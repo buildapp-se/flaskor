@@ -761,10 +761,7 @@ p {
   flex-direction: column;
   gap: var(--fl-s5);
 }
-/* Bara listvyns kort hålls smala som en mobilspalt (design §3); tabellen ska fylla sidan som i Källaren/Barskåpet. */
-.fl-wishlist__listwrap {
-  max-width: 720px;
-}
+/* Listvyn fyller sidan som Källarens grupper (2026-09-11), matchar stockbaren och verktygsfältet ovanför. */
 .fl-wish {
   display: grid;
   grid-template-columns: 32px 1fr auto;
@@ -921,9 +918,6 @@ p {
 @media (max-width: 899px) {
   .fl-wishlist {
     gap: 14px;
-  }
-  .fl-wishlist__listwrap {
-    max-width: none;
   }
   .fl-wishlist .fl-list {
     margin-top: -2px;
