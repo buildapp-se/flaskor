@@ -14,7 +14,8 @@ function api(method: string, path: string, body?: unknown, headers: Record<strin
 }
 
 beforeEach(async () => {
-  await env.DB.prepare('DELETE FROM drink').run()
+  // Spegeln töms också: refresh-all fyller den, och nästa test ska inte ärva en färsk spegel.
+  await env.DB.batch([env.DB.prepare('DELETE FROM drink'), env.DB.prepare('DELETE FROM sb_product'), env.DB.prepare('DELETE FROM sb_meta')])
 })
 
 describe('grindkoden (beslut 2)', () => {
