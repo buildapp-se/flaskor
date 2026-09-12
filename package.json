@@ -19,7 +19,8 @@
     "seed": "node scripts/seed.ts",
     "seed:bar": "node scripts/seed-bar.ts",
     "fix:caviste": "node scripts/caviste-images.ts",
-    "stores": "node scripts/stores.ts"
+    "stores": "node scripts/stores.ts",
+    "assortment": "node scripts/assortment.ts"
   },
   "dependencies": {
     "react": "^19.2.0",

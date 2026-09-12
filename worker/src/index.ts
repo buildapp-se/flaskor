@@ -1,6 +1,7 @@
 import { FatalError, NotFoundError, TransientError, UnauthorizedError } from '../../shared/errors.ts'
+import type { AssortmentChunk, AssortmentResult } from '../../shared/assortment.ts'
 import type { Candidate, Drink, DrinkPatch, LabelGuess, Preview, ScanResult, Stock, Tasting } from '../../shared/types.ts'
-import { getMirrored, importAssortment, isFresh, searchMirror } from './assortment.ts'
+import { finishAssortment, getMirrored, isFresh, searchMirror, upsertAssortment } from './assortment.ts'
 import { cached } from './cache.ts'
 import { fetchCaviste, parseCavistePage, parseCavisteUrl } from './caviste.ts'
 import { deleteDrink, deleteTasting, getDrink, insertDrink, insertTasting, listDrinks, listTastings, sanitize, sanitizeTasting, updateDrink } from './db.ts'
@@ -41,7 +42,7 @@ export default {
   },
 
   async scheduled(_controller: ScheduledController, env: GateEnv): Promise<void> {
-    await nightly(env.DB)
+    await refreshAll(env.DB)
   },
 } satisfies ExportedHandler<GateEnv>
 
@@ -58,7 +59,9 @@ async function route(request: Request, env: GateEnv): Promise<unknown> {
   if (method === 'GET' && path === '/api/ping') return null
   if (method === 'GET' && path === '/api/drinks') return { drinks: await listDrinks(env.DB) }
   if (method === 'POST' && path === '/api/drinks') return insertDrink(env.DB, await withVivino(sanitize(await request.json())))
-  if (method === 'POST' && path === '/api/refresh-all') return nightly(env.DB)
+  if (method === 'POST' && path === '/api/refresh-all') return refreshAll(env.DB)
+  // Spegelimporten (migrering 0006): nattskriptet postar dumpen i bitar, sist done. Se worker/src/assortment.ts.
+  if (method === 'POST' && path === '/api/assortment') return assortment(await request.json(), env.DB)
   if (method === 'POST' && path === '/api/scan') return scan(await request.json(), env)
 
   const single = path.match(/^\/api\/drinks\/(\d+)$/)
@@ -295,20 +298,14 @@ function refreshPatch(fresh: Fresh, drink: Drink): DrinkPatch {
   return patch
 }
 
-/**
- * Nattens jobb, också det POST /api/refresh-all kör: spegeln först (beslut 23), så prisuppdateringen kan läsa ur den.
- * Faller importen (dumpen nere, formatet ändrat) körs uppdateringen ändå, ur det som finns, och felet står i loggen.
- */
-async function nightly(db: D1Database): Promise<{ refreshed: number; mirrored: number; failed: number; vivino: number; imported: number | null }> {
-  let imported: number | null = null
-  try {
-    const result = await importAssortment(db)
-    console.log('assortment import', JSON.stringify(result))
-    imported = result.rows
-  } catch (error) {
-    console.error('assortment import failed', error)
-  }
-  return { ...(await refreshAll(db)), imported }
+/** En bit av dumpen in i spegeln, och på done: gamla rader bort och spegeln stämplad som färsk. */
+async function assortment(body: unknown, db: D1Database): Promise<AssortmentResult> {
+  if (typeof body !== 'object' || body === null) throw new FatalError('body must be an object')
+  const { run, rows, done } = body as AssortmentChunk
+  if (rows !== undefined && !Array.isArray(rows)) throw new FatalError('rows must be an array')
+  const upserted = rows ? await upsertAssortment(db, run, rows) : 0
+  if (done !== true) return { upserted }
+  return { upserted, ...(await finishAssortment(db, run)) }
 }
 
 export async function refreshAll(db: D1Database): Promise<{ refreshed: number; mirrored: number; failed: number; vivino: number }> {

@@ -58,10 +58,6 @@ export default defineConfig({
               return Response.json({ status: 0, status_verbose: 'product not found' }, { status: 404 })
             }
           }
-          // Sortimentsdumpen (migrering 0006): fyra produkter ur den riktiga dumpen 2026-09-12, utan bildbilagorna.
-          if (url.hostname === 'susbolaget.emrik.org') {
-            return new Response(await readFile('worker/test/fixtures/sb-dump.json', 'utf8'), { headers: { 'content-type': 'application/json' } })
-          }
           if (url.hostname === 'api-extern.systembolaget.se') {
             if (request.headers.get('ocp-apim-subscription-key') !== 'test-sb') return new Response('no key', { status: 401 })
             // Två ord i frågan tvingar fram felen spegeln ska täcka: "ratelimit" ger 429, "nyckelfel" ger 401.

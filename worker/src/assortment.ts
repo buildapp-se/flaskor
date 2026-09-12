@@ -1,57 +1,18 @@
 // Spegeln av Systembolagets sortiment (migrering 0006, beslut 23). Källan är tredjepartsdumpen
-// https://susbolaget.emrik.org/v1/products (C4illin/systembolaget-data): 100 MB JSON, 8 MB gzip, ny 03:00 varje natt.
-// Hela filen i minnet tar 289 MB och Workern har 128, så den strömmas och delas upp i toppnivåobjekt (0,57 s CPU,
-// 47 MB toppminne mätt 2026-09-12). Rader skrivs i batchar och det som inte längre finns i dumpen tas bort.
-import { FatalError, NotFoundError, TransientError } from '../../shared/errors.ts'
+// https://susbolaget.emrik.org/v1/products (C4illin/systembolaget-data): 100 MB JSON, 27 035 rader, ny 03:00 varje natt.
+// Workern läser den inte själv: att strömma och parsa den kostade 2 s CPU för 9 000 rader i molnet och dog på
+// Cloudflares fel 1102 (2026-09-12). I stället laddar scripts/assortment.ts ner den i GitHub Actions varje natt och
+// postar den hit i bitar om 300 rader (shared/assortment.ts), så varje anrop är några millisekunder.
+import { FatalError, NotFoundError } from '../../shared/errors.ts'
+import type { AssortmentResult } from '../../shared/assortment.ts'
 import type { Candidate } from '../../shared/types.ts'
 import { strip } from './scan.ts'
 import { imageUrl, type Product } from './systembolaget.ts'
 
-export const DUMP_URL = 'https://susbolaget.emrik.org/v1/products'
 /** Spegeln räknas som färsk så här länge efter importen. Dumpen förnyas var 24:e timme, så 36 tål en missad natt. */
 const FRESH_HOURS = 36
 const ROWS_PER_STATEMENT = 20
-const STATEMENTS_PER_BATCH = 50
-
-/**
- * Delar en ström av JSON-text (en array av objekt) i färdiga toppnivåobjekt utan att hålla hela texten.
- * Strängmedveten: klamrar inne i strängar räknas inte. Skanningen återupptas efter bärtexten, annars räknas
- * klamrarna om per chunk och tiden blir kvadratisk (första försöket tog över två minuter på 100 MB).
- */
-export function objectSplitter(): TransformStream<string, unknown> {
-  let depth = 0
-  let inString = false
-  let escaped = false
-  let start = -1
-  let carry = ''
-  return new TransformStream<string, unknown>({
-    transform(chunk, controller) {
-      const text = carry + chunk
-      for (let i = carry.length; i < text.length; i++) {
-        const ch = text[i]
-        if (inString) {
-          if (escaped) escaped = false
-          else if (ch === '\\') escaped = true
-          else if (ch === '"') inString = false
-          continue
-        }
-        if (ch === '"') inString = true
-        else if (ch === '{') {
-          if (depth === 0) start = i
-          depth++
-        } else if (ch === '}') {
-          depth--
-          if (depth === 0) {
-            controller.enqueue(JSON.parse(text.slice(start, i + 1)))
-            start = -1
-          }
-        }
-      }
-      carry = start >= 0 ? text.slice(start) : ''
-      if (start >= 0) start = 0
-    },
-  })
-}
+const MAX_ROWS_PER_CALL = 1000
 
 function str(v: unknown): string | null {
   return typeof v === 'string' && v.trim() !== '' ? v : null
@@ -61,32 +22,34 @@ function num(v: unknown): number | null {
 }
 
 /** Dumpens rad till vår Product. Fältnamnen är Systembolagets egna utom `price` (produktsidan säger `priceInclVat`) och `grapes` (lista, inte text). */
-export function fromDump(raw: Record<string, unknown>): Product {
-  if (typeof raw['productNumber'] !== 'string' || typeof raw['productNameBold'] !== 'string') throw new FatalError('dump row without number or name', 502)
-  const grapes = raw['grapes']
+export function fromDump(raw: unknown): Product {
+  if (typeof raw !== 'object' || raw === null) throw new FatalError('dump row must be an object')
+  const r = raw as Record<string, unknown>
+  if (typeof r['productNumber'] !== 'string' || typeof r['productNameBold'] !== 'string') throw new FatalError('dump row without number or name')
+  const grapes = r['grapes']
   return {
-    productId: String(raw['productId']),
-    productNumber: raw['productNumber'],
-    productNameBold: raw['productNameBold'],
-    productNameThin: str(raw['productNameThin']),
-    producerName: str(raw['producerName']),
-    vintage: str(raw['vintage']),
-    country: str(raw['country']),
-    originLevel1: str(raw['originLevel1']),
-    originLevel2: str(raw['originLevel2']),
-    categoryLevel1: str(raw['categoryLevel1']),
-    categoryLevel2: str(raw['categoryLevel2']),
-    categoryLevel3: str(raw['categoryLevel3']),
+    productId: String(r['productId']),
+    productNumber: r['productNumber'],
+    productNameBold: r['productNameBold'],
+    productNameThin: str(r['productNameThin']),
+    producerName: str(r['producerName']),
+    vintage: str(r['vintage']),
+    country: str(r['country']),
+    originLevel1: str(r['originLevel1']),
+    originLevel2: str(r['originLevel2']),
+    categoryLevel1: str(r['categoryLevel1']),
+    categoryLevel2: str(r['categoryLevel2']),
+    categoryLevel3: str(r['categoryLevel3']),
     grapes: Array.isArray(grapes) ? str(grapes.filter((g) => typeof g === 'string').join(', ')) : str(grapes),
-    priceInclVat: num(raw['price']),
-    volume: num(raw['volume']),
-    alcoholPercentage: num(raw['alcoholPercentage']),
-    usage: str(raw['usage']),
-    taste: str(raw['taste']),
-    isTemporaryOutOfStock: raw['isTemporaryOutOfStock'] === true,
-    isCompletelyOutOfStock: raw['isCompletelyOutOfStock'] === true,
-    isDiscontinued: raw['isDiscontinued'] === true,
-    hasImage: Array.isArray(raw['images']) && raw['images'].length > 0,
+    priceInclVat: num(r['price']),
+    volume: num(r['volume']),
+    alcoholPercentage: num(r['alcoholPercentage']),
+    usage: str(r['usage']),
+    taste: str(r['taste']),
+    isTemporaryOutOfStock: r['isTemporaryOutOfStock'] === true,
+    isCompletelyOutOfStock: r['isCompletelyOutOfStock'] === true,
+    isDiscontinued: r['isDiscontinued'] === true,
+    hasImage: Array.isArray(r['images']) && r['images'].length > 0,
   }
 }
 
@@ -100,63 +63,38 @@ export function searchTerms(query: string): string[] {
   return strip(query).toLowerCase().split(/[^a-z0-9]+/).filter(Boolean)
 }
 
-export interface ImportResult {
-  rows: number
-  removed: number
-  imported_at: string
+/** Körningens id måste vara en riktig ISO-tid: det jämförs som text mot updated_at när gamla rader rensas. */
+export function validRun(run: unknown): run is string {
+  return typeof run === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/.test(run) && !Number.isNaN(Date.parse(run))
 }
 
-/** Strömmar dumpen in i sb_product. Rader som inte kom med i den här körningen tas bort. */
-export async function importAssortment(db: D1Database, url = DUMP_URL): Promise<ImportResult> {
-  let response: Response
-  try {
-    response = await fetch(url, { headers: { accept: 'application/json' } })
-  } catch (error) {
-    throw new TransientError(`dump unreachable: ${String(error)}`)
+/** Skriver en bit av dumpen till spegeln, alla rader stämplade med körningen. Ger antalet rader. */
+export async function upsertAssortment(db: D1Database, run: string, rows: unknown[]): Promise<number> {
+  if (!validRun(run)) throw new FatalError('run must be an ISO timestamp')
+  if (rows.length === 0) return 0
+  if (rows.length > MAX_ROWS_PER_CALL) throw new FatalError(`at most ${MAX_ROWS_PER_CALL} rows per call`)
+  const products = rows.map(fromDump)
+  const statements: D1PreparedStatement[] = []
+  for (let i = 0; i < products.length; i += ROWS_PER_STATEMENT) {
+    const slice = products.slice(i, i + ROWS_PER_STATEMENT)
+    const sql = `INSERT OR REPLACE INTO sb_product (number, search, json, updated_at) VALUES ${slice.map(() => '(?, ?, ?, ?)').join(', ')}`
+    statements.push(db.prepare(sql).bind(...slice.flatMap((p) => [p.productNumber, searchText(p), JSON.stringify(p), run])))
   }
-  if (response.status === 429 || response.status >= 500) throw new TransientError(`dump answered ${response.status}`)
-  if (!response.ok || !response.body) throw new FatalError(`dump answered ${response.status}`, 502)
+  await db.batch(statements)
+  return products.length
+}
 
-  const imported_at = new Date().toISOString()
-  const insert = db.prepare(
-    `INSERT OR REPLACE INTO sb_product (number, search, json, updated_at) VALUES ${Array(ROWS_PER_STATEMENT).fill('(?, ?, ?, ?)').join(', ')}`,
-  )
-  let rows = 0
-  let pending: unknown[] = []
-  let statements: D1PreparedStatement[] = []
-  const flush = async (): Promise<void> => {
-    if (pending.length > 0) {
-      // Sista satsen är kortare än de andra: en egen sats med rätt antal platser.
-      const short = db.prepare(`INSERT OR REPLACE INTO sb_product (number, search, json, updated_at) VALUES ${Array(pending.length / 4).fill('(?, ?, ?, ?)').join(', ')}`)
-      statements.push(short.bind(...pending))
-      pending = []
-    }
-    if (statements.length > 0) await db.batch(statements)
-    statements = []
-  }
-
-  const reader = response.body.pipeThrough(new TextDecoderStream()).pipeThrough(objectSplitter()).getReader()
-  for (;;) {
-    const { done, value } = await reader.read()
-    if (done) break
-    const p = fromDump(value as Record<string, unknown>)
-    pending.push(p.productNumber, searchText(p), JSON.stringify(p), imported_at)
-    rows++
-    if (pending.length === ROWS_PER_STATEMENT * 4) {
-      statements.push(insert.bind(...pending))
-      pending = []
-      if (statements.length === STATEMENTS_PER_BATCH) await flush()
-    }
-  }
-  await flush()
-  if (rows === 0) throw new FatalError('dump held no products', 502)
-
-  const removed = (await db.prepare('DELETE FROM sb_product WHERE updated_at < ?').bind(imported_at).run()).meta.changes
+/** Avslutar körningen: rader från äldre körningar bort, spegeln stämplad som färsk. Kastar om körningen inte skrev något. */
+export async function finishAssortment(db: D1Database, run: string): Promise<Pick<AssortmentResult, 'rows' | 'removed'>> {
+  if (!validRun(run)) throw new FatalError('run must be an ISO timestamp')
+  const rows = (await db.prepare('SELECT count(*) AS n FROM sb_product WHERE updated_at = ?').bind(run).first<{ n: number }>())?.n ?? 0
+  if (rows === 0) throw new FatalError('run wrote no rows, refusing to empty the mirror')
+  const removed = (await db.prepare('DELETE FROM sb_product WHERE updated_at < ?').bind(run).run()).meta.changes
   await db.batch([
-    db.prepare("INSERT OR REPLACE INTO sb_meta (key, value) VALUES ('imported_at', ?)").bind(imported_at),
+    db.prepare("INSERT OR REPLACE INTO sb_meta (key, value) VALUES ('imported_at', ?)").bind(run),
     db.prepare("INSERT OR REPLACE INTO sb_meta (key, value) VALUES ('rows', ?)").bind(String(rows)),
   ])
-  return { rows, removed, imported_at }
+  return { rows, removed }
 }
 
 /** När spegeln senast fylldes, eller null om aldrig. */
