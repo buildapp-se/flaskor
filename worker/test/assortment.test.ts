@@ -31,7 +31,7 @@ async function split(text: string, size: number): Promise<unknown[]> {
 }
 
 beforeEach(async () => {
-  await env.DB.prepare('DELETE FROM drink').run()
+  await env.DB.batch([env.DB.prepare('DELETE FROM drink'), env.DB.prepare('DELETE FROM sb_product'), env.DB.prepare('DELETE FROM sb_meta')])
 })
 
 describe('strömdelaren', () => {
