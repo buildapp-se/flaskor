@@ -17,6 +17,8 @@ export default defineConfig({
           const url = new URL(request.url)
           if (url.hostname === 'www.systembolaget.se') {
             const number = url.pathname.match(/-(\d+)\/?$/)?.[1]
+            // 141201 (Norrlands Guld) finns bara i dumpfixturen: produktsidan "ligger nere", så spegeln får svara.
+            if (number === '141201') return new Response('bad gateway', { status: 503 })
             try {
               const html = await readFile(`worker/test/fixtures/${number}.html`, 'utf8')
               return new Response(html, { headers: { 'content-type': 'text/html' } })
@@ -56,8 +58,16 @@ export default defineConfig({
               return Response.json({ status: 0, status_verbose: 'product not found' }, { status: 404 })
             }
           }
+          // Sortimentsdumpen (migrering 0006): fyra produkter ur den riktiga dumpen 2026-09-12, utan bildbilagorna.
+          if (url.hostname === 'susbolaget.emrik.org') {
+            return new Response(await readFile('worker/test/fixtures/sb-dump.json', 'utf8'), { headers: { 'content-type': 'application/json' } })
+          }
           if (url.hostname === 'api-extern.systembolaget.se') {
             if (request.headers.get('ocp-apim-subscription-key') !== 'test-sb') return new Response('no key', { status: 401 })
+            // Två ord i frågan tvingar fram felen spegeln ska täcka: "ratelimit" ger 429, "nyckelfel" ger 401.
+            const q = url.searchParams.get('textQuery') ?? ''
+            if (q.includes('ratelimit')) return new Response('too many', { status: 429 })
+            if (q.includes('nyckelfel')) return new Response('key revoked', { status: 401 })
             // Lagersaldo (BACKLOG P3): produkt-id 21955733 är fixturens Vanliga Vodka och finns i butik 2401,
             // allt annat är slut. Butik 9999 för inte varan alls och svarar 404 som Systembolaget gör.
             const stock = url.pathname.match(/\/stockbalance\/store\/(\d+)\/(\d+)/)
