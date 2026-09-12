@@ -28,7 +28,7 @@ Status per 2026-09-05 kl. 21:20, efter v1-bygget. **beslutad** betyder att beslu
 | 20 | Ramverk, omtag | Se 10. Påståendet att Rotello är det snyggaste projektet saknade belägg och drogs tillbaka; Sipdeck är referensen, och dess snygghet kom ur designprocessen, inte ramverket | byggd |
 | 21 | Adress och hosting | Som Sipdeck: publikt repo, GitHub Pages på `buildapp.se/flaskor`, Worker `flaskor-api.buildapp.se` med D1 | byggd, live 2026-09-05 |
 | 22 | Hushåll från dag ett | `household_id` på all data, ett hushåll nu | byggd |
-| 23 | Uppdatering från Systembolaget | Nattligt cron plus knapp per rad. Dedupe per artikelnummer över hushåll och ett tak; vid många användare byts sidläsning mot sortimentsdumpen | byggd, cron verifierad i molnet 2026-09-09 |
+| 23 | Uppdatering från Systembolaget | Nattligt cron plus knapp per rad. Dedupe per artikelnummer över hushåll och ett tak; vid många användare byts sidläsning mot sortimentsdumpen | byggd, cron verifierad i molnet 2026-09-09; spegeln byggd 2026-09-12 (GitHub Actions fyller D1 nattligt, natten läser ur den) |
 | 24 | Startsida | Källaren med pillerfilter och "Dags att dricka: N"; mobil har Önskelistan ett tryck bort | byggd |
 | 25 | Startdata | 21 Excel-rader läses in från den inklistrade texten, bilder från Caviste-sidornas og:image | byggd, seedat i molnet |
 | 26 | Designbriefens grund | Syskon till Sipdeck i typografi och bakgrund, egen accent, inga illustrationer; Claude Design avgör detaljerna | byggd |
