@@ -1,10 +1,12 @@
 import { FatalError, NotFoundError, TransientError, UnauthorizedError } from '../../shared/errors.ts'
 import type { Candidate, Drink, DrinkPatch, LabelGuess, Preview, ScanResult, Stock, Tasting } from '../../shared/types.ts'
+import { getMirrored, importAssortment, isFresh, searchMirror } from './assortment.ts'
+import { cached } from './cache.ts'
 import { fetchCaviste, parseCavistePage, parseCavisteUrl } from './caviste.ts'
 import { deleteDrink, deleteTasting, getDrink, insertDrink, insertTasting, listDrinks, listTastings, sanitize, sanitizeTasting, updateDrink } from './db.ts'
-import { findByEan, normalizeEan, rank, readLabel, searchOnce, searchProducts, validEan } from './scan.ts'
+import { findByEan, normalizeEan, queries, rank, readLabel, searchOnce, searchProducts, validEan } from './scan.ts'
 import { fetchStock } from './stock.ts'
-import { fetchProduct, parseProductNumber, toPreview } from './systembolaget.ts'
+import { fetchProduct, parseProductNumber, toPreview, type Product } from './systembolaget.ts'
 import { fetchWine, findVivino, parseVivinoUrl, parseWinePage, queryFor, refreshVivino, vivinoDue, vivinoPatch, vivinoToPreview } from './vivino.ts'
 
 // Grindkoden (beslut 2): en delad kod, skickad som Bearer, jämförd mot secreten GATE_CODE. Sitter här, aldrig bara i klienten.
@@ -12,8 +14,11 @@ import { fetchWine, findVivino, parseVivinoUrl, parseWinePage, queryFor, refresh
 // saknas Systembolagsnyckeln blir kandidatlistan tom och användaren får fylla i själv.
 type GateEnv = Env & { GATE_CODE?: string; GEMINI_API_KEY?: string; SB_API_KEY?: string }
 
-/** Nattens tak (beslut 23): så många artikelnummer hämtas per körning. */
+/** Nattens tak (beslut 23): så många produktsidor hämtas per körning. Rader som spegeln känner till kostar ingen sida och räknas inte. */
 const NIGHTLY_CAP = 50
+/** Cache API (2026-09-12): Systembolagets eget sök säger max-age=1800; lagret åldras fortare. */
+const SEARCH_TTL = 1800
+const STOCK_TTL = 600
 /** Vivino: så många viner får nytt betyg per natt (saknat eller äldre än 30 dagar). */
 const VIVINO_CAP = 20
 
@@ -36,7 +41,7 @@ export default {
   },
 
   async scheduled(_controller: ScheduledController, env: GateEnv): Promise<void> {
-    await refreshAll(env.DB)
+    await nightly(env.DB)
   },
 } satisfies ExportedHandler<GateEnv>
 
@@ -53,7 +58,7 @@ async function route(request: Request, env: GateEnv): Promise<unknown> {
   if (method === 'GET' && path === '/api/ping') return null
   if (method === 'GET' && path === '/api/drinks') return { drinks: await listDrinks(env.DB) }
   if (method === 'POST' && path === '/api/drinks') return insertDrink(env.DB, await withVivino(sanitize(await request.json())))
-  if (method === 'POST' && path === '/api/refresh-all') return refreshAll(env.DB)
+  if (method === 'POST' && path === '/api/refresh-all') return nightly(env.DB)
   if (method === 'POST' && path === '/api/scan') return scan(await request.json(), env)
 
   const single = path.match(/^\/api\/drinks\/(\d+)$/)
@@ -83,7 +88,7 @@ async function route(request: Request, env: GateEnv): Promise<unknown> {
 
   if (method === 'GET' && path === '/api/systembolaget') {
     const number = parseProductNumber(url.searchParams.get('q') ?? '')
-    return toPreview(await fetchProduct(number))
+    return toPreview(await productOrMirror(env.DB, number))
   }
 
   // Sök på namn hos Systembolaget (BACKLOG P3, 2026-09-09). Samma sök som skanningen använder, men med användarens
@@ -91,8 +96,7 @@ async function route(request: Request, env: GateEnv): Promise<unknown> {
   if (method === 'GET' && path === '/api/search') {
     const q = (url.searchParams.get('q') ?? '').trim()
     if (q === '') throw new FatalError('q is required')
-    if (!env.SB_API_KEY) throw new FatalError('SB_API_KEY is not configured', 500)
-    return { candidates: await searchOnce(q, env.SB_API_KEY) satisfies Candidate[] }
+    return { candidates: await cached(`search:${q.toLowerCase()}`, SEARCH_TTL, () => searchOrMirror(q, env)) satisfies Candidate[] }
   }
 
   // Lagersaldo i en butik (BACKLOG P3, 2026-09-09). Slås upp på Systembolagets interna produkt-id, inte artikelnumret;
@@ -101,7 +105,9 @@ async function route(request: Request, env: GateEnv): Promise<unknown> {
     const store = url.searchParams.get('store') ?? ''
     const drink = await getDrink(env.DB, Number(url.searchParams.get('drink') ?? ''))
     if (!env.SB_API_KEY) throw new FatalError('SB_API_KEY is not configured', 500)
-    return { store, ...(await fetchStock(store, await productIdOf(env.DB, drink), env.SB_API_KEY)) } satisfies Stock
+    const key = env.SB_API_KEY
+    const productId = await productIdOf(env.DB, drink)
+    return { store, ...(await cached(`stock:${store}:${productId}`, STOCK_TTL, () => fetchStock(store, productId, key))) } satisfies Stock
   }
 
   // Caviste-import via produktlänk (beslut 6). En låda innehåller flera viner, så svaret är en lista att välja ur.
@@ -180,7 +186,7 @@ async function scan(body: unknown, env: GateEnv): Promise<ScanResult> {
     via = 'label'
   }
   if (!guess) throw new NotFoundError('unknown barcode')
-  const candidates = env.SB_API_KEY ? rank(await searchProducts(guess, env.SB_API_KEY), guess) : []
+  const candidates = rank(await scanSearchOrMirror(guess, env), guess)
   let vivino_url: string | null = null
   if (candidates.length === 0 && guess.kind === 'wine') {
     try {
@@ -195,7 +201,7 @@ async function scan(body: unknown, env: GateEnv): Promise<ScanResult> {
 /** Uppdatera-knappen: Systembolagets pris, tillgänglighet och (för önskelistan) årgång (beslut 23), och Vivinos betyg för vin. */
 async function refreshDrink(db: D1Database, drink: Drink): Promise<Drink> {
   const patch: DrinkPatch = {}
-  if (drink.source_kind === 'systembolaget' && drink.source_id) Object.assign(patch, refreshPatch(await fetchFresh(drink.source_id), drink))
+  if (drink.source_kind === 'systembolaget' && drink.source_id) Object.assign(patch, refreshPatch(await fetchFresh(db, drink.source_id), drink))
   if (drink.kind === 'wine') Object.assign(patch, await refreshVivino(drink))
   if (Object.keys(patch).length === 0) throw new FatalError('nothing to refresh for this drink')
   return updateDrink(db, drink.id, patch)
@@ -205,7 +211,7 @@ async function refreshDrink(db: D1Database, drink: Drink): Promise<Drink> {
 async function productIdOf(db: D1Database, drink: Drink): Promise<string> {
   if (drink.sb_product_id) return drink.sb_product_id
   if (drink.source_kind !== 'systembolaget' || !drink.source_id) throw new FatalError('drink has no systembolaget number')
-  const sb_product_id = toPreview(await fetchProduct(drink.source_id)).sb_product_id
+  const sb_product_id = toPreview(await productOrMirror(db, drink.source_id)).sb_product_id
   if (!sb_product_id) throw new FatalError('systembolaget gave no product id', 502)
   await updateDrink(db, drink.id, { sb_product_id })
   return sb_product_id
@@ -213,12 +219,67 @@ async function productIdOf(db: D1Database, drink: Drink): Promise<string> {
 
 type Fresh = { gone: true } | { gone: false; preview: Preview }
 
-async function fetchFresh(number: string): Promise<Fresh> {
+async function fetchFresh(db: D1Database, number: string): Promise<Fresh> {
   try {
-    return { gone: false, preview: toPreview(await fetchProduct(number)) }
+    return { gone: false, preview: toPreview(await productOrMirror(db, number)) }
   } catch (error) {
     // Sidan borta betyder att varan utgått. Allt annat (nätfel, 5xx) kastar vidare och lämnar raden orörd.
     if (error instanceof NotFoundError) return { gone: true }
+    throw error
+  }
+}
+
+// ── Spegeln som reserv (migrering 0006, beslut 23) ─────────────────────────────────────────────────────────────
+
+/**
+ * Produktsidan först, spegeln när sidan inte svarar (nätfel, 5xx, 429). En 404 är ett riktigt svar och går vidare
+ * som den är: spegeln får inte återuppliva en vara Systembolaget tagit bort. Saknas numret även i spegeln kastas
+ * sidans fel, inte spegelns, så felmeddelandet pekar på det som faktiskt gick sönder.
+ */
+async function productOrMirror(db: D1Database, number: string): Promise<Product> {
+  try {
+    return await fetchProduct(number)
+  } catch (error) {
+    if (error instanceof NotFoundError) throw error
+    try {
+      return await getMirrored(db, number)
+    } catch {
+      throw error
+    }
+  }
+}
+
+/** Systembolagets sök när nyckeln finns och svarar, annars spegeln. Nyckelfel (401/403) och 429 loggas, användaren får träffar ändå. */
+async function searchOrMirror(q: string, env: GateEnv): Promise<Candidate[]> {
+  if (!env.SB_API_KEY) return searchMirror(env.DB, q)
+  try {
+    return await searchOnce(q, env.SB_API_KEY)
+  } catch (error) {
+    console.error('systembolaget search failed, using mirror', error)
+    return searchMirror(env.DB, q)
+  }
+}
+
+/** Skanningens sök: alla frågor ur gissningen hos Systembolaget, annars samma frågor mot spegeln, sammanslagna som där. */
+async function scanSearchOrMirror(guess: LabelGuess, env: GateEnv): Promise<Candidate[]> {
+  if (env.SB_API_KEY) {
+    try {
+      return await searchProducts(guess, env.SB_API_KEY)
+    } catch (error) {
+      console.error('systembolaget scan search failed, using mirror', error)
+    }
+  }
+  const seen = new Set<string>()
+  const rounds = await Promise.all(queries(guess).map((q) => searchMirror(env.DB, q)))
+  return rounds.flat().filter((c) => !seen.has(c.number) && seen.add(c.number))
+}
+
+/** Radens färska värden ur spegeln, eller null när spegeln inte känner numret (då får produktsidan avgöra om varan finns). */
+async function mirroredFresh(db: D1Database, number: string): Promise<Fresh | null> {
+  try {
+    return { gone: false, preview: toPreview(await getMirrored(db, number)) }
+  } catch (error) {
+    if (error instanceof NotFoundError) return null
     throw error
   }
 }
@@ -234,7 +295,23 @@ function refreshPatch(fresh: Fresh, drink: Drink): DrinkPatch {
   return patch
 }
 
-export async function refreshAll(db: D1Database): Promise<{ refreshed: number; failed: number; vivino: number }> {
+/**
+ * Nattens jobb, också det POST /api/refresh-all kör: spegeln först (beslut 23), så prisuppdateringen kan läsa ur den.
+ * Faller importen (dumpen nere, formatet ändrat) körs uppdateringen ändå, ur det som finns, och felet står i loggen.
+ */
+async function nightly(db: D1Database): Promise<{ refreshed: number; mirrored: number; failed: number; vivino: number; imported: number | null }> {
+  let imported: number | null = null
+  try {
+    const result = await importAssortment(db)
+    console.log('assortment import', JSON.stringify(result))
+    imported = result.rows
+  } catch (error) {
+    console.error('assortment import failed', error)
+  }
+  return { ...(await refreshAll(db)), imported }
+}
+
+export async function refreshAll(db: D1Database): Promise<{ refreshed: number; mirrored: number; failed: number; vivino: number }> {
   const drinks = await listDrinks(db)
   // En hämtning per artikelnummer, oavsett hur många rader som delar det (beslut 23).
   const byNumber = new Map<string, Drink[]>()
@@ -242,13 +319,21 @@ export async function refreshAll(db: D1Database): Promise<{ refreshed: number; f
     if (d.source_kind !== 'systembolaget' || !d.source_id) continue
     byNumber.set(d.source_id, [...(byNumber.get(d.source_id) ?? []), d])
   }
+  // Spegeln svarar för alla rader den känner, utan en enda produktsida; bara resten räknas mot taket (beslut 23).
+  const useMirror = await isFresh(db)
   let refreshed = 0
+  let mirrored = 0
   let failed = 0
-  for (const [number, rows] of [...byNumber].slice(0, NIGHTLY_CAP)) {
+  let pages = 0
+  for (const [number, rows] of byNumber) {
     try {
-      const fresh = await fetchFresh(number)
+      const fromMirror = useMirror ? await mirroredFresh(db, number) : null
+      if (!fromMirror && pages >= NIGHTLY_CAP) continue
+      if (!fromMirror) pages++
+      const fresh = fromMirror ?? (await fetchFresh(db, number))
       for (const row of rows) await updateDrink(db, row.id, refreshPatch(fresh, row))
       refreshed++
+      if (fromMirror) mirrored++
     } catch (error) {
       failed++
       console.error(`refresh ${number} failed`, error)
@@ -265,5 +350,5 @@ export async function refreshAll(db: D1Database): Promise<{ refreshed: number; f
       console.error(`vivino ${row.id} failed`, error)
     }
   }
-  return { refreshed, failed, vivino }
+  return { refreshed, mirrored, failed, vivino }
 }
