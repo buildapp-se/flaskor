@@ -1,0 +1,29 @@
+# Nattens spegelimport (beslut 23): laddar Systembolagsdumpen och postar den till Workern i bitar.
+# 01:30 UTC är 03:30 svensk sommartid och 02:30 vintertid, i båda fallen efter dumpens förnyelse kl. 03:00.
+# Kräver hemligheten FLASKOR_GATE_CODE (grindkoden) i repots Actions-secrets.
+name: Spegla Systembolagets sortiment
+
+on:
+  schedule:
+    - cron: '30 1 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: assortment
+  cancel-in-progress: false
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: node scripts/assortment.ts
+        env:
+          FLASKOR_GATE_CODE: ${{ secrets.FLASKOR_GATE_CODE }}
