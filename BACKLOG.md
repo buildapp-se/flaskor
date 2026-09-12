@@ -91,8 +91,19 @@ Patriks önskelista 2026-09-06 (GRILL-STATUS 31 till 35) byggd i chunk-läge, co
 - [ ] `[P3]` Streckkodsläsning i kameran på iPhone: `BarcodeDetector` finns inte i WebKit, ett WASM-bibliotek på cirka 1 MB krävs. Tills dess läser Gemini siffrorna ur fotot, eller så skrivs de i rutan.
 - [x] `[P3]` Drucken-logg per rad: byggd 2026-09-09, se nedan.
 - [ ] `[P3]` Engelska som andra språk (beslut 18).
-- [ ] `[P3]` Byt sidläsning mot Systembolagets sortimentsdump om användarantalet växer (beslut 23).
+- [x] `[P3]` Byt sidläsning mot Systembolagets sortimentsdump om användarantalet växer (beslut 23): byggd 2026-09-12 som spegeln, se nedan.
 - [x] `[P3]` Namnsökning hos Systembolaget: byggt 2026-09-09, samma nyckel och samma sök som skanningen redan använde.
+
+## Spegeln 2026-09-12
+
+Systembolaget sa nej till officiell API-åtkomst. Workaround: spegel av sortimentet i D1, reserv och cache, så frontendnyckeln får dö och många användare får dela den.
+
+- [x] `[P1]` Spegel av sortimentet (beslut 23), migrering 0006: `sb_product` med 27 035 rader fylld av GitHub Actions varje natt via `POST /api/assortment` i bitar om 300. Workern dog på CPU-taket när den försökte själv (fel 1102 efter 2 s och 9 000 rader), därför skriptet.
+- [x] `[P1]` Reserv: söket och skanningen faller till spegeln vid 401/403/429/5xx från Systembolaget; produktuppslag vid 5xx från produktsidan (404 förblir 404). Natten läser ur spegeln, taket på 50 gäller bara sidhämtningar.
+- [x] `[P1]` Cache API på sök (30 min) och lager (10 min). Lokalt lasttest: 200 samtidiga sökningar, kall cache 86 ms, varm 5 ms, alla 200.
+- [ ] `[P1]` **Patrik:** Actions-hemligheten `FLASKOR_GATE_CODE` (grindkoden) i repot, annars kör inte nattens spegelimport. Länk och kommando i `HANDOFF.md` §Nästa steg 0.
+- [ ] `[P2]` FTS5 i spegeln i stället för LIKE. Gratisplanens D1-kvot är 5 miljoner lästa rader per dygn för hela kontot, och LIKE läser alla 27 035 rader per fråga: 185 reservsökningar på ett dygn tömmer kvoten. FTS5 (som D1 stöder) läser bara träffarna. Blir akut först när reserven används på riktigt, alltså när nyckeln dör eller lasten ger 429.
+- [ ] `[P3]` Rate Limiting-bindningen per användare när Firebase Auth finns (beslut 2). Meningslös i dag: alla delar en grindkod.
 
 ## Captured
 

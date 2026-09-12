@@ -1,15 +1,24 @@
 ---
 schemaVersion: 1
 status: active
-currentGoal: Fem omgångar 2026-09-09, alla live: Vivino-länken pinnad och Caviste-bilderna rättade; lagersaldo i vald butik och sök på namn; Caviste-import via produktlänk och drucken-logg; lagerkoll för hela Önskelistan; senast drucken i listan och som sortering. Backloggen har inget fritt kvar som inte kräver ett ja från Patrik. Distiller-importen väntar fortfarande på ett uttryckligt ja.
-nextAction: Ägar-QA av dagens fem omgångar: namnsöket i Lägg till, en Caviste-länk, en anteckning i Drucket (som nu också syns på raden i Källaren och under sorteringen "Senast drucken"), och framför allt "Kolla lagret för alla" i Önskelistan med din butik vald. Rätta de tre Caviste-bildlänkarna i Ändra, adresserna står nedan. Skanna om flaskorna som missade 2026-09-08. Sedan ja eller nej på Distiller-importen, och på de fyra punkter som ligger som beslutat uppskjutna (se nedan, §Vad som är kvar).
-blockers: []
-reviewedAt: 2026-09-09
+currentGoal: Spegeln av Systembolagets sortiment 2026-09-12 (beslut 23), live: D1-tabell med 27 035 rader fylld av GitHub Actions varje natt, reserv för sök och produktuppslag när frontendnyckeln eller produktsidan felar, Cache API på sök och lager, nattens prisuppdatering läser ur spegeln utan produktsidor. Kvar för att natten ska gå av sig själv: hemligheten FLASKOR_GATE_CODE i repots Actions-secrets, som bara Patrik får skapa.
+nextAction: Skapa hemligheten FLASKOR_GATE_CODE (värdet är grindkoden) i repots Actions-secrets, se §Nästa steg 0, och kör workflowen "Spegla Systembolagets sortiment" för hand en gång. Sedan ägar-QA av 2026-09-09 (namnsök, Caviste-länk, Drucket, "Kolla lagret för alla"), de tre Caviste-bildlänkarna, omskanningen. Ja eller nej på FTS5 i spegeln (BACKLOG §Spegeln P2) och på Distiller-importen.
+blockers: [Nattens spegelimport kräver Actions-hemligheten FLASKOR_GATE_CODE; tills den finns är spegeln färsk bara efter en manuell körning av npm run assortment]
+reviewedAt: 2026-09-12
 ---
 
 # Handoff: Flaskor
 
-Senast uppdaterad: 2026-09-09, femte omgången. **Senast drucken i listan och som sortering** (commit `7438253`, Worker `e84feecd`, Pages-körning 34358196558 grön, bundeln `index-g4ZeS_U2.js`; ingen migrering, ingen schemaändring). Backloggens sista fria punkt: loggen syntes bara i detaljvyn, och den byggdes i morse med noteringen att ett flöde kräver att loggen följer med i `GET /api/drinks`.
+Senast uppdaterad: 2026-09-12. **Spegeln av Systembolagets sortiment** (commits `8890ca7`, `558e67d`, `d344980`, migrering `0006_sb_product.sql` körd i molnet, Worker `4fadb2e4`). Bakgrund: Systembolaget sa nej till officiell API-åtkomst, så de inofficiella vägarna (frontendnyckeln, produktsidan) är de enda, och de ska tåla både att nyckeln dör och många användare. Chunk-läge på "kör".
+
+- **Spegeln** är tabellen `sb_product` (artikelnummer, söktext, hela produkten som vår `Product`-JSON, körningsstämpel) plus `sb_meta` med `imported_at`. Källa: tredjepartsdumpen `susbolaget.emrik.org/v1/products` (C4illin/systembolaget-data, 27 035 rader, förnyad 03:00). **Workern läser inte dumpen själv**: första versionen strömmade 100 MB i cronen och dog på Cloudflares fel 1102 efter 2 s CPU och 9 000 rader. Kontot är på gratisplanen (bekräftat av Cloudflares kvotmail samma dag). I stället laddar `scripts/assortment.ts` dumpen i GitHub Actions (`.github/workflows/assortment.yml`, 01:30 UTC) och postar 300 rader åt gången till `POST /api/assortment`, sist `done` som rensar äldre körningar och stämplar spegeln. Kört mot molnet för hand: 27 035 rader på 9 s, 92 anrop, högst 15 ms CPU per anrop.
+- **Reserv:** `GET /api/search` och skanningens sök går till Systembolaget först och till spegeln när nyckeln svarar 401/403/429/5xx (`searchOrMirror`, `scanSearchOrMirror` i `worker/src/index.ts`). `GET /api/systembolaget` och alla produktuppslag går till spegeln när produktsidan svarar 5xx eller inte nås; en 404 förblir 404 så spegeln aldrig återupplivar en utgången vara (`productOrMirror`). Lagersaldo har ingen reserv, bara Systembolaget vet det.
+- **Cache API** (`worker/src/cache.ts`): sök 30 minuter (Systembolagets egen `max-age`), lager 10 minuter. Live: 361 ms, sedan 98 och 69 ms. Lokalt lasttest: 200 samtidiga sökningar på 10 frågor, alla 200, kall cache 86 ms i snitt, varm 5 ms.
+- **Natten** (beslut 23): `refreshAll` läser pris, årgång och tillgänglighet ur spegeln när den är yngre än 36 timmar, och hämtar produktsidan bara för nummer spegeln saknar; taket på 50 gäller bara sidhämtningarna. Live: `POST /api/refresh-all` gav `refreshed 19, mirrored 19, failed 0` på 0,98 s. Cronen kör oförändrat 04:00 svensk sommartid.
+
+Verifierat: `npm run check` (tsc, 65 enhetstester, 65 Worker-tester varav 13 nya i `worker/test/assortment.test.ts`, torrdeploy), `wrangler dev` med riktig dump lokalt, och i molnet enligt ovan: `sb_product` 27 035 rader med en enda körningsstämpel, `sb_meta.imported_at` satt. **Ovanpå gratisplanen:** D1 har 100 000 skrivna och 5 miljoner lästa rader per dygn för hela kontot. Nattens import kostar 27 000 skrivningar; i dag gick två fulla körningar plus den dödade (cirka 63 000). Spegelns LIKE-sök läser alla 27 035 rader per fråga, så 185 reservsökningar på ett dygn tömmer läsbudgeten: därför BACKLOG §Spegeln P2 om FTS5.
+
+Tidigare: 2026-09-09, femte omgången. **Senast drucken i listan och som sortering** (commit `7438253`, Worker `e84feecd`, Pages-körning 34358196558 grön, bundeln `index-g4ZeS_U2.js`; ingen migrering, ingen schemaändring). Backloggens sista fria punkt: loggen syntes bara i detaljvyn, och den byggdes i morse med noteringen att ett flöde kräver att loggen följer med i `GET /api/drinks`.
 
 - **Listfrågan bär aggregatet.** En LEFT JOIN ger `last_drunk_on`, `last_rating` och `tasting_count` per rad, alltså ett anrop för hela listan i stället för ett per rad. Fälten är läsfält: de finns inte som kolumner på `drink` och går inte att skriva.
 - **Raden visar "Drucken 30 aug 2026 ★★★★★ · 2 ggr"** i Källaren och Barskåpet. Tabellen har kolumnen Drucken, dold från start. Önskelistan har egen radmarkup och visar inget: en vara du inte äger har sällan en logg.
@@ -119,11 +128,24 @@ Layout: `src/` (React, `app.css` ovanpå `tokens.css`; `sort.ts` är den enda so
 
 ## Nästa steg
 
+0. **Hemligheten för nattens spegelimport (2026-09-12).** Skapa `FLASKOR_GATE_CODE` med grindkoden som värde på https://github.com/buildapp-se/flaskor/settings/secrets/actions/new, eller i terminalen `! gh secret set FLASKOR_GATE_CODE --repo buildapp-se/flaskor` (den frågar efter värdet). Kör sedan workflowen en gång för hand: https://github.com/buildapp-se/flaskor/actions/workflows/assortment.yml, knappen Run workflow. Grön körning skriver "ok: 27035 rader speglade". Tills dess är spegeln färsk bara i 36 timmar efter dagens manuella körning (`imported_at` 2026-09-12 10:15), sedan går natten på produktsidor igen som före.
 1. **Barskåpet är seedat** (kl. 09:05): 18 sorter ur Sipdecks skafferi, antal 1 oöppnad, utan pris och bild, kommentaren "Från Sipdecks skafferi (id)". Tryck "Öppna en" på de som är öppnade. Sipdecks D1 lästes av Patrik själv (Claude Codes klassificerare stoppar D1-läsning i molnet), och kontot var id 1 av sex; de två största skafferierna (id 7 och 8) är testkonton.
 2. **Prova live:** tabellvyn (knappen Lista/Tabell i Källaren), klicka på en kolumnrubrik, bocka i Kommentar och Källa, sök "fisk", öppna önskelistans artikelnummer, se betyget i detaljvyn. Fortfarande ogjort från i går: installera som app på telefonen, ge Julia koden, kolla att cron gått (fältet Kollat i detaljvyn).
 3. **Nyckeln till lager per butik** (backlog P3) om du vill ha det: skriptet som gräver nyckeln ur Systembolagets JS-bundle ligger i sessionens scratchpad som `sbkey.mjs` och får inte köras av Claude Code. Säg till så skrivs det in i `scripts/` för dig att köra själv.
 
 Byta grindkod: ändra raden i `.dev.vars` och kör `npx wrangler secret bulk .dev.vars` själv i terminalen. Inte `secret put` via `!`-prefixet: den läser tom stdin och sparar en tom sträng (hände 2026-09-05).
+
+## Val tagna åt Patrik, 2026-09-12 (spegeln)
+
+Chunk-läge på "kör". Säg till om något ska ändras.
+
+- **GitHub Actions i stället för Workern** för nedladdning och parsning, efter att Workern dog på CPU-taket. Alternativet, att spegla via många småcron i Workern, hade blivit två timmars körning per natt. Kostnaden: en Actions-hemlighet som bara du får skapa.
+- **300 rader per anrop** (`shared/assortment.ts`), 92 anrop per natt. Mättes till högst 15 ms CPU per anrop i molnet.
+- **En 404 från produktsidan går aldrig till spegeln.** Spegeln får inte återuppliva en vara Systembolaget tagit bort; däremot får en gammal spegelrad svara när sidan ligger nere.
+- **Spegeln räknas som färsk i 36 timmar**, så en missad natt inte skickar hela natten tillbaka till produktsidor.
+- **LIKE-sök med kortast namn först**, inte FTS5, med ponytail-kommentar. Gratisplanens läskvot gör FTS5 mer motiverat än jag trodde när valet togs, se BACKLOG §Spegeln.
+- **Rate limiting-bindningen hoppad**: alla delar en grindkod, så det finns ingen nyckel att räkna per användare förrän Firebase Auth. Cachen och spegeln skyddar nyckeln i stället.
+- **Ingen nyckelgrävning ur Systembolagets JS** vid 401: det steget är ditt enligt vaultnoten.
 
 ## Val tagna åt Patrik
 
@@ -182,14 +204,16 @@ Chunk-läge 2026-09-06 (önskelistan). Säg till om något ska ändras.
 
 Backloggen har **inget fritt kvar att bygga**. Det som står öppet är antingen ditt eller väntar på ditt ja:
 
-- **Ditt:** ägar-QA av dagens fem omgångar, de tre Caviste-bildlänkarna, PWA-installation på telefonerna, koden till Julia.
-- **Väntar på ett ja, med skäl som fortfarande håller:** Firebase Auth (beslut 2), Sipdeck-synk (beslut 7, dessutom blockerad: Claude Code får inte läsa Sipdecks D1), dagspris från fler källor (beslut 4), engelska (beslut 18), sortimentsdumpen (beslut 23), Distiller-importen.
+- **Ditt:** Actions-hemligheten `FLASKOR_GATE_CODE` (§Nästa steg 0), ägar-QA av 2026-09-09:s fem omgångar, de tre Caviste-bildlänkarna, PWA-installation på telefonerna, koden till Julia.
+- **Väntar på ett ja, med skäl som fortfarande håller:** Firebase Auth (beslut 2), Sipdeck-synk (beslut 7, dessutom blockerad: Claude Code får inte läsa Sipdecks D1), dagspris från fler källor (beslut 4), engelska (beslut 18), FTS5 i spegeln (BACKLOG §Spegeln), Distiller-importen. Sortimentsdumpen (beslut 23) är byggd 2026-09-12.
 - **Kvar som blockerad, prövad på nytt 2026-09-09:** streckkodsläsning i kameran på iPhone. Den kräver ett WASM-bibliotek på cirka 1 MB i bundeln eftersom WebKit saknar `BarcodeDetector`, och det går inte att pröva om härifrån: det kräver en riktig iPhone. Skälet står kvar tills du testat skanningen på din telefon, vilket ändå ligger i ägar-QA:n.
 
 ## Fällor
 
 - **`wrangler dev` under Claude Code svarar 401 på allt.** Starta med agentvariablerna avstängda, metoden står i vaultnoten `Browser Automation`. För kontroll i webbläsaren utan att grindkoden hamnar i chatten: `--var GATE_CODE:test-kod` och skriv `test-kod` i grinden.
 - **Lokal D1 kan vara tom** även om migreringarna står som körda (2026-09-06). `npm run seed` fyller på från Excel-raderna.
+- **Kontot är på Cloudflares gratisplan** (bekräftat 2026-09-12 av kvotmailet om Durable Objects). Workern dör på fel 1102 när ett anrop drar mer än ungefär 2 s CPU (mätt: 2 020 ms), och D1 har 100 000 skrivna och 5 miljoner lästa rader per dygn för hela kontot. Ingen tung parsning i Workern, inga fulla speglingar för hand mer än en om dagen, och räkna rader lästa innan en fråga får skanna hela `sb_product`.
+- **Skurtester mot Systembolaget stoppas av Claude Codes klassificerare** (40 parallella anrop, 2026-09-12). Mät lasten mot `wrangler dev` med cachen varm i stället.
 - **Vivinos söksida är 1,7 MB** per vin. Nattens tak på 20 håller cronen kort; höj inte utan att kolla körtiden i `wrangler tail`.
 - **Caviste-bilden är en liggande banner**, inte en flaska. Backlog P2.
 - **Skärmbilder av utvecklingsservern visar cachad lista** tills sidan laddas om; `location.hash`-byten hämtar inte om.
