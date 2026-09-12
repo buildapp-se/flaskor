@@ -2,8 +2,8 @@
 schemaVersion: 1
 status: active
 currentGoal: Spegeln av Systembolagets sortiment 2026-09-12 (beslut 23), live: D1-tabell med 27 035 rader fylld av GitHub Actions varje natt, reserv för sök och produktuppslag när frontendnyckeln eller produktsidan felar, Cache API på sök och lager, nattens prisuppdatering läser ur spegeln utan produktsidor. Kvar för att natten ska gå av sig själv: hemligheten FLASKOR_GATE_CODE i repots Actions-secrets, som bara Patrik får skapa.
-nextAction: Skapa hemligheten FLASKOR_GATE_CODE (värdet är grindkoden) i repots Actions-secrets, se §Nästa steg 0, och kör workflowen "Spegla Systembolagets sortiment" för hand en gång. Sedan ägar-QA av 2026-09-09 (namnsök, Caviste-länk, Drucket, "Kolla lagret för alla"), de tre Caviste-bildlänkarna, omskanningen. Ja eller nej på FTS5 i spegeln (BACKLOG §Spegeln P2) och på Distiller-importen.
-blockers: [Nattens spegelimport kräver Actions-hemligheten FLASKOR_GATE_CODE; tills den finns är spegeln färsk bara efter en manuell körning av npm run assortment]
+nextAction: Nattens spegelimport är i drift sedan 2026-09-12 (§Nästa steg 0). Kolla i morgon att körningen 03:30 blev grön på https://github.com/buildapp-se/flaskor/actions/workflows/assortment.yml. Sedan ägar-QA av 2026-09-09 (namnsök, Caviste-länk, Drucket, "Kolla lagret för alla"), de tre Caviste-bildlänkarna, omskanningen. Ja eller nej på FTS5 i spegeln (BACKLOG §Spegeln P2) och på Distiller-importen.
+blockers: []
 reviewedAt: 2026-09-12
 ---
 
@@ -128,7 +128,7 @@ Layout: `src/` (React, `app.css` ovanpå `tokens.css`; `sort.ts` är den enda so
 
 ## Nästa steg
 
-0. **Hemligheten för nattens spegelimport (2026-09-12).** Skapa `FLASKOR_GATE_CODE` med grindkoden som värde på https://github.com/buildapp-se/flaskor/settings/secrets/actions/new, eller i terminalen `! gh secret set FLASKOR_GATE_CODE --repo buildapp-se/flaskor` (den frågar efter värdet). Kör sedan workflowen en gång för hand: https://github.com/buildapp-se/flaskor/actions/workflows/assortment.yml, knappen Run workflow. Grön körning skriver "ok: 27035 rader speglade". Tills dess är spegeln färsk bara i 36 timmar efter dagens manuella körning (`imported_at` 2026-09-12 10:15), sedan går natten på produktsidor igen som före.
+0. **Nattens spegelimport är i drift (2026-09-12 kl. 10:43).** Patrik skapade Actions-hemligheten `FLASKOR_GATE_CODE` och körde workflowen för hand: körning 1 grön på 41 s, loggen "ok: 27035 rader speglade (27035 skickade, 0 gamla borttagna) på 34 s", och `sb_meta.imported_at` i molnet bär körningens stämpel `2026-09-12T08:43:06Z`. Från och med i natt kör den själv 01:30 UTC. Byts grindkoden måste hemligheten bytas med: https://github.com/buildapp-se/flaskor/settings/secrets/actions.
 1. **Barskåpet är seedat** (kl. 09:05): 18 sorter ur Sipdecks skafferi, antal 1 oöppnad, utan pris och bild, kommentaren "Från Sipdecks skafferi (id)". Tryck "Öppna en" på de som är öppnade. Sipdecks D1 lästes av Patrik själv (Claude Codes klassificerare stoppar D1-läsning i molnet), och kontot var id 1 av sex; de två största skafferierna (id 7 och 8) är testkonton.
 2. **Prova live:** tabellvyn (knappen Lista/Tabell i Källaren), klicka på en kolumnrubrik, bocka i Kommentar och Källa, sök "fisk", öppna önskelistans artikelnummer, se betyget i detaljvyn. Fortfarande ogjort från i går: installera som app på telefonen, ge Julia koden, kolla att cron gått (fältet Kollat i detaljvyn).
 3. **Nyckeln till lager per butik** (backlog P3) om du vill ha det: skriptet som gräver nyckeln ur Systembolagets JS-bundle ligger i sessionens scratchpad som `sbkey.mjs` och får inte köras av Claude Code. Säg till så skrivs det in i `scripts/` för dig att köra själv.
