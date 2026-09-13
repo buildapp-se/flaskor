@@ -17,11 +17,14 @@ export interface AssortmentChunk {
   run: string
   /** Rader ur dumpen, slimmade till DUMP_FIELDS. Utelämnas i avslutningsanropet. */
   rows?: unknown[]
-  /** Sant i sista anropet: rader från äldre körningar tas bort och spegeln stämplas som färsk. */
+  /** Sant i sista anropet: rader utanför `numbers` tas bort och spegeln stämplas som färsk. */
   done?: boolean
+  /** Alla artikelnummer i dumpen, bara i avslutningsanropet. Oförändrade rader stämplas inte om, så listan är det enda som säger vad som utgått. */
+  numbers?: string[]
 }
 
 export interface AssortmentResult {
+  /** Rader som faktiskt skrevs: oförändrade rader kostar inget mot D1:s dagskvot. */
   upserted: number
   /** Bara i avslutningsanropet. */
   rows?: number
