@@ -102,6 +102,7 @@ Systembolaget sa nej till officiell API-åtkomst. Workaround: spegel av sortimen
 - [x] `[P1]` Reserv: söket och skanningen faller till spegeln vid 401/403/429/5xx från Systembolaget; produktuppslag vid 5xx från produktsidan (404 förblir 404). Natten läser ur spegeln, taket på 50 gäller bara sidhämtningar.
 - [x] `[P1]` Cache API på sök (30 min) och lager (10 min). Lokalt lasttest: 200 samtidiga sökningar, kall cache 86 ms, varm 5 ms, alla 200.
 - [x] `[P1]` **Patrik:** Actions-hemligheten `FLASKOR_GATE_CODE` skapad 2026-09-12, nattens körning 2026-09-13 grön.
+- [x] `[P0]` Spegeln skriver bara ändrade rader (`fd88043`, 2026-09-13): `INSERT OR REPLACE` kostade två D1-skrivningar per rad, 54 000 per natt, och tre körningar samma dag sprängde kontots kvot på 100 000 så alla sju databaserna gav skrivfel till midnatt UTC. Utgångna rader hittas nu via dumpens nummerlista i `done`. Kvar att läsa av: nattens logg, se `HANDOFF.md` §Nästa steg 0c.
 - [ ] `[P2]` FTS5 i spegeln i stället för LIKE. Gratisplanens D1-kvot är 5 miljoner lästa rader per dygn för hela kontot, och LIKE läser alla 27 035 rader per fråga: 185 reservsökningar på ett dygn tömmer kvoten. FTS5 (som D1 stöder) läser bara träffarna. Blir akut först när reserven används på riktigt, alltså när nyckeln dör eller lasten ger 429.
 - [ ] `[P3]` Rate Limiting-bindningen per användare när Firebase Auth finns (beslut 2). Meningslös i dag: alla delar en grindkod.
 
