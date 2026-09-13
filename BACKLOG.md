@@ -110,7 +110,7 @@ Systembolaget sa nej till officiell API-åtkomst. Workaround: spegel av sortimen
 Patrik: "Tillfälligt slut i butiken" i Önskelistan går inte att tolka. Utredningen visade fel data: dumpens `isTemporaryOutOfStock` är true på varje rad, så natten satte `temporarily_out` på alla 19 Systembolagsrader.
 
 - [x] `[P1]` Spegeln ignorerar dumpens `isTemporaryOutOfStock`; `sb_assortment` (sortimentskoden) på raden; `availability` vidgad med `supplier_out` och `sold_out`; Önskelistan skriver "sortiment · status" ("Ordervara · Slut hos leverantören", "Fast sortiment · Finns hos Systembolaget", "Slutsåld", "Utgått ur sortimentet"). Migrering 0007 bygger om `drink` och `tasting`. Commit `7fa58a7`.
-- [ ] `[P1]` **Patrik:** kör migrering 0007 i molnet (`HANDOFF.md` §Nästa steg 0), klassificeraren stoppar den i både Bash och PowerShell. Sedan deployar Claude Workern, kör spegelimporten om och refresh-all.
+- [x] `[P1]` Migrering 0007 körd i molnet av Patrik 2026-09-13, Worker `be3892f7`, spegeln körd om, refresh-all 19 av 19. På vägen: `DUMP_FIELDS` saknade `assortment` och `isSupplierTemporaryNotAvailable` så första spegelkörningen gav null; fix `c2258fa` med test genom `slim`.
 - [ ] `[P3]` Samma text i detaljvyn. I dag visas tillgängligheten bara i Önskelistan.
 
 ## Captured
