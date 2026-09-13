@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { fromDump, importedAt, isFresh, searchMirror, searchTerms, validRun } from '../src/assortment.ts'
 import worker, { refreshAll } from '../src/index.ts'
 import { availabilityOf } from '../src/systembolaget.ts'
+import { slim } from '../../shared/assortment.ts'
 import dump from './fixtures/sb-dump.json'
 
 const AUTH = { authorization: 'Bearer test-kod' }
@@ -44,6 +45,10 @@ describe('dumpraden', () => {
     expect(p.isTemporaryOutOfStock).toBe(false)
     expect(availabilityOf(p)).toBe('supplier_out')
     expect(p.assortment).toBe('BS')
+    // Genom skriptets slim: faller nÃ¤r DUMP_FIELDS saknar ett fÃ¤lt fromDump lÃ¤ser (2026-09-13 fick spegeln null i assortment pÃ¥ alla rader).
+    const slimmed = fromDump(slim({ productNumber: '1', productId: '2', productNameBold: 'X', isSupplierTemporaryNotAvailable: true, assortment: 'BS' }))
+    expect(slimmed.assortment).toBe('BS')
+    expect(availabilityOf(slimmed)).toBe('supplier_out')
     expect(availabilityOf(fromDump({ productNumber: '1', productId: '2', productNameBold: 'X', isCompletelyOutOfStock: true, isSupplierTemporaryNotAvailable: true }))).toBe('sold_out')
     expect(availabilityOf(fromDump({ productNumber: '1', productId: '2', productNameBold: 'X' }))).toBe('in_stock')
   })

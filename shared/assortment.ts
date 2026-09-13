@@ -5,7 +5,8 @@
 export const DUMP_FIELDS = [
   'productId', 'productNumber', 'productNameBold', 'productNameThin', 'producerName', 'vintage', 'country',
   'originLevel1', 'originLevel2', 'categoryLevel1', 'categoryLevel2', 'categoryLevel3', 'grapes', 'price', 'volume',
-  'alcoholPercentage', 'usage', 'taste', 'isTemporaryOutOfStock', 'isCompletelyOutOfStock', 'isDiscontinued', 'images',
+  'alcoholPercentage', 'usage', 'taste', 'assortment', 'isTemporaryOutOfStock', 'isCompletelyOutOfStock',
+  'isSupplierTemporaryNotAvailable', 'isDiscontinued', 'images',
 ] as const
 
 /** Rader per anrop. 300 slimmade rader är cirka 150 kB, vilket Workern parsar på ett par millisekunder: klart under gratisplanens tak. */
@@ -25,4 +26,11 @@ export interface AssortmentResult {
   /** Bara i avslutningsanropet. */
   rows?: number
   removed?: number
+}
+
+/** En dumprad slimmad till DUMP_FIELDS. Här och inte i skriptet, så Workerns test kan köra fromDump(slim(rad)) och falla när listan och läsaren glider isär (2026-09-13: assortment saknades i listan, spegeln fick null på alla rader). */
+export function slim(raw: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = {}
+  for (const key of DUMP_FIELDS) if (key in raw) out[key] = raw[key]
+  return out
 }
