@@ -1,4 +1,4 @@
-import { useRef, useState, type ChangeEvent, type FormEvent } from 'react'
+import { useRef, useState, type ChangeEvent, type FormEvent, type SyntheticEvent } from 'react'
 import { FatalError, NotFoundError } from '../../shared/errors.ts'
 import type { Candidate, Drink, DrinkPatch, Kind, LabelGuess, Preview, ScanResult } from '../../shared/types.ts'
 import { windowState } from '../../shared/window.ts'
@@ -405,5 +405,11 @@ function CandidateList({ candidates, disabled, onPick }: { candidates: Candidate
 
 /** Flaskfotot: Systembolagets frilagda bild, eller platshållaren ur designen när bild saknas. */
 export function Bottle({ url, size }: { url: string | null; size: 'sm' | 'md' | 'lg' | 'xl' }) {
-  return url ? <img className={`fl-bottle fl-bottle--${size}`} src={url} alt="" loading="lazy" /> : <div className={`fl-bottle fl-bottle--${size} fl-bottle--empty`} />
+  // Äldre produkter saknar webp på Systembolagets CDN (516 Bacardi Carta Blanca gav 404 2026-09-13) men har alltid png.
+  // Ett byte, sedan får bilden vara trasig: annars loopar onError när även png saknas.
+  const fallback = (e: SyntheticEvent<HTMLImageElement>) => {
+    const img = e.currentTarget
+    if (img.src.endsWith('_200.webp')) img.src = img.src.replace(/_200\.webp$/, '_200.png')
+  }
+  return url ? <img className={`fl-bottle fl-bottle--${size}`} src={url} alt="" loading="lazy" onError={fallback} /> : <div className={`fl-bottle fl-bottle--${size} fl-bottle--empty`} />
 }
