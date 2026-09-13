@@ -13,6 +13,8 @@ import { imageUrl, type Product } from './systembolaget.ts'
 const FRESH_HOURS = 36
 const ROWS_PER_STATEMENT = 20
 const MAX_ROWS_PER_CALL = 1000
+/** Bundna parametrar per sats: D1:s tak är 100. */
+const NUMBERS_PER_DELETE = 100
 
 function str(v: unknown): string | null {
   return typeof v === 'string' && v.trim() !== '' ? v : null
@@ -72,7 +74,12 @@ export function validRun(run: unknown): run is string {
   return typeof run === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/.test(run) && !Number.isNaN(Date.parse(run))
 }
 
-/** Skriver en bit av dumpen till spegeln, alla rader stämplade med körningen. Ger antalet rader. */
+/**
+ * Skriver en bit av dumpen till spegeln. Bara rader vars json ändrats skrivs, oförändrade behåller sin gamla
+ * stämpel: D1 räknar varje skriven rad mot kontots dagskvot (100 000 på gratisplanen), och INSERT OR REPLACE
+ * kostade två skrivningar per rad (delete plus insert), 54 000 per natt oavsett ändringar. Tre körningar
+ * 2026-09-13 stängde alla D1-skrivningar på kontot för resten av dygnet. Ger antalet rader som faktiskt skrevs.
+ */
 export async function upsertAssortment(db: D1Database, run: string, rows: unknown[]): Promise<number> {
   if (!validRun(run)) throw new FatalError('run must be an ISO timestamp')
   if (rows.length === 0) return 0
@@ -81,19 +88,36 @@ export async function upsertAssortment(db: D1Database, run: string, rows: unknow
   const statements: D1PreparedStatement[] = []
   for (let i = 0; i < products.length; i += ROWS_PER_STATEMENT) {
     const slice = products.slice(i, i + ROWS_PER_STATEMENT)
-    const sql = `INSERT OR REPLACE INTO sb_product (number, search, json, updated_at) VALUES ${slice.map(() => '(?, ?, ?, ?)').join(', ')}`
+    const sql = `INSERT INTO sb_product (number, search, json, updated_at) VALUES ${slice.map(() => '(?, ?, ?, ?)').join(', ')}
+      ON CONFLICT(number) DO UPDATE SET search = excluded.search, json = excluded.json, updated_at = excluded.updated_at WHERE excluded.json <> sb_product.json`
     statements.push(db.prepare(sql).bind(...slice.flatMap((p) => [p.productNumber, searchText(p), JSON.stringify(p), run])))
   }
-  await db.batch(statements)
-  return products.length
+  const results = await db.batch(statements)
+  return results.reduce((n, r) => n + r.meta.changes, 0)
 }
 
-/** Avslutar körningen: rader från äldre körningar bort, spegeln stämplad som färsk. Kastar om körningen inte skrev något. */
-export async function finishAssortment(db: D1Database, run: string): Promise<Pick<AssortmentResult, 'rows' | 'removed'>> {
+/**
+ * Avslutar körningen: rader vars nummer inte finns i dumpen bort, spegeln stämplad som färsk. Listan kommer från
+ * skriptet eftersom oförändrade rader inte längre stämplas om (se upsertAssortment), så updated_at säger inte
+ * vad natten såg. Skillnaden räknas i JS och raderas i satser om 100 nummer. Kastar utan lista, så ett ensamt done
+ * aldrig tömmer spegeln.
+ */
+export async function finishAssortment(db: D1Database, run: string, numbers: unknown): Promise<Pick<AssortmentResult, 'rows' | 'removed'>> {
   if (!validRun(run)) throw new FatalError('run must be an ISO timestamp')
-  const rows = (await db.prepare('SELECT count(*) AS n FROM sb_product WHERE updated_at = ?').bind(run).first<{ n: number }>())?.n ?? 0
-  if (rows === 0) throw new FatalError('run wrote no rows, refusing to empty the mirror')
-  const removed = (await db.prepare('DELETE FROM sb_product WHERE updated_at < ?').bind(run).run()).meta.changes
+  if (!Array.isArray(numbers) || numbers.length === 0 || !numbers.every((n) => typeof n === 'string')) {
+    throw new FatalError("done needs the dump's product numbers, refusing to empty the mirror")
+  }
+  const keep = new Set(numbers as string[])
+  const { results } = await db.prepare('SELECT number FROM sb_product').all<{ number: string }>()
+  const stale = results.map((r) => r.number).filter((n) => !keep.has(n))
+  const deletes: D1PreparedStatement[] = []
+  for (let i = 0; i < stale.length; i += NUMBERS_PER_DELETE) {
+    const slice = stale.slice(i, i + NUMBERS_PER_DELETE)
+    deletes.push(db.prepare(`DELETE FROM sb_product WHERE number IN (${slice.map(() => '?').join(', ')})`).bind(...slice))
+  }
+  if (deletes.length > 0) await db.batch(deletes)
+  const rows = results.length - stale.length
+  const removed = stale.length
   await db.batch([
     db.prepare("INSERT OR REPLACE INTO sb_meta (key, value) VALUES ('imported_at', ?)").bind(run),
     db.prepare("INSERT OR REPLACE INTO sb_meta (key, value) VALUES ('rows', ?)").bind(String(rows)),

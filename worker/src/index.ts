@@ -301,11 +301,11 @@ function refreshPatch(fresh: Fresh, drink: Drink): DrinkPatch {
 /** En bit av dumpen in i spegeln, och på done: gamla rader bort och spegeln stämplad som färsk. */
 async function assortment(body: unknown, db: D1Database): Promise<AssortmentResult> {
   if (typeof body !== 'object' || body === null) throw new FatalError('body must be an object')
-  const { run, rows, done } = body as AssortmentChunk
+  const { run, rows, done, numbers } = body as AssortmentChunk
   if (rows !== undefined && !Array.isArray(rows)) throw new FatalError('rows must be an array')
   const upserted = rows ? await upsertAssortment(db, run, rows) : 0
   if (done !== true) return { upserted }
-  return { upserted, ...(await finishAssortment(db, run)) }
+  return { upserted, ...(await finishAssortment(db, run, numbers)) }
 }
 
 export async function refreshAll(db: D1Database): Promise<{ refreshed: number; mirrored: number; failed: number; vivino: number }> {

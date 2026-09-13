@@ -3,7 +3,8 @@
 //   FLASKOR_GATE_CODE=<grindkoden> npm run assortment
 //   FLASKOR_API=http://127.0.0.1:8787 för en lokal Worker.
 // Laddar hela dumpen (100 MB, 8 MB gzip), skalar varje rad till fälten Workern läser och postar 300 rader åt gången
-// till POST /api/assortment, sist ett avslutningsanrop som rensar gamla rader och stämplar spegeln som färsk.
+// till POST /api/assortment, sist ett avslutningsanrop med alla artikelnummer som rensar utgångna rader och stämplar
+// spegeln som färsk. Workern skriver bara rader som ändrats (D1:s dagskvot, 2026-09-13).
 // Workern får inte göra det här själv: parsningen kostade 2 s CPU för 9 000 rader och dog på fel 1102 (2026-09-12).
 import { CHUNK_ROWS, slim, type AssortmentChunk, type AssortmentResult } from '../shared/assortment.ts'
 
@@ -33,10 +34,11 @@ const dump = (await response.json()) as Record<string, unknown>[]
 if (!Array.isArray(dump) || dump.length < 10_000) throw new Error(`dumpen bar ${Array.isArray(dump) ? dump.length : 'inga'} rader, förväntade tiotusentals`)
 
 const run = new Date().toISOString()
-let sent = 0
+let changed = 0
 for (let i = 0; i < dump.length; i += CHUNK_ROWS) {
-  sent += (await post({ run, rows: dump.slice(i, i + CHUNK_ROWS).map(slim) })).upserted
+  changed += (await post({ run, rows: dump.slice(i, i + CHUNK_ROWS).map(slim) })).upserted
 }
-const { rows, removed } = await post({ run, done: true })
+const numbers = dump.map((r) => String(r['productNumber']))
+const { rows, removed } = await post({ run, done: true, numbers })
 if (rows !== dump.length) throw new Error(`spegeln har ${rows} rader men dumpen ${dump.length}`)
-console.log(`ok: ${rows} rader speglade (${sent} skickade, ${removed} gamla borttagna) på ${Math.round((Date.now() - started) / 1000)} s, körning ${run}`)
+console.log(`ok: ${rows} rader speglade (${changed} ändrade, ${removed} utgångna borttagna) på ${Math.round((Date.now() - started) / 1000)} s, körning ${run}`)

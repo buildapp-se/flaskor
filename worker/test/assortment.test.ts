@@ -21,7 +21,7 @@ function api(method: string, path: string, body?: unknown): Promise<Response> {
 async function mirror(run = RUN): Promise<{ upserted: number; rows?: number; removed?: number }> {
   const first = await api('POST', '/api/assortment', { run, rows: dump })
   expect(first.status, await first.clone().text()).toBe(200)
-  const done = await api('POST', '/api/assortment', { run, done: true })
+  const done = await api('POST', '/api/assortment', { run, done: true, numbers: dump.map((r) => r.productNumber) })
   expect(done.status, await done.clone().text()).toBe(200)
   return done.json()
 }
@@ -79,12 +79,27 @@ describe('POST /api/assortment', () => {
     expect(second).toEqual({ upserted: 0, rows: 4, removed: 1 })
     expect((await env.DB.prepare('SELECT count(*) AS n FROM sb_product').first<{ n: number }>())?.n).toBe(4)
   })
+  it('skriver bara rader som ändrats: samma dump igen kostar noll skrivningar mot D1:s dagskvot', async () => {
+    const RUN2 = '2026-09-13T02:00:00.000Z'
+    const post = async (run: string, rows: unknown[]): Promise<number> => (await (await api('POST', '/api/assortment', { run, rows })).json<{ upserted: number }>()).upserted
+    expect(await post(RUN, dump)).toBe(4)
+    expect(await post(RUN2, dump)).toBe(0)
+    expect(await post(RUN2, [{ ...dump[0], price: 1 }])).toBe(1)
+    // Oförändrade rader behåller sin stämpel, den ändrade får den nya.
+    const stamps = (await env.DB.prepare('SELECT updated_at, count(*) AS n FROM sb_product GROUP BY updated_at ORDER BY updated_at').all<{ updated_at: string; n: number }>()).results
+    expect(stamps).toEqual([{ updated_at: RUN, n: 3 }, { updated_at: RUN2, n: 1 }])
+    // Avslutningen tar bort det som inte står i listan, även om raden stämplades i denna körning.
+    const done = await (await api('POST', '/api/assortment', { run: RUN2, done: true, numbers: dump.slice(1).map((r) => r.productNumber) })).json<{ rows: number; removed: number }>()
+    expect(done).toEqual({ upserted: 0, rows: 3, removed: 1 })
+  })
   it('avvisar skräp: fel körnings-id, rader som inte är en lista, done utan rader, för många rader', async () => {
     expect((await api('POST', '/api/assortment', { run: 'igår', rows: dump })).status).toBe(400)
     expect((await api('POST', '/api/assortment', { run: RUN, rows: 'nej' })).status).toBe(400)
     expect((await api('POST', '/api/assortment', { run: RUN, rows: [{ productId: '1' }] })).status).toBe(400)
-    // done på en körning som inte skrev något får aldrig tömma spegeln.
+    // done utan nummerlista får aldrig tömma spegeln.
     expect((await api('POST', '/api/assortment', { run: RUN, done: true })).status).toBe(400)
+    expect((await api('POST', '/api/assortment', { run: RUN, done: true, numbers: [] })).status).toBe(400)
+    expect((await api('POST', '/api/assortment', { run: RUN, done: true, numbers: [1] })).status).toBe(400)
     expect((await api('POST', '/api/assortment', { run: RUN, rows: Array(1001).fill(dump[0]) })).status).toBe(400)
     expect((await api('POST', '/api/assortment', { run: RUN, rows: [] })).status).toBe(200)
   })
