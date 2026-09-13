@@ -5,7 +5,7 @@
 // Laddar hela dumpen (100 MB, 8 MB gzip), skalar varje rad till fälten Workern läser och postar 300 rader åt gången
 // till POST /api/assortment, sist ett avslutningsanrop som rensar gamla rader och stämplar spegeln som färsk.
 // Workern får inte göra det här själv: parsningen kostade 2 s CPU för 9 000 rader och dog på fel 1102 (2026-09-12).
-import { CHUNK_ROWS, DUMP_FIELDS, type AssortmentChunk, type AssortmentResult } from '../shared/assortment.ts'
+import { CHUNK_ROWS, slim, type AssortmentChunk, type AssortmentResult } from '../shared/assortment.ts'
 
 const DUMP_URL = 'https://susbolaget.emrik.org/v1/products'
 const api = (process.env['FLASKOR_API'] ?? 'https://flaskor-api.buildapp.se').replace(/\/$/, '')
@@ -16,12 +16,6 @@ if (!code) {
 }
 
 /** Bara fälten Workern läser: rå rad är 3,7 kB med bildbilagor, skalad cirka 500 byte. */
-export function slim(raw: Record<string, unknown>): Record<string, unknown> {
-  const out: Record<string, unknown> = {}
-  for (const key of DUMP_FIELDS) if (key in raw) out[key] = raw[key]
-  return out
-}
-
 async function post(body: AssortmentChunk): Promise<AssortmentResult> {
   const response = await fetch(`${api}/api/assortment`, {
     method: 'POST',
