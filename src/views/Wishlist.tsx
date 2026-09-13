@@ -206,10 +206,19 @@ export function Wishlist() {
   )
 }
 
+/** "Ordervara · Går att beställa", "Fast sortiment · Finns hos Systembolaget", "Utgått ur sortimentet". Utgått står ensamt: sortimentet är då inte längre sant. */
+function sourceText(drink: Drink): string {
+  const A = S.wishlist.availability
+  if (drink.availability === 'discontinued') return A.discontinued
+  const label = drink.sb_assortment ? S.wishlist.assortment[drink.sb_assortment] : undefined
+  const status = drink.availability === 'in_stock' && drink.sb_assortment === 'BS' ? A.orderable : A[drink.availability]
+  return label ? `${label} · ${status}` : status
+}
+
 function WishRow({ drink, stock, onBuy }: { drink: Drink; stock: Stock | null; onBuy: () => void }) {
-  const gone = drink.availability === 'discontinued'
+  const gone = drink.availability === 'discontinued' || drink.availability === 'sold_out'
   const price = drink.price_current ?? drink.price_paid
-  const source = drink.source_kind === 'systembolaget' ? S.wishlist.availability[drink.availability] : drink.source_kind === 'caviste' ? S.wishlist.availability.unknown : null
+  const source = drink.source_kind === 'systembolaget' ? sourceText(drink) : drink.source_kind === 'caviste' ? S.wishlist.availability.unknown : null
   // Numret är en länk till produktsidan: där minns Systembolaget din valda butik, så lagret för den syns direkt.
   const number = drink.source_id ? (drink.source_kind === 'systembolaget' ? `${S.wishlist.number} ${articleNo(drink.source_id)}` : drink.source_kind === 'caviste' ? `CAV ${drink.source_id}` : null) : null
   const name = drink.vintage ? `${drink.name} ${drink.vintage}` : drink.name

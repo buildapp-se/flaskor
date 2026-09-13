@@ -44,8 +44,14 @@ export interface Product {
   alcoholPercentage: number | null
   usage: string | null
   taste: string | null
+  /** Sortimentskoden (BS, FS, TSE ...). Saknas i spegelrader skrivna före 2026-09-13, därför nullbar. */
+  assortment: string | null
+  /** Tillfälligt slut på centrallagret. Bara produktsidan är att lita på: dumpen har true på varje rad (2026-09-13). */
   isTemporaryOutOfStock: boolean
+  /** Slutsåld, kommer inte tillbaka. Vanligast på tillfälliga släpp. */
   isCompletelyOutOfStock: boolean
+  /** Ordervara som leverantören inte kan skicka just nu. */
+  isSupplierTemporaryNotAvailable: boolean
   isDiscontinued: boolean
   /** Falskt när Systembolaget saknar flaskfoto (`images: []`). Då finns ingen bild att gissa adressen till. */
   hasImage: boolean
@@ -93,8 +99,10 @@ export function parseProductPage(html: string): Product {
     alcoholPercentage: num(raw['alcoholPercentage']),
     usage: str(raw['usage']),
     taste: str(raw['taste']),
+    assortment: str(raw['assortment']),
     isTemporaryOutOfStock: raw['isTemporaryOutOfStock'] === true,
     isCompletelyOutOfStock: raw['isCompletelyOutOfStock'] === true,
+    isSupplierTemporaryNotAvailable: raw['isSupplierTemporaryNotAvailable'] === true,
     isDiscontinued: raw['isDiscontinued'] === true,
     hasImage: Array.isArray(raw['images']) && raw['images'].length > 0,
   }
@@ -102,7 +110,9 @@ export function parseProductPage(html: string): Product {
 
 export function availabilityOf(p: Product): Availability {
   if (p.isDiscontinued) return 'discontinued'
-  if (p.isTemporaryOutOfStock || p.isCompletelyOutOfStock) return 'temporarily_out'
+  if (p.isCompletelyOutOfStock) return 'sold_out'
+  if (p.isSupplierTemporaryNotAvailable) return 'supplier_out'
+  if (p.isTemporaryOutOfStock) return 'temporarily_out'
   return 'in_stock'
 }
 
@@ -144,6 +154,7 @@ export function toPreview(p: Product, now = new Date()): Preview {
     source_url: productUrl(p.productNumber),
     image_url: p.hasImage ? imageUrl(p.productId) : null,
     sb_product_id: p.productId,
+    sb_assortment: p.assortment,
     price_paid: null,
     price_current: p.priceInclVat,
     price_checked_at: now.toISOString(),

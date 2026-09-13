@@ -292,7 +292,7 @@ function refreshPatch(fresh: Fresh, drink: Drink): DrinkPatch {
   if (fresh.gone) return { availability: 'discontinued', price_checked_at }
   const { preview } = fresh
   // sb_product_id kom till 2026-09-09: nattens körning fyller i det på gamla rader, så lagersaldot funkar utan extra hämtning.
-  const patch: DrinkPatch = { price_current: preview.price_current, price_checked_at, availability: preview.availability, sb_product_id: preview.sb_product_id }
+  const patch: DrinkPatch = { price_current: preview.price_current, price_checked_at, availability: preview.availability, sb_product_id: preview.sb_product_id, sb_assortment: preview.sb_assortment }
   // Ägda flaskor behåller sin årgång: Systembolaget säljer den nya, källaren har den gamla.
   if (!drink.owned) patch.vintage = preview.vintage
   return patch
