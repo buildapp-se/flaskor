@@ -11,8 +11,8 @@ function Icon({ children, size = 20 }: { children: ReactNode; size?: number }) {
 
 export const IconCellar = () => (
   <Icon>
-    <path d="M8 2h4v4l1.5 2.5V17a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1V8.5L8 6z" />
-    <path d="M6.5 12h7" />
+    <path d="M9 1.5h2v5c1.5.6 2 1.8 2 3.2V17.2a.8.8 0 0 1-.8.8H7.8a.8.8 0 0 1-.8-.8V9.7c0-1.4.5-2.6 2-3.2z" />
+    <path d="M7 12h6M7 14.5h6" />
   </Icon>
 )
 export const IconWishlist = () => (
@@ -22,8 +22,9 @@ export const IconWishlist = () => (
 )
 export const IconBar = () => (
   <Icon>
-    <path d="M5 3h10l-1 14H6z" />
-    <path d="M5.5 9h9" />
+    <path d="M4.5 3h11l-1 14h-9z" />
+    <path d="M5.2 10.5h9.6" />
+    <path d="M8 12.5h3.5v2.5H8z" />
   </Icon>
 )
 export const IconAdd = () => (
