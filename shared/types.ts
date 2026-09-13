@@ -2,7 +2,12 @@
 
 export type Kind = 'wine' | 'spirit' | 'beer'
 export type SourceKind = 'systembolaget' | 'caviste' | 'manual'
-export type Availability = 'in_stock' | 'temporarily_out' | 'discontinued' | 'unknown'
+/**
+ * Systembolagets status för varan som helhet, inte för en butik (butiken är `Stock`). Ordningen är den
+ * `availabilityOf` väljer i: utgått, slutsåld (kommer inte tillbaka), slut hos leverantören (ordervaror),
+ * tillfälligt slut på centrallagret, finns. `unknown` för Caviste och egna rader.
+ */
+export type Availability = 'in_stock' | 'temporarily_out' | 'supplier_out' | 'sold_out' | 'discontinued' | 'unknown'
 /** Fjärdedelar kvar i den öppnade flaskan (beslut 14). null: ingen öppnad. */
 export type OpenLevel = 4 | 3 | 2 | 1
 export type WindowState = 'wait' | 'drink' | 'soon' | 'past' | 'unknown'
@@ -28,6 +33,8 @@ export interface Drink {
   image_url: string | null
   /** Systembolagets interna produkt-id, som lagersaldot per butik slås upp på. Inte artikelnumret. */
   sb_product_id: string | null
+  /** Systembolagets sortimentskod: BS ordervara, FS fast, TSE/TSV/TST tillfälligt, TSLS lokalt, TSS säsong, FSÖ webblansering. */
+  sb_assortment: string | null
   price_paid: number | null
   price_current: number | null
   price_checked_at: string | null

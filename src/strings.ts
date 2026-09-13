@@ -51,10 +51,15 @@ export const S = {
     sortLabel: 'Sortera',
     noMatch: 'Inget matchar.',
     empty: 'Tomt. Lägg till något du vill köpa.',
+    // Raden är "sortiment · status". Statusen gäller Systembolaget som helhet, butiken står på egen rad efter Kolla lagret.
+    assortment: { BS: 'Ordervara', FS: 'Fast sortiment', FSB: 'Fast sortiment', FSN: 'Fast sortiment', FSÖ: 'Webblansering', TSE: 'Tillfälligt sortiment', TSV: 'Tillfälligt sortiment', TST: 'Tillfälligt sortiment', TSLS: 'Lokalt & småskaligt', TSS: 'Säsong' } as Record<string, string>,
     availability: {
-      in_stock: 'Finns på Systembolaget',
-      temporarily_out: 'Tillfälligt slut på Systembolaget',
-      discontinued: 'Utgått hos Systembolaget',
+      in_stock: 'Finns hos Systembolaget',
+      orderable: 'Går att beställa',
+      temporarily_out: 'Tillfälligt slut på centrallagret',
+      supplier_out: 'Slut hos leverantören',
+      sold_out: 'Slutsåld',
+      discontinued: 'Utgått ur sortimentet',
       unknown: 'Caviste',
     },
     number: 'nr',

@@ -46,8 +46,12 @@ export function fromDump(raw: unknown): Product {
     alcoholPercentage: num(r['alcoholPercentage']),
     usage: str(r['usage']),
     taste: str(r['taste']),
-    isTemporaryOutOfStock: r['isTemporaryOutOfStock'] === true,
+    assortment: str(r['assortment']),
+    // Dumpens isTemporaryOutOfStock är true på alla 26 903 rader medan produktsidan säger false (kollat 2026-09-13),
+    // så den ignoreras: annars blev varje spegluppdaterad rad "tillfälligt slut". De andra flaggorna varierar och stämmer.
+    isTemporaryOutOfStock: false,
     isCompletelyOutOfStock: r['isCompletelyOutOfStock'] === true,
+    isSupplierTemporaryNotAvailable: r['isSupplierTemporaryNotAvailable'] === true,
     isDiscontinued: r['isDiscontinued'] === true,
     hasImage: Array.isArray(r['images']) && r['images'].length > 0,
   }

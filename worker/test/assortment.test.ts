@@ -2,6 +2,7 @@ import { SELF, env } from 'cloudflare:test'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { fromDump, importedAt, isFresh, searchMirror, searchTerms, validRun } from '../src/assortment.ts'
 import worker, { refreshAll } from '../src/index.ts'
+import { availabilityOf } from '../src/systembolaget.ts'
 import dump from './fixtures/sb-dump.json'
 
 const AUTH = { authorization: 'Bearer test-kod' }
@@ -37,6 +38,14 @@ describe('dumpraden', () => {
     expect(p.vintage).toBe('2020')
     expect(() => fromDump({ productId: '2' })).toThrow()
     expect(() => fromDump(null)).toThrow()
+  })
+  it('litar inte på dumpens isTemporaryOutOfStock (true på varje rad) men på de andra flaggorna och koden', () => {
+    const p = fromDump({ productNumber: '1', productId: '2', productNameBold: 'X', isTemporaryOutOfStock: true, isSupplierTemporaryNotAvailable: true, assortment: 'BS' })
+    expect(p.isTemporaryOutOfStock).toBe(false)
+    expect(availabilityOf(p)).toBe('supplier_out')
+    expect(p.assortment).toBe('BS')
+    expect(availabilityOf(fromDump({ productNumber: '1', productId: '2', productNameBold: 'X', isCompletelyOutOfStock: true, isSupplierTemporaryNotAvailable: true }))).toBe('sold_out')
+    expect(availabilityOf(fromDump({ productNumber: '1', productId: '2', productNameBold: 'X' }))).toBe('in_stock')
   })
   it('sökord är gemener utan diakriter och skiljetecken', () => {
     expect(searchTerms("Kahlúa, d'Ibry 2023!")).toEqual(['kahlua', 'd', 'ibry', '2023'])
@@ -140,7 +149,7 @@ describe('natten ur spegeln (beslut 23)', () => {
 
     await worker.scheduled({} as ScheduledController, env)
     const rows = (await (await api('GET', '/api/drinks')).json<{ drinks: Array<{ id: number; price_current: number | null; availability: string; sb_product_id: string | null }> }>()).drinks
-    expect(rows.find((r) => r.id === mirrored.id)).toMatchObject({ price_current: 17.5, sb_product_id: '939', availability: 'temporarily_out' })
+    expect(rows.find((r) => r.id === mirrored.id)).toMatchObject({ price_current: 17.5, sb_product_id: '939', availability: 'in_stock', sb_assortment: 'FS' })
     expect(rows.find((r) => r.id === paged.id)?.price_current).not.toBe(1)
     expect(rows.find((r) => r.id === gone.id)?.availability).toBe('discontinued')
 

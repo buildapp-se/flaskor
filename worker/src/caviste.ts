@@ -122,6 +122,7 @@ export function parseCavistePage(html: string, cavNr: string, url: string, now =
       source_url: url,
       image_url: image,
       sb_product_id: null,
+      sb_assortment: null,
       price_paid: null,
       price_current: price,
       price_checked_at: now.toISOString(),
