@@ -101,9 +101,17 @@ Systembolaget sa nej till officiell API-åtkomst. Workaround: spegel av sortimen
 - [x] `[P1]` Spegel av sortimentet (beslut 23), migrering 0006: `sb_product` med 27 035 rader fylld av GitHub Actions varje natt via `POST /api/assortment` i bitar om 300. Workern dog på CPU-taket när den försökte själv (fel 1102 efter 2 s och 9 000 rader), därför skriptet.
 - [x] `[P1]` Reserv: söket och skanningen faller till spegeln vid 401/403/429/5xx från Systembolaget; produktuppslag vid 5xx från produktsidan (404 förblir 404). Natten läser ur spegeln, taket på 50 gäller bara sidhämtningar.
 - [x] `[P1]` Cache API på sök (30 min) och lager (10 min). Lokalt lasttest: 200 samtidiga sökningar, kall cache 86 ms, varm 5 ms, alla 200.
-- [ ] `[P1]` **Patrik:** Actions-hemligheten `FLASKOR_GATE_CODE` (grindkoden) i repot, annars kör inte nattens spegelimport. Länk och kommando i `HANDOFF.md` §Nästa steg 0.
+- [x] `[P1]` **Patrik:** Actions-hemligheten `FLASKOR_GATE_CODE` skapad 2026-09-12, nattens körning 2026-09-13 grön.
 - [ ] `[P2]` FTS5 i spegeln i stället för LIKE. Gratisplanens D1-kvot är 5 miljoner lästa rader per dygn för hela kontot, och LIKE läser alla 27 035 rader per fråga: 185 reservsökningar på ett dygn tömmer kvoten. FTS5 (som D1 stöder) läser bara träffarna. Blir akut först när reserven används på riktigt, alltså när nyckeln dör eller lasten ger 429.
 - [ ] `[P3]` Rate Limiting-bindningen per användare när Firebase Auth finns (beslut 2). Meningslös i dag: alla delar en grindkod.
+
+## Tillgänglighet 2026-09-13
+
+Patrik: "Tillfälligt slut i butiken" i Önskelistan går inte att tolka. Utredningen visade fel data: dumpens `isTemporaryOutOfStock` är true på varje rad, så natten satte `temporarily_out` på alla 19 Systembolagsrader.
+
+- [x] `[P1]` Spegeln ignorerar dumpens `isTemporaryOutOfStock`; `sb_assortment` (sortimentskoden) på raden; `availability` vidgad med `supplier_out` och `sold_out`; Önskelistan skriver "sortiment · status" ("Ordervara · Slut hos leverantören", "Fast sortiment · Finns hos Systembolaget", "Slutsåld", "Utgått ur sortimentet"). Migrering 0007 bygger om `drink` och `tasting`. Commit `7fa58a7`.
+- [ ] `[P1]` **Patrik:** kör migrering 0007 i molnet (`HANDOFF.md` §Nästa steg 0), klassificeraren stoppar den i både Bash och PowerShell. Sedan deployar Claude Workern, kör spegelimporten om och refresh-all.
+- [ ] `[P3]` Samma text i detaljvyn. I dag visas tillgängligheten bara i Önskelistan.
 
 ## Captured
 
