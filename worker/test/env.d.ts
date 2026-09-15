@@ -5,5 +5,6 @@ declare namespace Cloudflare {
     GATE_CODE: string
     GEMINI_API_KEY: string
     SB_API_KEY: string
+    FIREBASE_TEST_KEY: JsonWebKey
   }
 }

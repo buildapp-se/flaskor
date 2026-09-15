@@ -23,6 +23,7 @@
     "assortment": "node scripts/assortment.ts"
   },
   "dependencies": {
+    "jose": "^6.2.12",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },

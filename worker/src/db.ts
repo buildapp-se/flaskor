@@ -1,8 +1,6 @@
 import { FatalError, NotFoundError } from '../../shared/errors.ts'
 import type { Drink, DrinkInput, DrinkPatch, Tasting, TastingInput } from '../../shared/types.ts'
 
-export const HOUSEHOLD_ID = 1
-
 type Derived = 'last_drunk_on' | 'last_rating' | 'tasting_count'
 // Aggregaten kommer bara med i listan; en enskild rad läses med SELECT * och saknar dem.
 type Row = Omit<Drink, 'owned' | Derived> & { owned: 0 | 1 } & Partial<Pick<Drink, Derived>>
@@ -54,52 +52,60 @@ export function sanitize(body: unknown): DrinkPatch {
  * anrop per rad. `rating` i undergruppen hör till raden med `MAX(drunk_on)`: SQLite lovar det för en enda
  * min/max-aggregat, vilket sparar en fönsterfunktion.
  */
-export async function listDrinks(db: D1Database): Promise<Drink[]> {
+export async function listDrinks(db: D1Database, household: number): Promise<Drink[]> {
+  // Båda delarna begränsas till hushållet: D1 räknar lästa rader, och en osorterad GROUP BY över alla hushålls loggar kostar per sidladdning.
   const { results } = await db
     .prepare(
       `SELECT d.*, t.last_drunk_on, t.last_rating, COALESCE(t.tasting_count, 0) AS tasting_count
        FROM drink d
-       LEFT JOIN (SELECT drink_id, MAX(drunk_on) AS last_drunk_on, rating AS last_rating, COUNT(*) AS tasting_count FROM tasting GROUP BY drink_id) t
+       LEFT JOIN (SELECT drink_id, MAX(drunk_on) AS last_drunk_on, rating AS last_rating, COUNT(*) AS tasting_count
+                  FROM tasting WHERE drink_id IN (SELECT id FROM drink WHERE household_id = ?1) GROUP BY drink_id) t
          ON t.drink_id = d.id
-       WHERE d.household_id = ? ORDER BY d.id`,
+       WHERE d.household_id = ?1 ORDER BY d.id`,
     )
-    .bind(HOUSEHOLD_ID)
+    .bind(household)
     .all<Row>()
   return results.map(rowToDrink)
 }
 
-export async function getDrink(db: D1Database, id: number): Promise<Drink> {
-  const row = await db.prepare('SELECT * FROM drink WHERE id = ? AND household_id = ?').bind(id, HOUSEHOLD_ID).first<Row>()
+/** Varje hushålls rader, för nattens uppdatering. Utan loggaggregat: natten behöver dem inte. */
+export async function listAllDrinks(db: D1Database): Promise<Drink[]> {
+  const { results } = await db.prepare('SELECT * FROM drink ORDER BY id').all<Row>()
+  return results.map(rowToDrink)
+}
+
+export async function getDrink(db: D1Database, household: number, id: number): Promise<Drink> {
+  const row = await db.prepare('SELECT * FROM drink WHERE id = ? AND household_id = ?').bind(id, household).first<Row>()
   if (!row) throw new NotFoundError(`drink ${id} not found`)
   return rowToDrink(row)
 }
 
-export async function insertDrink(db: D1Database, input: DrinkPatch): Promise<Drink> {
+export async function insertDrink(db: D1Database, household: number, input: DrinkPatch): Promise<Drink> {
   if (typeof input.name !== 'string' || input.name.trim() === '') throw new FatalError('name is required')
   if (input.kind !== 'wine' && input.kind !== 'spirit' && input.kind !== 'beer') throw new FatalError('kind is required')
   const keys = Object.keys(input) as Array<keyof DrinkPatch>
   const columns = ['household_id', ...keys].join(', ')
   const marks = ['?', ...keys.map(() => '?')].join(', ')
-  const values = [HOUSEHOLD_ID, ...keys.map((k) => input[k] as unknown)]
+  const values = [household, ...keys.map((k) => input[k] as unknown)]
   const row = await db.prepare(`INSERT INTO drink (${columns}) VALUES (${marks}) RETURNING *`).bind(...values).first<Row>()
   if (!row) throw new FatalError('insert returned no row', 500)
   return rowToDrink(row)
 }
 
 /** Tar bort raden och dess avsmakningar. Kastar NotFoundError när raden inte finns. */
-export async function deleteDrink(db: D1Database, id: number): Promise<void> {
-  const result = await db.prepare('DELETE FROM drink WHERE id = ? AND household_id = ?').bind(id, HOUSEHOLD_ID).run()
+export async function deleteDrink(db: D1Database, household: number, id: number): Promise<void> {
+  const result = await db.prepare('DELETE FROM drink WHERE id = ? AND household_id = ?').bind(id, household).run()
   if (result.meta.changes === 0) throw new NotFoundError(`drink ${id} not found`)
   // Tabellen har ON DELETE CASCADE, men den kräver att PRAGMA foreign_keys är på. En rad till är billigare
   // än en föräldralös logg som ingen upptäcker.
   await db.prepare('DELETE FROM tasting WHERE drink_id = ?').bind(id).run()
 }
 
-export async function updateDrink(db: D1Database, id: number, patch: DrinkPatch): Promise<Drink> {
+export async function updateDrink(db: D1Database, household: number, id: number, patch: DrinkPatch): Promise<Drink> {
   const keys = Object.keys(patch) as Array<keyof DrinkPatch>
-  if (keys.length === 0) return getDrink(db, id)
+  if (keys.length === 0) return getDrink(db, household, id)
   const sets = [...keys.map((k) => `${k} = ?`), "updated_at = datetime('now')"].join(', ')
-  const values = [...keys.map((k) => patch[k] as unknown), id, HOUSEHOLD_ID]
+  const values = [...keys.map((k) => patch[k] as unknown), id, household]
   const row = await db.prepare(`UPDATE drink SET ${sets} WHERE id = ? AND household_id = ? RETURNING *`).bind(...values).first<Row>()
   if (!row) throw new NotFoundError(`drink ${id} not found`)
   return rowToDrink(row)

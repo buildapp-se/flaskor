@@ -113,6 +113,12 @@ export interface Tasting {
 
 export type TastingInput = Omit<Tasting, 'id' | 'drink_id' | 'created_at'>
 
+/** Svaret på GET /api/me (beslut 2, 2026-09-15). `email` är null för grindkoden, som inte är ett konto. */
+export interface Account {
+  email: string | null
+  household: { id: number; name: string; invite_code: string; members: string[] }
+}
+
 /** Svaret på GET /api/stock: saldot för en rad i en butik. `shelf` är Systembolagets hyllplats, "14-04-03". */
 export interface Stock {
   store: string

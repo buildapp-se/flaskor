@@ -4,6 +4,9 @@ import { defineConfig } from 'vitest/config'
 
 // Testerna kör i riktig workerd mot en lokal D1 med samma migreringar som i molnet.
 const migrations = await readD1Migrations('./worker/migrations')
+// Inloggningen (beslut 2): en testnyckel som bara testerna litar på. Testet signerar ID-token med den privata delen,
+// och Googles nyckeladress svarar med den publika. Ingen koppling till det riktiga Firebase-projektet.
+const firebaseKey = JSON.parse(await readFile('./worker/test/fixtures/firebase-test-private.json', 'utf8'))
 
 export default defineConfig({
   plugins: [
@@ -11,7 +14,7 @@ export default defineConfig({
       wrangler: { configPath: './wrangler.jsonc' },
       miniflare: {
         d1Databases: ['DB'],
-        bindings: { TEST_MIGRATIONS: migrations, GATE_CODE: 'test-kod', GEMINI_API_KEY: 'test-gemini', SB_API_KEY: 'test-sb' },
+        bindings: { TEST_MIGRATIONS: migrations, GATE_CODE: 'test-kod', GEMINI_API_KEY: 'test-gemini', SB_API_KEY: 'test-sb', FIREBASE_TEST_KEY: firebaseKey },
         // Inget test får nå internet. Systembolaget svarar ur fixturerna, allt annat är ett fel.
         async outboundService(request) {
           const url = new URL(request.url)
@@ -25,6 +28,9 @@ export default defineConfig({
             } catch {
               return new Response('not found', { status: 404 })
             }
+          }
+          if (url.hostname === 'www.googleapis.com' && url.pathname.includes('securetoken')) {
+            return new Response(await readFile('worker/test/fixtures/firebase-jwks.json', 'utf8'), { headers: { 'content-type': 'application/json' } })
           }
           // Caviste (beslut 6): produktsidan för CAV0143 ur fixtur, andra CAV-nummer finns inte.
           if (url.hostname === 'www.caviste.se' || url.hostname === 'caviste.se') {
