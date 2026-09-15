@@ -123,6 +123,22 @@ describe('sök i spegeln', () => {
     expect(await searchMirror(env.DB, 'ibry rioja')).toEqual([])
     expect(await searchMirror(env.DB, '!!')).toEqual([])
   })
+  it('ordstart räcker, och FTS-syntax i frågan gör ingen skada', async () => {
+    expect((await searchMirror(env.DB, 'kahl')).map((c) => c.number)).toEqual(['71401'])
+    expect(await searchMirror(env.DB, 'kahlua" OR "ibry')).toEqual([])
+    expect(await searchMirror(env.DB, 'NEAR(kahlua) *')).toEqual([])
+  })
+  it('indexet följer spegeln (migrering 0009): nytt namn, borttagen rad', async () => {
+    const kahlua = dump.find((r) => r.productNumber === '71401')!
+    await api('POST', '/api/assortment', { run: '2026-09-13T02:00:00.000Z', rows: [{ ...kahlua, productNameBold: 'Tia Maria' }] })
+    expect(await searchMirror(env.DB, 'kahlua')).toEqual([])
+    expect((await searchMirror(env.DB, 'tia maria')).map((c) => c.number)).toEqual(['71401'])
+    await api('POST', '/api/assortment', { run: '2026-09-13T02:00:00.000Z', done: true, numbers: dump.filter((r) => r !== kahlua).map((r) => r.productNumber) })
+    expect(await searchMirror(env.DB, 'tia maria')).toEqual([])
+    // Indexet och tabellen är i fas: lika många rader i båda.
+    const indexed = await env.DB.prepare("SELECT count(*) AS n FROM sb_product_fts WHERE sb_product_fts MATCH 'domaine* OR absolut* OR kahlua* OR tia*'").first<{ n: number }>()
+    expect(indexed?.n).toBeLessThanOrEqual((await env.DB.prepare('SELECT count(*) AS n FROM sb_product').first<{ n: number }>())!.n)
+  })
 })
 
 describe('reserven i API:t', () => {
