@@ -141,7 +141,7 @@ describe('systembolaget', () => {
     expect(one.vintage).toBe(2019)
     expect(one.availability).toBe('in_stock')
 
-    const result = await refreshAll(env.DB)
+    const result = await refreshAll(env.DB, { kind: 'service' })
     // Raderna fick sitt Vivino-datum redan vid POST, så natten har inget vin att hämta betyg för.
     expect(result).toEqual({ refreshed: 2, mirrored: 0, failed: 0, vivino: 0 })
     const rows = (await (await api('GET', '/api/drinks')).json<{ drinks: Array<{ id: number; vintage: number | null; availability: string }> }>()).drinks

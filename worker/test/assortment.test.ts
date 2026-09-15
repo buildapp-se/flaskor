@@ -173,13 +173,13 @@ describe('natten ur spegeln (beslut 23)', () => {
     expect(rows.find((r) => r.id === paged.id)?.price_current).not.toBe(1)
     expect(rows.find((r) => r.id === gone.id)?.availability).toBe('discontinued')
 
-    expect(await refreshAll(env.DB)).toMatchObject({ refreshed: 3, mirrored: 1, failed: 0 })
+    expect(await refreshAll(env.DB, { kind: 'service' })).toMatchObject({ refreshed: 3, mirrored: 1, failed: 0 })
   })
   it('gammal spegel går inte före produktsidan, men duger som reserv när sidan ligger nere', async () => {
     await mirror('2020-01-01T00:00:00.000Z')
     await api('POST', '/api/drinks', { kind: 'beer', name: 'ng', owned: false, source_kind: 'systembolaget', source_id: '141201', price_current: 1 })
     // Spegeln är för gammal för att räknas som källa (mirrored 0), så sidan provas först; den svarar 503 och då får
     // den gamla spegelraden ändå svara: ett gammalt pris är bättre än ett fel.
-    expect(await refreshAll(env.DB)).toMatchObject({ refreshed: 1, mirrored: 0, failed: 0 })
+    expect(await refreshAll(env.DB, { kind: 'service' })).toMatchObject({ refreshed: 1, mirrored: 0, failed: 0 })
   })
 })

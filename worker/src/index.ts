@@ -1,16 +1,19 @@
-import { FatalError, NotFoundError, TransientError, UnauthorizedError } from '../../shared/errors.ts'
+import { FatalError, NotFoundError, TransientError } from '../../shared/errors.ts'
 import type { AssortmentChunk, AssortmentResult } from '../../shared/assortment.ts'
 import type { Candidate, Drink, DrinkPatch, LabelGuess, Preview, ScanResult, Stock, Tasting } from '../../shared/types.ts'
+import { authenticate, type Identity } from './auth.ts'
 import { finishAssortment, getMirrored, isFresh, searchMirror, upsertAssortment } from './assortment.ts'
 import { cached } from './cache.ts'
 import { fetchCaviste, parseCavistePage, parseCavisteUrl } from './caviste.ts'
-import { deleteDrink, deleteTasting, getDrink, insertDrink, insertTasting, listDrinks, listTastings, sanitize, sanitizeTasting, updateDrink } from './db.ts'
+import { deleteDrink, deleteTasting, getDrink, insertDrink, insertTasting, listAllDrinks, listDrinks, listTastings, sanitize, sanitizeTasting, updateDrink } from './db.ts'
+import { deleteAccount, getAccount, householdOf, joinHousehold, renameHousehold } from './household.ts'
 import { findByEan, normalizeEan, queries, rank, readLabel, searchOnce, searchProducts, validEan } from './scan.ts'
 import { fetchStock } from './stock.ts'
 import { fetchProduct, parseProductNumber, toPreview, type Product } from './systembolaget.ts'
 import { fetchWine, findVivino, parseVivinoUrl, parseWinePage, queryFor, refreshVivino, vivinoDue, vivinoPatch, vivinoToPreview } from './vivino.ts'
 
-// Grindkoden (beslut 2): en delad kod, skickad som Bearer, jämförd mot secreten GATE_CODE. Sitter här, aldrig bara i klienten.
+// Inloggning (beslut 2, 2026-09-15): Firebase ID-token per användare, eller grindkoden (secreten GATE_CODE) som tjänsteåtkomst
+// till hushåll 1 för nattskriptet och skripten. Se worker/src/auth.ts och household.ts.
 // GEMINI_API_KEY och SB_API_KEY (2026-09-08) är secrets för skanningen: saknas Gemini svarar /api/scan 500 på foton,
 // saknas Systembolagsnyckeln blir kandidatlistan tom och användaren får fylla i själv.
 type GateEnv = Env & { GATE_CODE?: string; GEMINI_API_KEY?: string; SB_API_KEY?: string }
@@ -42,7 +45,7 @@ export default {
   },
 
   async scheduled(_controller: ScheduledController, env: GateEnv): Promise<void> {
-    await refreshAll(env.DB)
+    await refreshAll(env.DB, { kind: 'service' })
   },
 } satisfies ExportedHandler<GateEnv>
 
@@ -54,40 +57,70 @@ async function route(request: Request, env: GateEnv): Promise<unknown> {
   if (method === 'GET' && path === '/health') return { ok: true }
   if (!path.startsWith('/api/')) throw new NotFoundError('no such route')
 
-  authenticate(request, env)
+  const who = await authenticate(request, env)
+  const hh = await householdOf(env.DB, who)
+  const user = (): Identity & { kind: 'user' } => {
+    if (who.kind !== 'user') throw new FatalError('requires a signed-in account', 403)
+    return who
+  }
 
   if (method === 'GET' && path === '/api/ping') return null
-  if (method === 'GET' && path === '/api/drinks') return { drinks: await listDrinks(env.DB) }
-  if (method === 'POST' && path === '/api/drinks') return insertDrink(env.DB, await withVivino(sanitize(await request.json())))
-  if (method === 'POST' && path === '/api/refresh-all') return refreshAll(env.DB)
+  if (method === 'GET' && path === '/api/me') return getAccount(env.DB, who, hh)
+  if (method === 'DELETE' && path === '/api/me') {
+    await deleteAccount(env.DB, user(), hh)
+    return null
+  }
+  if (method === 'PATCH' && path === '/api/household') {
+    await renameHousehold(env.DB, hh, await request.json())
+    return null
+  }
+  if (method === 'POST' && path === '/api/household/join') {
+    // Samma snäva tak som skanningen: en inbjudningskod (och grindkoden) ska inte gå att gissa i en loop.
+    await throttle(env.SCAN_LIMIT, who)
+    await joinHousehold(env.DB, user(), hh, await request.json(), env.GATE_CODE)
+    return null
+  }
+  if (method === 'GET' && path === '/api/drinks') return { drinks: await listDrinks(env.DB, hh) }
+  if (method === 'POST' && path === '/api/drinks') {
+    await throttle(env.LOOKUP_LIMIT, who)
+    return insertDrink(env.DB, hh, await withVivino(sanitize(await request.json())))
+  }
+  // Nattjobbet och spegelimporten rör alla hushåll och hela spegeln: bara grindkoden, aldrig ett konto.
+  if (method === 'POST' && path === '/api/refresh-all') return refreshAll(env.DB, service(who))
   // Spegelimporten (migrering 0006): nattskriptet postar dumpen i bitar, sist done. Se worker/src/assortment.ts.
-  if (method === 'POST' && path === '/api/assortment') return assortment(await request.json(), env.DB)
-  if (method === 'POST' && path === '/api/scan') return scan(await request.json(), env)
+  if (method === 'POST' && path === '/api/assortment') return assortment(await request.json(), env.DB, service(who))
+  if (method === 'POST' && path === '/api/scan') {
+    await throttle(env.SCAN_LIMIT, who)
+    return scan(await request.json(), env)
+  }
 
   const single = path.match(/^\/api\/drinks\/(\d+)$/)
-  if (single?.[1] && method === 'PATCH') return updateDrink(env.DB, Number(single[1]), sanitize(await request.json()))
+  if (single?.[1] && method === 'PATCH') return updateDrink(env.DB, hh, Number(single[1]), sanitize(await request.json()))
   if (single?.[1] && method === 'DELETE') {
-    await deleteDrink(env.DB, Number(single[1]))
+    await deleteDrink(env.DB, hh, Number(single[1]))
     return null
   }
 
   // Drucken-logg (beslut 16). getDrink först, så en logg aldrig hamnar på ett id som inte är hushållets.
   const tastings = path.match(/^\/api\/drinks\/(\d+)\/tastings$/)
   if (tastings?.[1]) {
-    const drink = await getDrink(env.DB, Number(tastings[1]))
+    const drink = await getDrink(env.DB, hh, Number(tastings[1]))
     if (method === 'GET') return { tastings: (await listTastings(env.DB, drink.id)) satisfies Tasting[] }
     if (method === 'POST') return insertTasting(env.DB, drink.id, sanitizeTasting(await request.json()))
   }
 
   const tasting = path.match(/^\/api\/drinks\/(\d+)\/tastings\/(\d+)$/)
   if (tasting?.[1] && tasting[2] && method === 'DELETE') {
-    const drink = await getDrink(env.DB, Number(tasting[1]))
+    const drink = await getDrink(env.DB, hh, Number(tasting[1]))
     await deleteTasting(env.DB, drink.id, Number(tasting[2]))
     return null
   }
 
+  // Allt nedan hämtar från Systembolaget, Vivino eller Caviste åt användaren: ett tak per konto (Rate Limiting-bindningen).
+  await throttle(env.LOOKUP_LIMIT, who)
+
   const refresh = path.match(/^\/api\/drinks\/(\d+)\/refresh$/)
-  if (refresh?.[1] && method === 'POST') return refreshDrink(env.DB, await getDrink(env.DB, Number(refresh[1])))
+  if (refresh?.[1] && method === 'POST') return refreshDrink(env.DB, await getDrink(env.DB, hh, Number(refresh[1])))
 
   if (method === 'GET' && path === '/api/systembolaget') {
     const number = parseProductNumber(url.searchParams.get('q') ?? '')
@@ -106,7 +139,7 @@ async function route(request: Request, env: GateEnv): Promise<unknown> {
   // gamla rader saknar det och fyller i det ur produktsidan vid första förfrågan.
   if (method === 'GET' && path === '/api/stock') {
     const store = url.searchParams.get('store') ?? ''
-    const drink = await getDrink(env.DB, Number(url.searchParams.get('drink') ?? ''))
+    const drink = await getDrink(env.DB, hh, Number(url.searchParams.get('drink') ?? ''))
     if (!env.SB_API_KEY) throw new FatalError('SB_API_KEY is not configured', 500)
     const key = env.SB_API_KEY
     const productId = await productIdOf(env.DB, drink)
@@ -127,19 +160,20 @@ async function route(request: Request, env: GateEnv): Promise<unknown> {
   throw new NotFoundError('no such route')
 }
 
-function authenticate(request: Request, env: GateEnv): void {
-  if (!env.GATE_CODE) throw new FatalError('GATE_CODE is not configured', 500)
-  const header = request.headers.get('authorization') ?? ''
-  const code = header.startsWith('Bearer ') ? header.slice(7) : ''
-  if (code === '' || !timingSafeEqual(code, env.GATE_CODE)) throw new UnauthorizedError()
+/** Kastar 403 för ett konto. Returnerar ett bevis som bara går att få med grindkoden, så routen inte kan glömma kollen. */
+function service(who: Identity): { kind: 'service' } {
+  if (who.kind !== 'service') throw new FatalError('requires the service code', 403)
+  return who
 }
 
-function timingSafeEqual(a: string, b: string): boolean {
-  const enc = new TextEncoder()
-  const x = enc.encode(a)
-  const y = enc.encode(b)
-  if (x.byteLength !== y.byteLength) return false
-  return crypto.subtle.timingSafeEqual(x, y)
+/**
+ * Ett tak per konto (Rate Limiting-bindningen, 2026-09-15). Grindkoden räknas inte: nattskriptet och seedskripten är betrodda.
+ * ponytail: bindningen räknar per Cloudflare-plats och är ungefärlig; ett dygnstak på Gemini kräver lagring, lägg till om kvoten tar slut.
+ */
+async function throttle(limiter: RateLimit, who: Identity): Promise<void> {
+  if (who.kind === 'service') return
+  const { success } = await limiter.limit({ key: who.uid })
+  if (!success) throw new FatalError('too many requests, wait a minute', 429)
 }
 
 function allowedOrigins(list: string): string[] {
@@ -207,7 +241,7 @@ async function refreshDrink(db: D1Database, drink: Drink): Promise<Drink> {
   if (drink.source_kind === 'systembolaget' && drink.source_id) Object.assign(patch, refreshPatch(await fetchFresh(db, drink.source_id), drink))
   if (drink.kind === 'wine') Object.assign(patch, await refreshVivino(drink))
   if (Object.keys(patch).length === 0) throw new FatalError('nothing to refresh for this drink')
-  return updateDrink(db, drink.id, patch)
+  return updateDrink(db, drink.household_id, drink.id, patch)
 }
 
 /** Radens Systembolags-id, hämtat ur produktsidan och sparat första gången det behövs. Kastar för rader utan artikelnummer. */
@@ -216,7 +250,7 @@ async function productIdOf(db: D1Database, drink: Drink): Promise<string> {
   if (drink.source_kind !== 'systembolaget' || !drink.source_id) throw new FatalError('drink has no systembolaget number')
   const sb_product_id = toPreview(await productOrMirror(db, drink.source_id)).sb_product_id
   if (!sb_product_id) throw new FatalError('systembolaget gave no product id', 502)
-  await updateDrink(db, drink.id, { sb_product_id })
+  await updateDrink(db, drink.household_id, drink.id, { sb_product_id })
   return sb_product_id
 }
 
@@ -299,7 +333,7 @@ function refreshPatch(fresh: Fresh, drink: Drink): DrinkPatch {
 }
 
 /** En bit av dumpen in i spegeln, och på done: gamla rader bort och spegeln stämplad som färsk. */
-async function assortment(body: unknown, db: D1Database): Promise<AssortmentResult> {
+async function assortment(body: unknown, db: D1Database, _proof: { kind: 'service' }): Promise<AssortmentResult> {
   if (typeof body !== 'object' || body === null) throw new FatalError('body must be an object')
   const { run, rows, done, numbers } = body as AssortmentChunk
   if (rows !== undefined && !Array.isArray(rows)) throw new FatalError('rows must be an array')
@@ -308,8 +342,9 @@ async function assortment(body: unknown, db: D1Database): Promise<AssortmentResu
   return { upserted, ...(await finishAssortment(db, run, numbers)) }
 }
 
-export async function refreshAll(db: D1Database): Promise<{ refreshed: number; mirrored: number; failed: number; vivino: number }> {
-  const drinks = await listDrinks(db)
+export async function refreshAll(db: D1Database, _proof: { kind: 'service' }): Promise<{ refreshed: number; mirrored: number; failed: number; vivino: number }> {
+  // ponytail: läser alla hushålls rader varje natt, linjärt med användarna; tak per hushåll när det blir tusentals.
+  const drinks = await listAllDrinks(db)
   // En hämtning per artikelnummer, oavsett hur många rader som delar det (beslut 23).
   const byNumber = new Map<string, Drink[]>()
   for (const d of drinks) {
@@ -328,7 +363,7 @@ export async function refreshAll(db: D1Database): Promise<{ refreshed: number; m
       if (!fromMirror && pages >= NIGHTLY_CAP) continue
       if (!fromMirror) pages++
       const fresh = fromMirror ?? (await fetchFresh(db, number))
-      for (const row of rows) await updateDrink(db, row.id, refreshPatch(fresh, row))
+      for (const row of rows) await updateDrink(db, row.household_id, row.id, refreshPatch(fresh, row))
       refreshed++
       if (fromMirror) mirrored++
     } catch (error) {
@@ -340,7 +375,7 @@ export async function refreshAll(db: D1Database): Promise<{ refreshed: number; m
   let vivino = 0
   for (const row of drinks.filter((d) => vivinoDue(d)).slice(0, VIVINO_CAP)) {
     try {
-      await updateDrink(db, row.id, await refreshVivino(row))
+      await updateDrink(db, row.household_id, row.id, await refreshVivino(row))
       vivino++
     } catch (error) {
       failed++
