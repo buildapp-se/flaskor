@@ -4,8 +4,8 @@
  * Hämtas ur Firebase Console för projektet flaskor-d3762: Project settings, Your apps, webbappen.
  */
 export const FIREBASE = {
-  apiKey: '',
+  apiKey: 'AIzaSyBHHc0LJN1ofGWesjd0oyXMyHZFtmxux1Q',
   authDomain: 'flaskor-d3762.firebaseapp.com',
   projectId: 'flaskor-d3762',
-  appId: '',
+  appId: '1:460125004076:web:1dd87edc54ae279a334c89',
 }
