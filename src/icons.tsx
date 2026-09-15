@@ -33,6 +33,12 @@ export const IconAdd = () => (
     <path d="M10 6.5v7M6.5 10h7" />
   </Icon>
 )
+export const IconAccount = () => (
+  <Icon>
+    <circle cx="10" cy="7" r="3.5" />
+    <path d="M3.5 17.5c.8-3.2 3.3-5 6.5-5s5.7 1.8 6.5 5" />
+  </Icon>
+)
 export const IconSearch = () => (
   <Icon>
     <circle cx="9" cy="9" r="5.5" />

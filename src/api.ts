@@ -1,10 +1,13 @@
 import { FatalError, NotFoundError, TransientError, UnauthorizedError } from '../shared/errors.ts'
-import type { Candidate, Drink, DrinkInput, DrinkPatch, Preview, ScanResult, Stock, Tasting, TastingInput } from '../shared/types.ts'
+import { getIdToken, isAuthConfigured } from './auth.ts'
+import type { Account, Candidate, Drink, DrinkInput, DrinkPatch, Preview, ScanResult, Stock, Tasting, TastingInput } from '../shared/types.ts'
 
 const API_URL: string = import.meta.env.VITE_API_URL ?? 'http://localhost:8787'
 const GATE_KEY = 'flaskor.gate'
 
 // Grindkoden (beslut 2) skrivs in en gång och sparas i localStorage. Servern avgör om den är rätt.
+// Med inloggningen på (src/config.ts) skickas Firebase-token i stället, och en sparad grindkod används bara en gång:
+// för att flytta kontot till hushåll 1 (App.tsx).
 export function findGate(): string | null {
   return localStorage.getItem(GATE_KEY)
 }
@@ -15,12 +18,22 @@ export function clearGate(): void {
   localStorage.removeItem(GATE_KEY)
 }
 
+async function bearer(): Promise<string> {
+  if (!isAuthConfigured()) return findGate() ?? ''
+  try {
+    return await getIdToken()
+  } catch {
+    throw new UnauthorizedError()
+  }
+}
+
 async function call<T>(method: string, path: string, body?: unknown): Promise<T> {
+  const token = await bearer()
   let response: Response
   try {
     response = await fetch(API_URL + path, {
       method,
-      headers: { authorization: `Bearer ${findGate() ?? ''}`, ...(body === undefined ? {} : { 'content-type': 'application/json' }) },
+      headers: { authorization: `Bearer ${token}`, ...(body === undefined ? {} : { 'content-type': 'application/json' }) },
       body: body === undefined ? undefined : JSON.stringify(body),
     })
   } catch (error) {
@@ -37,6 +50,12 @@ async function call<T>(method: string, path: string, body?: unknown): Promise<T>
 
 export const api = {
   ping: () => call<void>('GET', '/api/ping'),
+  me: () => call<Account>('GET', '/api/me'),
+  renameHousehold: (name: string) => call<void>('PATCH', '/api/household', { name }),
+  /** Inbjudningskod eller den gamla grindkoden. Kastar FatalError 409 när det egna hushållet har rader. */
+  joinHousehold: (code: string) => call<void>('POST', '/api/household/join', { code }),
+  /** Tar bort medlemskapet, och hushållet med allt i när ingen annan är kvar. */
+  deleteAccount: () => call<void>('DELETE', '/api/me'),
   listDrinks: () => call<{ drinks: Drink[] }>('GET', '/api/drinks').then((r) => r.drinks),
   createDrink: (input: DrinkInput) => call<Drink>('POST', '/api/drinks', input),
   patchDrink: (id: number, patch: DrinkPatch) => call<Drink>('PATCH', `/api/drinks/${id}`, patch),
