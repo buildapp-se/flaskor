@@ -121,7 +121,7 @@ Patrik vill dela appen på AI-forum och senare vinforum. Byggt i batch-läge, tr
 - [x] `[P0]` Firebase-inloggning (Google, e-post med bekräftelse), ett hushåll per konto, inbjudningskod, radera konto. Migrering 0008. 12 Worker-tester med riktigt signerade token.
 - [x] `[P0]` Nattjobbet och spegelimporten bara för grindkoden. Före 2026-09-15 kunde vem som helst med koden trigga dem; med konton hade varje användare kunnat skriva om spegeln.
 - [x] `[P1]` Kontovy (`#/konto`, femte platsen i navigeringen) och integritetstext på inloggningen och under Konto.
-- [ ] `[P0]` **Patrik:** registrera en webbapp i Firebase-projektet `flaskor-d3762`, lägg `buildapp.se` under Authorized domains, klistra in `apiKey` och `appId` i `src/config.ts`. Migreringarna, Workern (`20fd7bc3`) och Pages är gjorda 2026-09-15; bara nycklarna saknas. Se `HANDOFF.md` §Nästa steg 00.
+- [x] `[P0]` **Patrik:** registrera en webbapp i Firebase-projektet `flaskor-d3762`, lägg `buildapp.se` under Authorized domains, klistra in `apiKey` och `appId` i `src/config.ts`. Migreringarna, Workern (`20fd7bc3`) och Pages är gjorda 2026-09-15; nycklarna inlagda och live samma dag kl. 16:30.
 - [ ] `[P1]` Byt grindkoden när Patrik och Julia loggat in (`.dev.vars`, `wrangler secret bulk`, Actions-hemligheten `FLASKOR_GATE_CODE`). Den har legat i två webbläsare och ger fortfarande hushåll 1.
 - [ ] `[P2]` Egen authDomain (`flaskor.buildapp.se` eller liknande) så Googles inloggningsruta inte visar `flaskor-d3762.firebaseapp.com`. Receptet finns i vaultnoten Firebase Consent Screen (Beefcake).
 - [ ] `[P2]` Dygnstak på skanningen per konto. Geminis gratisnivå (cirka 1 500 anrop per dygn) delas av alla; bindningen räknar bara per minut.

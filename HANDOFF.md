@@ -2,8 +2,8 @@
 schemaVersion: 1
 status: active
 currentGoal: 2026-09-15 Flaskor öppen för fler hushåll, byggd i batch-läge och live utom själva inloggningen. Firebase-inloggning (Google, e-post), ett hushåll per konto med inbjudningskod, radera konto, integritetstext, tak per konto, nattjobb och spegelimport bara för grindkoden, FTS5 i spegeln (commits 6e61858, fafc1ee, 62730d7, b352481, pushade; migrering 0008 och 0009 körda i molnet kl. 14:40, Worker 20fd7bc3, bundeln index-9qwUTQcI.js). Före det minus och plus i tabellens Antal-kolumn (5da909c, live) och D1-fixen bekräftad av nattens spegelkörning (2 ändrade, 166 borttagna).
-nextAction: Patrik: webbapp i Firebase-projektet flaskor-d3762 och buildapp.se som authorized domain, klistra apiKey och appId till Claude (§Nästa steg 00). Claude lägger in dem och pushar, sedan loggar Patrik och Julia in i sina redan upplåsta webbläsare. Sedan byts grindkoden.
-blockers: ["Firebase-webbappens apiKey och appId (Patrik)"]
+nextAction: Patrik och Julia loggar in på https://buildapp.se/flaskor i webbläsare där appen redan är upplåst med grindkoden, så kontot hamnar i hushåll 1 av sig självt; kontrollera under Konto att båda står som medlemmar. Loggar någon in i en webbläsare utan sparad kod: Konto, Gå med i ett hushåll, skriv grindkoden. Sedan byts grindkoden (BACKLOG §Öppen för fler hushåll P1).
+blockers: []
 reviewedAt: 2026-09-15
 ---
 
@@ -148,7 +148,7 @@ Layout: `src/` (React, `app.css` ovanpå `tokens.css`; `sort.ts` är den enda so
     1. **Patrik, Firebase:** registrera en webbapp och kopiera `apiKey` och `appId` (inte hemliga, de hamnar i bundeln): https://console.firebase.google.com/project/flaskor-d3762/settings/general. Lägg `buildapp.se` under Authorized domains: https://console.firebase.google.com/project/flaskor-d3762/authentication/settings. Kontrollera att Google och Email/Password är på: https://console.firebase.google.com/project/flaskor-d3762/authentication/providers.
     2. **Claude:** nycklarna in i `src/config.ts`, commit.
     3. ~~Säkerhetskopia, migrering 0008 och 0009, Worker, push~~: gjort 2026-09-15 kl. 14:40 till 14:47, se överst.
-    4. **Claude:** nycklarna in, push, och kontrollera att inloggningskortet visas live.
+    4. ~~Nycklarna in och live~~: gjort 2026-09-15 kl. 16:30 (commit efter `ef5cbee`, Pages 34981793922, bundeln `index-D619rDzc.js`). Kontrollerat: Firebase listar `buildapp.se` bland authorized domains, Google och Email/Password är på (Patrik), inloggningskortet visas live i en ren webbläsare, och en inloggning med påhittat konto gav "Fel e-post eller lösenord.", alltså svarar Firebase på nyckeln. **Overifierat:** en lyckad inloggning, den kräver ett riktigt konto.
     6. **Patrik och Julia:** logga in i de webbläsare där appen redan är upplåst. Kontot hamnar i hushåll 1 av sig självt. Kontrollera under Konto att båda står som medlemmar.
     7. Sedan: byt grindkoden (BACKLOG §Öppen för fler hushåll P1), den har legat i två webbläsare och ger fortfarande hushåll 1.
 0. **Migrering 0007 körd och allt efter den klart (2026-09-13 kl. 17:30).** Öppna Önskelistan live: två rader ska säga "Ordervara · Slut hos leverantören", resten sitt sortiment plus "Finns hos Systembolaget". Mönstret när en migrering behövs igen: Patrik kör `! npm run db:migrate:remote` i sessionen (klassificeraren stoppar Claude), sedan deployar Claude Workern.

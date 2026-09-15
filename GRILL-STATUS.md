@@ -7,7 +7,7 @@ Status per 2026-09-05 kl. 21:20, efter v1-bygget. **beslutad** betyder att beslu
 | Nr | Titel | Beslut | Status |
 |---|---|---|---|
 | 1 | Namn och adress | `buildapp-se/flaskor`, live på `buildapp.se/flaskor`. `flaskkoll` och `vinrum` var lediga på .se och .com men valdes bort; `flaskor` valdes framför `bottles` för att gränssnittet är svenskt | beslutad |
-| 2 | Användare och inloggning | Patrik och Julia, delad data. Grindkod i webbläsaren först (kontrollerad i Workern), Firebase Auth senare. Repot publikt: innehållet är vilka viner som finns hemma. **2026-09-15:** Firebase Auth byggd på Patriks ja (appen ska delas på forum): ett hushåll per konto, inbjudningskod, grindkoden kvar som tjänsteåtkomst till hushåll 1 | byggd och deployad 2026-09-15, inloggningen väntar på webbappens apiKey |
+| 2 | Användare och inloggning | Patrik och Julia, delad data. Grindkod i webbläsaren först (kontrollerad i Workern), Firebase Auth senare. Repot publikt: innehållet är vilka viner som finns hemma. **2026-09-15:** Firebase Auth byggd på Patriks ja (appen ska delas på forum): ett hushåll per konto, inbjudningskod, grindkoden kvar som tjänsteåtkomst till hushåll 1 | byggd och live 2026-09-15 |
 | 3 | En modell, två flaggor | En tabell för vin och sprit, `kind` och `owned`. Fyra vyer ur samma data | byggd |
 | 4 | Vad en rad är | Vin plus antal, som i Excel, plus fritextkommentar. Ingen per-flaska-modell. Inköpspris per rad; dagspris från källor är beslut 23 | byggd |
 | 5 | Drickfönster | Finns, som egna fält med årsintervall, förifyllda av tumregel, visade som piller | byggd |
