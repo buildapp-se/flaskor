@@ -1,5 +1,5 @@
 import { FatalError, NotFoundError } from '../../shared/errors.ts'
-import type { Drink, DrinkInput, DrinkPatch, Tasting, TastingInput } from '../../shared/types.ts'
+import { IMPORT_WEIGHT_MAX, type Drink, type DrinkInput, type DrinkPatch, type ExportData, type Tasting, type TastingInput } from '../../shared/types.ts'
 
 type Derived = 'last_drunk_on' | 'last_rating' | 'tasting_count'
 // Aggregaten kommer bara med i listan; en enskild rad läses med SELECT * och saknar dem.
@@ -80,16 +80,54 @@ export async function getDrink(db: D1Database, household: number, id: number): P
   return rowToDrink(row)
 }
 
-export async function insertDrink(db: D1Database, household: number, input: DrinkPatch): Promise<Drink> {
+function insertStatement(db: D1Database, household: number, input: DrinkPatch): D1PreparedStatement {
   if (typeof input.name !== 'string' || input.name.trim() === '') throw new FatalError('name is required')
   if (input.kind !== 'wine' && input.kind !== 'spirit' && input.kind !== 'beer') throw new FatalError('kind is required')
   const keys = Object.keys(input) as Array<keyof DrinkPatch>
   const columns = ['household_id', ...keys].join(', ')
   const marks = ['?', ...keys.map(() => '?')].join(', ')
   const values = [household, ...keys.map((k) => input[k] as unknown)]
-  const row = await db.prepare(`INSERT INTO drink (${columns}) VALUES (${marks}) RETURNING *`).bind(...values).first<Row>()
+  return db.prepare(`INSERT INTO drink (${columns}) VALUES (${marks}) RETURNING *`).bind(...values)
+}
+
+export async function insertDrink(db: D1Database, household: number, input: DrinkPatch): Promise<Drink> {
+  const row = await insertStatement(db, household, input).first<Row>()
   if (!row) throw new FatalError('insert returned no row', 500)
   return rowToDrink(row)
+}
+
+/**
+ * En gästs lokala flaskor in i hushållet (2026-09-15). Allt kontrolleras innan något skrivs, så en trasig rad inte
+ * lämnar halva bitar. Två batchar: raderna, sedan avsmakningarna mot de nya id:na. Ger antalet sparade rader.
+ */
+export async function importDrinks(db: D1Database, household: number, body: unknown): Promise<number> {
+  const items = typeof body === 'object' && body !== null ? (body as { drinks?: unknown }).drinks : undefined
+  if (!Array.isArray(items) || items.length === 0) throw new FatalError('drinks must be a non-empty array')
+  const parsed = items.map((item) => {
+    const tastings = typeof item === 'object' && item !== null ? (item as { tastings?: unknown }).tastings : undefined
+    if (tastings !== undefined && !Array.isArray(tastings)) throw new FatalError('tastings must be an array')
+    return { input: sanitize(item), tastings: (tastings ?? []).map(sanitizeTasting) }
+  })
+  const weight = parsed.reduce((n, p) => n + 1 + p.tastings.length, 0)
+  if (weight > IMPORT_WEIGHT_MAX) throw new FatalError(`at most ${IMPORT_WEIGHT_MAX} drinks and tastings per call`)
+  const inserted = await db.batch<Row>(parsed.map((p) => insertStatement(db, household, p.input)))
+  const tastingStatements = parsed.flatMap((p, i) => {
+    const id = inserted[i]?.results[0]?.id
+    if (id === undefined) throw new FatalError('insert returned no row', 500)
+    return p.tastings.map((t) => db.prepare('INSERT INTO tasting (drink_id, drunk_on, rating, note) VALUES (?, ?, ?, ?)').bind(id, t.drunk_on, t.rating, t.note))
+  })
+  if (tastingStatements.length > 0) await db.batch(tastingStatements)
+  return inserted.length
+}
+
+/** Hela hushållet till en fil: raderna som listan ser dem och varje avsmakning. */
+export async function exportHousehold(db: D1Database, household: number): Promise<ExportData> {
+  const [drinks, name, tastings] = await Promise.all([
+    listDrinks(db, household),
+    db.prepare('SELECT name FROM household WHERE id = ?').bind(household).first<string>('name'),
+    db.prepare('SELECT t.* FROM tasting t JOIN drink d ON d.id = t.drink_id WHERE d.household_id = ? ORDER BY t.drink_id, t.drunk_on').bind(household).all<Tasting>(),
+  ])
+  return { app: 'flaskor', exported_at: new Date().toISOString(), household: name, drinks, tastings: tastings.results }
 }
 
 /** Tar bort raden och dess avsmakningar. Kastar NotFoundError när raden inte finns. */
