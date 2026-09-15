@@ -75,6 +75,59 @@ describe('Firebase-token', () => {
   })
 })
 
+describe('utan konto (gästläget)', () => {
+  const anon = (path: string, ip = '203.0.113.1') => SELF.fetch(`https://flaskor-api.test${path}`, { headers: { 'cf-connecting-ip': ip } })
+
+  it('uppslag fungerar, men inget som rör ett hushåll', async () => {
+    const preview = await anon('/api/systembolaget?q=7562401')
+    expect(preview.status, await preview.clone().text()).toBe(200)
+    expect((await preview.json<{ name: string }>()).name).toContain('Ibry')
+    expect((await anon('/api/drinks')).status).toBe(401)
+    expect((await anon('/api/me')).status).toBe(401)
+    expect((await anon('/api/stock?drink=1&store=2401')).status).toBe(401)
+    expect((await SELF.fetch('https://flaskor-api.test/api/scan', { method: 'POST', body: '{}' })).status).toBe(401)
+    // En trasig token går den vanliga vägen och får 401, även på ett uppslag.
+    expect((await SELF.fetch('https://flaskor-api.test/api/systembolaget?q=7562401', { headers: { authorization: 'Bearer trasig' } })).status).toBe(401)
+  })
+
+  it('taket räknas per IP-adress', async () => {
+    const statuses: number[] = []
+    for (let i = 0; i < 62; i++) statuses.push((await anon('/api/search?q=', '198.51.100.7')).status)
+    expect(statuses[0]).toBe(400)
+    expect(statuses.at(-1)).toBe(429)
+    expect((await anon('/api/search?q=', '198.51.100.8')).status).toBe(400)
+  })
+})
+
+describe('import och export', () => {
+  it('en gästs rader och avsmakningar kommer in, och exporten bär båda', async () => {
+    const a = await asUser()
+    const res = await a('POST', '/api/drinks/import', {
+      drinks: [
+        { id: 7, household_id: 0, kind: 'wine', name: 'Lokal Barolo', owned: true, count: 2, created_at: 'x', tastings: [{ drunk_on: '2026-09-01', rating: 5, note: 'gott' }] },
+        { kind: 'spirit', name: 'Lokal rom', owned: true, count: 1, open_level: 3 },
+      ],
+    })
+    expect(res.status, await res.clone().text()).toBe(200)
+    expect(await res.json()).toEqual({ imported: 2 })
+    const data = await (await a('GET', '/api/export')).json<{ app: string; household: string; drinks: Array<{ id: number; name: string; last_rating: number | null }>; tastings: Array<{ drink_id: number; note: string }> }>()
+    expect(data.app).toBe('flaskor')
+    expect(data.household).toBe('Mitt hushåll')
+    expect(data.drinks.map((d) => d.name)).toEqual(['Lokal Barolo', 'Lokal rom'])
+    expect(data.drinks[0]!.last_rating).toBe(5)
+    expect(data.tastings).toHaveLength(1)
+    expect(data.tastings[0]!.drink_id).toBe(data.drinks[0]!.id)
+  })
+
+  it('en trasig rad skriver ingenting, och för stora bitar nekas', async () => {
+    const a = await asUser()
+    expect((await a('POST', '/api/drinks/import', { drinks: [{ kind: 'wine', name: 'Bra' }, { kind: 'wine', name: 'Dålig', tastings: [{ drunk_on: 'igår' }] }] })).status).toBe(400)
+    expect((await (await a('GET', '/api/drinks')).json<{ drinks: unknown[] }>()).drinks).toEqual([])
+    const tooMany = Array.from({ length: 41 }, (_, i) => ({ kind: 'wine', name: `Vin ${i}` }))
+    expect((await a('POST', '/api/drinks/import', { drinks: tooMany })).status).toBe(400)
+  })
+})
+
 describe('hushåll', () => {
   it('går med via inbjudningskod och delar raderna', async () => {
     const a = await asUser()

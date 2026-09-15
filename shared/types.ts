@@ -113,6 +113,21 @@ export interface Tasting {
 
 export type TastingInput = Omit<Tasting, 'id' | 'drink_id' | 'created_at'>
 
+/** En rad i POST /api/drinks/import: en gästs lokala flaska med sina avsmakningar (2026-09-15). */
+export type ImportItem = DrinkInput & { tastings?: TastingInput[] }
+
+/** Högsta antal rader plus avsmakningar per import-anrop. D1 på gratisplanen tar 50 frågor per anrop. */
+export const IMPORT_WEIGHT_MAX = 40
+
+/** Exportfilen (2026-09-15): samma form från servern och från gästläget. */
+export interface ExportData {
+  app: 'flaskor'
+  exported_at: string
+  household: string | null
+  drinks: Drink[]
+  tastings: Tasting[]
+}
+
 /** Svaret på GET /api/me (beslut 2, 2026-09-15). `email` är null för grindkoden, som inte är ett konto. */
 export interface Account {
   email: string | null

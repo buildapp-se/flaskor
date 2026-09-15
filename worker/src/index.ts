@@ -5,7 +5,7 @@ import { authenticate, type Identity } from './auth.ts'
 import { finishAssortment, getMirrored, isFresh, searchMirror, upsertAssortment } from './assortment.ts'
 import { cached } from './cache.ts'
 import { fetchCaviste, parseCavistePage, parseCavisteUrl } from './caviste.ts'
-import { deleteDrink, deleteTasting, getDrink, insertDrink, insertTasting, listAllDrinks, listDrinks, listTastings, sanitize, sanitizeTasting, updateDrink } from './db.ts'
+import { deleteDrink, deleteTasting, exportHousehold, getDrink, importDrinks, insertDrink, insertTasting, listAllDrinks, listDrinks, listTastings, sanitize, sanitizeTasting, updateDrink } from './db.ts'
 import { deleteAccount, getAccount, householdOf, joinHousehold, renameHousehold } from './household.ts'
 import { findByEan, normalizeEan, queries, rank, readLabel, searchOnce, searchProducts, validEan } from './scan.ts'
 import { fetchStock } from './stock.ts'
@@ -57,6 +57,14 @@ async function route(request: Request, env: GateEnv): Promise<unknown> {
   if (method === 'GET' && path === '/health') return { ok: true }
   if (!path.startsWith('/api/')) throw new NotFoundError('no such route')
 
+  // Utan konto (2026-09-15): gäster i appen får slå upp flaskor, men inget som läser eller skriver ett hushåll.
+  // Taket räknas per IP-adress. Ett anrop med Authorization går alltid den vanliga vägen, så en trasig token ger 401.
+  if (!request.headers.has('authorization') && method === 'GET' && ANONYMOUS_LOOKUPS.has(path)) {
+    const { success } = await env.LOOKUP_LIMIT.limit({ key: `ip:${request.headers.get('cf-connecting-ip') ?? 'unknown'}` })
+    if (!success) throw new FatalError('too many requests, wait a minute', 429)
+    return lookup(path, url, env)
+  }
+
   const who = await authenticate(request, env)
   const hh = await householdOf(env.DB, who)
   const user = (): Identity & { kind: 'user' } => {
@@ -81,6 +89,13 @@ async function route(request: Request, env: GateEnv): Promise<unknown> {
     return null
   }
   if (method === 'GET' && path === '/api/drinks') return { drinks: await listDrinks(env.DB, hh) }
+  // Hela hushållet som en fil (2026-09-15): rader och alla avsmakningar i ett anrop.
+  if (method === 'GET' && path === '/api/export') return exportHousehold(env.DB, hh)
+  // En gästs lokala flaskor in i kontot (2026-09-15), i bitar om högst 40 rader och avsmakningar per anrop.
+  if (method === 'POST' && path === '/api/drinks/import') {
+    await throttle(env.LOOKUP_LIMIT, who)
+    return { imported: await importDrinks(env.DB, hh, await request.json()) }
+  }
   if (method === 'POST' && path === '/api/drinks') {
     await throttle(env.LOOKUP_LIMIT, who)
     return insertDrink(env.DB, hh, await withVivino(sanitize(await request.json())))
@@ -122,18 +137,7 @@ async function route(request: Request, env: GateEnv): Promise<unknown> {
   const refresh = path.match(/^\/api\/drinks\/(\d+)\/refresh$/)
   if (refresh?.[1] && method === 'POST') return refreshDrink(env.DB, await getDrink(env.DB, hh, Number(refresh[1])))
 
-  if (method === 'GET' && path === '/api/systembolaget') {
-    const number = parseProductNumber(url.searchParams.get('q') ?? '')
-    return toPreview(await productOrMirror(env.DB, number))
-  }
-
-  // Sök på namn hos Systembolaget (BACKLOG P3, 2026-09-09). Samma sök som skanningen använder, men med användarens
-  // egna ord och utan rankning: hen skrev frågan själv, så sökmotorns ordning är den bästa gissningen vi har.
-  if (method === 'GET' && path === '/api/search') {
-    const q = (url.searchParams.get('q') ?? '').trim()
-    if (q === '') throw new FatalError('q is required')
-    return { candidates: await cached(`search:${q.toLowerCase()}`, SEARCH_TTL, () => searchOrMirror(q, env)) satisfies Candidate[] }
-  }
+  if (method === 'GET' && ANONYMOUS_LOOKUPS.has(path)) return lookup(path, url, env)
 
   // Lagersaldo i en butik (BACKLOG P3, 2026-09-09). Slås upp på Systembolagets interna produkt-id, inte artikelnumret;
   // gamla rader saknar det och fyller i det ur produktsidan vid första förfrågan.
@@ -146,17 +150,33 @@ async function route(request: Request, env: GateEnv): Promise<unknown> {
     return { store, ...(await cached(`stock:${store}:${productId}`, STOCK_TTL, () => fetchStock(store, productId, key))) } satisfies Stock
   }
 
+  throw new NotFoundError('no such route')
+}
+
+/** Uppslag som bara läser Systembolaget, Vivino, Caviste eller spegeln. Tillåtna utan konto, se route. */
+const ANONYMOUS_LOOKUPS = new Set(['/api/systembolaget', '/api/search', '/api/caviste', '/api/vivino'])
+
+async function lookup(path: string, url: URL, env: GateEnv): Promise<unknown> {
+  if (path === '/api/systembolaget') {
+    const number = parseProductNumber(url.searchParams.get('q') ?? '')
+    return toPreview(await productOrMirror(env.DB, number))
+  }
+  // Sök på namn hos Systembolaget (BACKLOG P3, 2026-09-09). Samma sök som skanningen använder, men med användarens
+  // egna ord och utan rankning: hen skrev frågan själv, så sökmotorns ordning är den bästa gissningen vi har.
+  if (path === '/api/search') {
+    const q = (url.searchParams.get('q') ?? '').trim()
+    if (q === '') throw new FatalError('q is required')
+    return { candidates: await cached(`search:${q.toLowerCase()}`, SEARCH_TTL, () => searchOrMirror(q, env)) satisfies Candidate[] }
+  }
   // Caviste-import via produktlänk (beslut 6). En låda innehåller flera viner, så svaret är en lista att välja ur.
-  if (method === 'GET' && path === '/api/caviste') {
+  if (path === '/api/caviste') {
     const { number, url: page } = parseCavisteUrl(url.searchParams.get('q') ?? '')
     return { wines: parseCavistePage(await fetchCaviste(page), number, page) satisfies Preview[] }
   }
-
-  if (method === 'GET' && path === '/api/vivino') {
+  if (path === '/api/vivino') {
     const { wineId, year } = parseVivinoUrl(url.searchParams.get('q') ?? '')
     return vivinoToPreview(parseWinePage(await fetchWine(wineId), wineId), wineId, year)
   }
-
   throw new NotFoundError('no such route')
 }
 
