@@ -3,7 +3,9 @@ import { NotFoundError } from '../../shared/errors.ts'
 import type { Drink, Stock as StockValue } from '../../shared/types.ts'
 import { api } from '../api.ts'
 import { usePersisted } from '../persist.ts'
+import { useStore as useData } from '../store.tsx'
 import { S } from '../strings.ts'
+import { Locked } from './Locked.tsx'
 import stores from '../stores.json'
 
 // Lager i vald butik (BACKLOG P3, 2026-09-09). Butiken väljs en gång och sparas i localStorage.
@@ -68,6 +70,7 @@ export async function checkStock(drinkId: number, storeId: string): Promise<Stoc
 
 /** Butiksväljare plus saldo för en rad. Visas bara för rader med artikelnummer. */
 export function Stock({ drink }: { drink: Drink }) {
+  const { guest } = useData()
   const [store, pickStore] = useSavedStore()
   const [picking, setPicking] = useState(false)
   const [value, setValue] = useState<StockValue | null>(null)
@@ -75,6 +78,17 @@ export function Stock({ drink }: { drink: Drink }) {
   const [error, setError] = useState<string | null>(null)
 
   if (!hasStock(drink)) return null
+  if (guest)
+    return picking ? (
+      <Locked reason="stock" onClose={() => setPicking(false)} />
+    ) : (
+      <div className="fl-stock">
+        <div className="fl-label">{S.stock.label}</div>
+        <button type="button" className="fl-btn fl-btn--secondary" onClick={() => setPicking(true)}>
+          {S.stock.check}
+        </button>
+      </div>
+    )
 
   async function check(id: string) {
     setBusy(true)

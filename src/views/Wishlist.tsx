@@ -3,6 +3,7 @@ import type { Drink, Kind, Stock } from '../../shared/types.ts'
 import { articleNo, kr } from '../format.ts'
 import { detailPath, navigate } from '../hash.ts'
 import { Rating } from '../components/Rating.tsx'
+import { Locked } from '../components/Locked.tsx'
 import { checkStock, hasStock, StorePicker, stockText, useSavedStore } from '../components/Stock.tsx'
 import { IconArrow, IconExternal, IconMinus, IconPlus, IconSearch } from '../icons.tsx'
 import { usePersisted } from '../persist.ts'
@@ -33,7 +34,8 @@ interface WishlistState {
 const INITIAL: WishlistState = { query: '', kind: null, category: null, sort: 'price', dir: 'asc', view: 'list' }
 
 export function Wishlist() {
-  const { drinks, patch } = useStore()
+  const { drinks, patch, guest } = useStore()
+  const [locked, setLocked] = useState(false)
   const { removeMany } = useBulkActions()
   const [state, set] = usePersisted<WishlistState>('flaskor.wishlist', INITIAL)
   const { query, kind, category, sort, dir, view } = state
@@ -137,7 +139,19 @@ export function Wishlist() {
         </div>
       </div>
 
-      {checkable > 0 && (
+      {checkable > 0 && guest && (
+        <div className="fl-stockbar">
+          {locked ? (
+            <Locked reason="stock" onClose={() => setLocked(false)} />
+          ) : (
+            <button type="button" className="fl-btn fl-btn--secondary" onClick={() => setLocked(true)}>
+              {S.stock.checkAll(checkable)}
+            </button>
+          )}
+        </div>
+      )}
+
+      {checkable > 0 && !guest && (
         <div className="fl-stockbar">
           {pickingStore || !store ? (
             <>

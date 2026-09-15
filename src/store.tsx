@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { UnauthorizedError } from '../shared/errors.ts'
 import type { Drink, DrinkInput, DrinkPatch } from '../shared/types.ts'
 import { api } from './api.ts'
+import { localBackend, localSaves, type Backend } from './local.ts'
 import { S } from './strings.ts'
 
 // Servern är sanningen, klienten cachar senaste hämtning (beslut 11). Skrivningar går direkt till Workern.
@@ -10,6 +11,15 @@ const CACHE_KEY = 'flaskor.drinks'
 const UNDO_MS = 10 * 60 * 1000
 
 export interface Store {
+  /** Gästläget (2026-09-15): allt sparas i webbläsaren, se src/local.ts. */
+  guest: boolean
+  /** Där rader och avsmakningar läses och skrivs: Workern, eller localStorage för en gäst. */
+  backend: Backend
+  /** Till inloggningen. Bara meningsfull för en gäst; en inloggad är redan där. */
+  signIn(): void
+  /** Påminnelsen efter en lokal sparning, eller null. */
+  notice: string | null
+  dismissNotice(): void
   drinks: Drink[] | null
   error: string | null
   reload(): Promise<void>
@@ -43,26 +53,40 @@ function writeCache(list: Drink[]): void {
   }
 }
 
-export function StoreProvider({ onLocked, children }: { onLocked: () => void; children: ReactNode }) {
-  const [drinks, setDrinks] = useState<Drink[] | null>(readCache)
+/** Påminnelsen visas efter första sparningen och sedan var femte, så den märks utan att bli brus. */
+const remindAt = (saves: number) => saves === 1 || saves % 5 === 0
+
+export function StoreProvider({ onLocked, children, guest = false, onSignIn = () => {} }: { onLocked: () => void; children: ReactNode; guest?: boolean; onSignIn?: () => void }) {
+  const backend: Backend = guest ? localBackend : api
+  // En gäst har ingen servercache: localStorage är källan.
+  const [drinks, setDrinks] = useState<Drink[] | null>(() => (guest ? null : readCache()))
+  const [notice, setNotice] = useState<string | null>(null)
+  useEffect(() => {
+    if (notice === null) return
+    const timer = setTimeout(() => setNotice(null), 10_000)
+    return () => clearTimeout(timer)
+  }, [notice])
   const [error, setError] = useState<string | null>(null)
   const [undo, setUndoLabel] = useState<string | null>(null)
   const undoFn = useRef<(() => Promise<void>) | null>(null)
   const undoTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const keep = useCallback((list: Drink[]) => {
-    setDrinks(list)
-    writeCache(list)
-  }, [])
+  const keep = useCallback(
+    (list: Drink[]) => {
+      setDrinks(list)
+      if (!guest) writeCache(list)
+    },
+    [guest],
+  )
 
   /** Ändrar listan utifrån dess senaste värde, aldrig ett gammalt: flera anrop i rad (massåtgärder) ska inte skriva över varandra. */
   const mutate = useCallback((fn: (list: Drink[]) => Drink[]) => {
     setDrinks((list) => {
       const next = fn(list ?? [])
-      writeCache(next)
+      if (!guest) writeCache(next)
       return next
     })
-  }, [])
+  }, [guest])
 
   const fail = useCallback(
     (err: unknown) => {
@@ -77,12 +101,12 @@ export function StoreProvider({ onLocked, children }: { onLocked: () => void; ch
 
   const reload = useCallback(async () => {
     try {
-      keep(await api.listDrinks())
+      keep(await backend.listDrinks())
       setError(null)
     } catch (err) {
       fail(err)
     }
-  }, [keep, fail])
+  }, [keep, fail, backend])
 
   // Hämta om vid start och varje gång fliken får fokus igen: två användare delar listan (beslut 2, 11).
   useEffect(() => {
@@ -107,6 +131,11 @@ export function StoreProvider({ onLocked, children }: { onLocked: () => void; ch
 
   const store = useMemo<Store>(
     () => ({
+      guest,
+      backend,
+      signIn: onSignIn,
+      notice,
+      dismissNotice: () => setNotice(null),
       drinks,
       error,
       reload,
@@ -114,19 +143,21 @@ export function StoreProvider({ onLocked, children }: { onLocked: () => void; ch
         // Optimistiskt: raden ändras direkt, servern bekräftar eller listan laddas om.
         mutate((list) => list.map((d) => (d.id === id ? { ...d, ...patch } : d)))
         try {
-          replace(await api.patchDrink(id, patch))
+          replace(await backend.patchDrink(id, patch))
         } catch (err) {
           fail(err)
           await reload()
         }
       },
       async add(input) {
-        const row = await api.createDrink(input)
+        const row = await backend.createDrink(input)
         replace(row)
+        if (guest && remindAt(localSaves())) setNotice(S.guest.saved)
         return row
       },
       async refresh(id) {
         try {
+          if (guest) throw new Error('refresh requires an account')
           replace(await api.refreshDrink(id))
         } catch (err) {
           fail(err)
@@ -136,7 +167,7 @@ export function StoreProvider({ onLocked, children }: { onLocked: () => void; ch
         // Raden försvinner direkt; misslyckas servern laddas listan om och raden kommer tillbaka.
         mutate((list) => list.filter((d) => d.id !== id))
         try {
-          await api.deleteDrink(id)
+          await backend.deleteDrink(id)
         } catch (err) {
           fail(err)
           await reload()
@@ -162,7 +193,7 @@ export function StoreProvider({ onLocked, children }: { onLocked: () => void; ch
       },
       dismissUndo,
     }),
-    [drinks, error, reload, replace, fail, mutate, undo, dismissUndo],
+    [guest, backend, onSignIn, notice, drinks, error, reload, replace, fail, mutate, undo, dismissUndo],
   )
 
   return <StoreContext.Provider value={store}>{children}</StoreContext.Provider>

@@ -3,10 +3,12 @@ import { FatalError, NotFoundError } from '../../shared/errors.ts'
 import type { Candidate, Drink, DrinkPatch, Kind, LabelGuess, Preview, ScanResult } from '../../shared/types.ts'
 import { windowState } from '../../shared/window.ts'
 import { api } from '../api.ts'
+import { Locked } from '../components/Locked.tsx'
 import { Pill } from '../components/Pill.tsx'
 import { Rating } from '../components/Rating.tsx'
 import { dateShort, kr, pct, volume } from '../format.ts'
 import { detailPath, navigate, PATHS } from '../hash.ts'
+import { blankDrink } from '../local.ts'
 import { findBarcode, looksLikeEan, shrink } from '../scan.ts'
 import { useStore } from '../store.tsx'
 import { S } from '../strings.ts'
@@ -18,15 +20,7 @@ import { EditForm } from './Detail.tsx'
 // Systembolagskandidater att välja bland, sedan samma förhandsvisning som för ett artikelnummer.
 // Desktop saknar artboard: samma innehåll i en kolumn på 560 px. Bokfört i HANDOFF §Val tagna åt Patrik.
 
-/** Tom rad att fylla i för hand. Formuläret vill ha en Drink; id och tider är låtsas och skalas bort vid sparandet. */
-function blank(kind: Kind): Drink {
-  return {
-    id: 0, household_id: 0, kind, owned: false, name: '', producer: null, vintage: null, country: null, region: null, category: kind === 'wine' ? 'Rött vin' : null,
-    style: null, grapes: null, volume_ml: null, alcohol: null, source_kind: 'manual', source_id: null, source_url: null, image_url: null, sb_product_id: null, sb_assortment: null, price_paid: null,
-    price_current: null, price_checked_at: null, availability: 'unknown', count: 0, open_level: null, drink_from: null, drink_to: null, serve_temp: null,
-    decant_hours: null, food: null, note: null, taste: null, vivino_rating: null, vivino_count: null, vivino_url: null, vivino_checked_at: null, rating: null, rating_url: null, last_drunk_on: null, last_rating: null, tasting_count: 0, created_at: '', updated_at: '',
-  }
-}
+const blank = blankDrink
 
 /** Formuläret förifyllt med det som lästes från flaskan, när ingen Systembolagsträff passade. */
 function fromGuess(g: LabelGuess): Drink {
@@ -49,7 +43,9 @@ function isCaviste(q: string): boolean {
 }
 
 export function Add() {
-  const { add } = useStore()
+  const { add, guest } = useStore()
+  /** Gästen tryckte på något som kräver konto (2026-09-15). */
+  const [locked, setLocked] = useState(false)
   const fileInput = useRef<HTMLInputElement>(null)
   const [query, setQuery] = useState('')
   const [preview, setPreview] = useState<Preview | null>(null)
@@ -124,6 +120,7 @@ export function Add() {
 
   /** Streckkod och/eller foto till Workern. Svaret blir kandidater att välja bland, ett Vivino-vin, eller ett förifyllt formulär. */
   async function runScan(body: { image?: string; ean?: string }) {
+    if (guest) return setLocked(true)
     setBusy('scan')
     reset()
     try {
@@ -230,7 +227,7 @@ export function Add() {
         )}
         {idle && (
           <>
-            <button className="fl-btn fl-btn--primary" type="button" disabled={busy !== null} onClick={() => fileInput.current?.click()}>
+            <button className="fl-btn fl-btn--primary" type="button" disabled={busy !== null} onClick={() => (guest ? setLocked(true) : fileInput.current?.click())}>
               {busy === 'scan' ? S.scan.scanning : S.scan.button}
             </button>
             <input ref={fileInput} type="file" accept="image/*" capture="environment" hidden onChange={onPhoto} />
@@ -249,6 +246,8 @@ export function Add() {
           </>
         )}
       </form>
+
+      {locked && <Locked reason="scan" onClose={() => setLocked(false)} />}
 
       {scan && (
         <div className="fl-card fl-add__card">

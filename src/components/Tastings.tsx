@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { Drink, Tasting } from '../../shared/types.ts'
-import { api } from '../api.ts'
 import { dateShort } from '../format.ts'
+import { useStore } from '../store.tsx'
 import { S } from '../strings.ts'
 
 // Drucken-logg per rad (beslut 16, backlog P3): datum, betyg 1 till 5, kommentar.
@@ -30,6 +30,7 @@ function today(): string {
 }
 
 export function Tastings({ drinkId }: { drinkId: number }) {
+  const { backend } = useStore()
   const [list, setList] = useState<Tasting[] | null>(null)
   const [adding, setAdding] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -40,20 +41,20 @@ export function Tastings({ drinkId }: { drinkId: number }) {
 
   useEffect(() => {
     let alive = true
-    api
+    backend
       .listTastings(drinkId)
       .then((t) => alive && setList(t))
       .catch(() => alive && setError(S.tasting.failed))
     return () => {
       alive = false
     }
-  }, [drinkId])
+  }, [drinkId, backend])
 
   async function save() {
     setBusy(true)
     setError(null)
     try {
-      const saved = await api.addTasting(drinkId, { drunk_on: date, rating, note: note.trim() || null })
+      const saved = await backend.addTasting(drinkId, { drunk_on: date, rating, note: note.trim() || null })
       setList((prev) => [saved, ...(prev ?? [])])
       setAdding(false)
       setDate(today())
@@ -69,7 +70,7 @@ export function Tastings({ drinkId }: { drinkId: number }) {
   async function remove(id: number) {
     setError(null)
     try {
-      await api.deleteTasting(drinkId, id)
+      await backend.deleteTasting(drinkId, id)
       setList((prev) => (prev ?? []).filter((t) => t.id !== id))
     } catch {
       setError(S.tasting.failed)
