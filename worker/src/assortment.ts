@@ -89,11 +89,13 @@ export async function upsertAssortment(db: D1Database, run: string, rows: unknow
   for (let i = 0; i < products.length; i += ROWS_PER_STATEMENT) {
     const slice = products.slice(i, i + ROWS_PER_STATEMENT)
     const sql = `INSERT INTO sb_product (number, search, json, updated_at) VALUES ${slice.map(() => '(?, ?, ?, ?)').join(', ')}
-      ON CONFLICT(number) DO UPDATE SET search = excluded.search, json = excluded.json, updated_at = excluded.updated_at WHERE excluded.json <> sb_product.json`
+      ON CONFLICT(number) DO UPDATE SET search = excluded.search, json = excluded.json, updated_at = excluded.updated_at WHERE excluded.json <> sb_product.json
+      RETURNING number`
     statements.push(db.prepare(sql).bind(...slice.flatMap((p) => [p.productNumber, searchText(p), JSON.stringify(p), run])))
   }
   const results = await db.batch(statements)
-  return results.reduce((n, r) => n + r.meta.changes, 0)
+  // RETURNING, inte meta.changes: den räknar även raderna FTS-indexets trigger skriver (migrering 0009).
+  return results.reduce((n, r) => n + r.results.length, 0)
 }
 
 /**
@@ -158,17 +160,26 @@ export function toCandidate(p: Product): Candidate {
   }
 }
 
+/** Så många indexträffar sorteras på namnlängd. Ett vanligt ord ("vin") ger tusentals; resten läses aldrig. */
+const MAX_MATCHES = 200
+
 /**
- * Sök i spegeln: alla ord måste finnas i namn eller producent, kortast namn först (närmast frågan).
- * ponytail: LIKE över 27 000 rader tar några millisekunder; FTS5 (finns i D1) är uppgraderingen om rankningen behöver bli bättre.
+ * Sök i spegeln via FTS5-indexet (migrering 0009): varje ord måste inleda ett ord i namn eller producent, kortast namn
+ * först (närmast frågan). LIKE läste alla 27 035 rader per fråga mot D1:s läskvot; indexet läser bara träffarna.
+ * Frågan byggs bara av searchTerms, alltså [a-z0-9], så ingen FTS-syntax kan smita in.
+ * ponytail: ordstart, inte delsträng ("livet" hittar inte "glenlivet"); samma som Systembolagets eget sök i praktiken.
  */
 export async function searchMirror(db: D1Database, query: string, limit = 10): Promise<Candidate[]> {
   const terms = searchTerms(query)
   if (terms.length === 0) return []
-  const where = terms.map(() => 'search LIKE ?').join(' AND ')
+  const match = terms.map((t) => `"${t}"*`).join(' AND ')
   const { results } = await db
-    .prepare(`SELECT json FROM sb_product WHERE ${where} ORDER BY length(search) LIMIT ?`)
-    .bind(...terms.map((t) => `%${t}%`), limit)
+    .prepare(
+      `SELECT json FROM sb_product
+       WHERE number IN (SELECT CAST(rowid AS TEXT) FROM sb_product_fts WHERE sb_product_fts MATCH ? LIMIT ?)
+       ORDER BY length(search) LIMIT ?`,
+    )
+    .bind(match, MAX_MATCHES, limit)
     .all<{ json: string }>()
   return results.map((r) => toCandidate(JSON.parse(r.json) as Product))
 }
