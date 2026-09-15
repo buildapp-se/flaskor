@@ -127,6 +127,18 @@ Patrik vill dela appen på AI-forum och senare vinforum. Byggt i batch-läge, tr
 - [ ] `[P2]` Dygnstak på skanningen per konto. Geminis gratisnivå (cirka 1 500 anrop per dygn) delas av alla; bindningen räknar bara per minut.
 - [ ] `[P3]` Nattens `listAllDrinks` läser alla hushålls rader. Linjärt med användarna; tak eller uppdelning när det blir tusentals rader.
 
+## Gästläge och export 2026-09-15
+
+Patrik: "Jag vill att man ska kunna leka runt i appen och att det ska sparas i localdata, men dom som kräver databas-sync ska få en logga in med konto för att använda och förklaring." Plus export som JSON och CSV. Commits `c0df8e0` (Worker) och `891feea` (klient), Worker `a8d81a81`.
+
+- [x] `[P1]` "Prova utan konto": allt som bara rör den egna listan sparas i `localStorage`, uppslag utan konto med tak per IP.
+- [x] `[P1]` Lås med förklaring för skanning, lagersaldo, uppdatering och hushåll.
+- [x] `[P1]` Påminnelser: rad överst, rad efter sparning (1, 5, 10 ...), jämförelse under Konto.
+- [x] `[P1]` Lokala rader följer med till kontot vid inloggning, eller valet "lägg till eller släng" när kontot redan har rader.
+- [x] `[P1]` Exportera JSON och CSV under Konto, för gäst och konto.
+- [ ] `[P2]` Importera en exporterad JSON-fil tillbaka (flytt mellan webbläsare utan konto, återställning).
+- [ ] `[P3]` Uppladdningen till kontot är overifierad med en riktig inloggning: bitningen och Worker-routen är testade var för sig. Prova: lägg in en flaska som gäst, skapa konto, se att den finns kvar.
+
 ## Captured
 
 - [x] `[P0]` Minus och plus i tabellens Antal-kolumn, minus före siffran och plus efter (2026-09-15), i Källaren och Barskåpet. Tryck på knapparna öppnar inte detaljvyn. Önskelistan har ingen Antal-kolumn.
