@@ -7,7 +7,7 @@ Status per 2026-09-05 kl. 21:20, efter v1-bygget. **beslutad** betyder att beslu
 | Nr | Titel | Beslut | Status |
 |---|---|---|---|
 | 1 | Namn och adress | `buildapp-se/flaskor`, live på `buildapp.se/flaskor`. `flaskkoll` och `vinrum` var lediga på .se och .com men valdes bort; `flaskor` valdes framför `bottles` för att gränssnittet är svenskt | beslutad |
-| 2 | Användare och inloggning | Patrik och Julia, delad data. Grindkod i webbläsaren nu (kontrollerad i Workern), Firebase Auth senare. Repot publikt: innehållet är vilka viner som finns hemma | byggd (grindkoden; Firebase senare) |
+| 2 | Användare och inloggning | Patrik och Julia, delad data. Grindkod i webbläsaren först (kontrollerad i Workern), Firebase Auth senare. Repot publikt: innehållet är vilka viner som finns hemma. **2026-09-15:** Firebase Auth byggd på Patriks ja (appen ska delas på forum): ett hushåll per konto, inbjudningskod, grindkoden kvar som tjänsteåtkomst till hushåll 1 | byggd 2026-09-15, väntar på webbappens apiKey och migrering 0008 i molnet |
 | 3 | En modell, två flaggor | En tabell för vin och sprit, `kind` och `owned`. Fyra vyer ur samma data | byggd |
 | 4 | Vad en rad är | Vin plus antal, som i Excel, plus fritextkommentar. Ingen per-flaska-modell. Inköpspris per rad; dagspris från källor är beslut 23 | byggd |
 | 5 | Drickfönster | Finns, som egna fält med årsintervall, förifyllda av tumregel, visade som piller | byggd |
@@ -27,7 +27,7 @@ Status per 2026-09-05 kl. 21:20, efter v1-bygget. **beslutad** betyder att beslu
 | 19 | Designrundan | Alla vyer skissas i Claude Design från `docs/DESIGN-BRIEF.md`: Källaren desktop och mobil, Önskelistan, Barskåpet, Vindetalj, Lägg till, Köpt-rutan. Ändrat från fyra artboards 2026-09-05 på Patriks ord "skissa på allt" | byggd |
 | 20 | Ramverk, omtag | Se 10. Påståendet att Rotello är det snyggaste projektet saknade belägg och drogs tillbaka; Sipdeck är referensen, och dess snygghet kom ur designprocessen, inte ramverket | byggd |
 | 21 | Adress och hosting | Som Sipdeck: publikt repo, GitHub Pages på `buildapp.se/flaskor`, Worker `flaskor-api.buildapp.se` med D1 | byggd, live 2026-09-05 |
-| 22 | Hushåll från dag ett | `household_id` på all data, ett hushåll nu | byggd |
+| 22 | Hushåll från dag ett | `household_id` på all data, ett hushåll nu. Flera hushåll från 2026-09-15 (beslut 2) utan datamigrering, som beslutet förutsåg | byggd |
 | 23 | Uppdatering från Systembolaget | Nattligt cron plus knapp per rad. Dedupe per artikelnummer över hushåll och ett tak; vid många användare byts sidläsning mot sortimentsdumpen | byggd, cron verifierad i molnet 2026-09-09; spegeln byggd 2026-09-12 (GitHub Actions fyller D1 nattligt, natten läser ur den) |
 | 24 | Startsida | Källaren med pillerfilter och "Dags att dricka: N"; mobil har Önskelistan ett tryck bort | byggd |
 | 25 | Startdata | 21 Excel-rader läses in från den inklistrade texten, bilder från Caviste-sidornas og:image | byggd, seedat i molnet |

@@ -51,7 +51,7 @@ Patriks önskelista 2026-09-06 (GRILL-STATUS 31 till 35) byggd i chunk-läge, co
 
 - [ ] `[P1]` Verifiera live som användare: logga in på https://buildapp.se/flaskor, lägg till ett Systembolagsvin, PWA-installation på Patriks och Julias telefoner. (D1, Worker, secret, Pages och seed gjorda 2026-09-05; grinden ger 401 på fel kod.) **Cronen är avbockad 2026-09-09**: 19 rader i molnet bär `price_checked_at` 2026-09-09 kl. 04:00 och 04:01 svensk tid (02:00 UTC), vilket är exakt schemat `0 2 * * *`. Beslut 23 är därmed inte längre overifierat i molnet.
 - [x] `[P2]` Caviste-bilden: rätt flaska väljs nu ur sidan (2026-09-09). `scripts/caviste.ts` rankar på ord ur vinnamnet i filnamnet och därefter på höjd genom bredd ur WordPress storlekssuffix; `npm run fix:caviste` rättade alla 21 rader i molnet. 18 blev rätt flaska, 3 (Chianti Classico, Côtes du Rhône, La Butte 'O') fick fel eftersom Caviste förkortar dem `CC`, `CDR` och `CNP`. De rättas för hand i Ändra, som nu har både bildlänk och Vivino-länk.
-- [ ] `[P2]` Grindkoden ligger i localStorage i klartext på delad dator; räcker tills Firebase Auth (beslut 2).
+- [x] `[P2]` Grindkoden ligger i localStorage i klartext på delad dator; räcker tills Firebase Auth (beslut 2). Löst av inloggningen 2026-09-15: en sparad kod används en gång och tas bort.
 - [x] `[P2]` Ta bort en rad: knapp längst ner i detaljvyn, två tryck utan dialogruta (2026-09-06, Patrik saknade den efter en felinläggning).
 
 ## Öl och betyg 2026-09-07
@@ -84,7 +84,7 @@ Patriks önskelista 2026-09-06 (GRILL-STATUS 31 till 35) byggd i chunk-läge, co
 
 ## Senare, beslutat uppskjutet
 
-- [ ] `[P2]` Firebase Auth som Beefcake, användare kopplade till `household_id` (beslut 2).
+- [x] `[P2]` Firebase Auth som Beefcake, användare kopplade till `household_id` (beslut 2). Byggd 2026-09-15, se §Öppen för fler hushåll.
 - [ ] `[P2]` Sipdeck-synk: mappa barskåpsrad till Sipdecks ingrediens-id, knapp som skriver eget skafferi via Sipdecks Worker (beslut 7).
 - [x] `[P2]` Caviste-import via produktlänk (beslut 6): byggd 2026-09-09, se nedan.
 - [ ] `[P2]` Dagspris från fler källor än Systembolaget, inköpspris mot dagspris (beslut 4).
@@ -103,8 +103,8 @@ Systembolaget sa nej till officiell API-åtkomst. Workaround: spegel av sortimen
 - [x] `[P1]` Cache API på sök (30 min) och lager (10 min). Lokalt lasttest: 200 samtidiga sökningar, kall cache 86 ms, varm 5 ms, alla 200.
 - [x] `[P1]` **Patrik:** Actions-hemligheten `FLASKOR_GATE_CODE` skapad 2026-09-12, nattens körning 2026-09-13 grön.
 - [x] `[P0]` Spegeln skriver bara ändrade rader (`fd88043`, 2026-09-13): `INSERT OR REPLACE` kostade två D1-skrivningar per rad, 54 000 per natt, och tre körningar samma dag sprängde kontots kvot på 100 000 så alla sju databaserna gav skrivfel till midnatt UTC. Utgångna rader hittas nu via dumpens nummerlista i `done`. Kvar att läsa av: nattens logg, se `HANDOFF.md` §Nästa steg 0c.
-- [ ] `[P2]` FTS5 i spegeln i stället för LIKE. Gratisplanens D1-kvot är 5 miljoner lästa rader per dygn för hela kontot, och LIKE läser alla 27 035 rader per fråga: 185 reservsökningar på ett dygn tömmer kvoten. FTS5 (som D1 stöder) läser bara träffarna. Blir akut först när reserven används på riktigt, alltså när nyckeln dör eller lasten ger 429.
-- [ ] `[P3]` Rate Limiting-bindningen per användare när Firebase Auth finns (beslut 2). Meningslös i dag: alla delar en grindkod.
+- [x] `[P2]` FTS5 i spegeln i stället för LIKE, byggd 2026-09-15 (migrering 0009, cirka 300 skuggrader). Fyllningen kostar cirka 27 000 skrivna rader en gång, se `HANDOFF.md` §Nästa steg. Gratisplanens D1-kvot är 5 miljoner lästa rader per dygn för hela kontot, och LIKE läser alla 27 035 rader per fråga: 185 reservsökningar på ett dygn tömmer kvoten. FTS5 (som D1 stöder) läser bara träffarna. Blir akut först när reserven används på riktigt, alltså när nyckeln dör eller lasten ger 429.
+- [x] `[P3]` Rate Limiting-bindningen per användare, byggd 2026-09-15 (`SCAN_LIMIT` 10/min, `LOOKUP_LIMIT` 60/min per konto).
 
 ## Tillgänglighet 2026-09-13
 
@@ -114,7 +114,20 @@ Patrik: "Tillfälligt slut i butiken" i Önskelistan går inte att tolka. Utredn
 - [x] `[P1]` Migrering 0007 körd i molnet av Patrik 2026-09-13, Worker `be3892f7`, spegeln körd om, refresh-all 19 av 19. På vägen: `DUMP_FIELDS` saknade `assortment` och `isSupplierTemporaryNotAvailable` så första spegelkörningen gav null; fix `c2258fa` med test genom `slim`.
 - [ ] `[P3]` Samma text i detaljvyn. I dag visas tillgängligheten bara i Önskelistan.
 
+## Öppen för fler hushåll 2026-09-15
+
+Patrik vill dela appen på AI-forum och senare vinforum. Byggt i batch-läge, tre commits: `6e61858` Worker, `fafc1ee` klient, `62730d7` FTS5.
+
+- [x] `[P0]` Firebase-inloggning (Google, e-post med bekräftelse), ett hushåll per konto, inbjudningskod, radera konto. Migrering 0008. 12 Worker-tester med riktigt signerade token.
+- [x] `[P0]` Nattjobbet och spegelimporten bara för grindkoden. Före 2026-09-15 kunde vem som helst med koden trigga dem; med konton hade varje användare kunnat skriva om spegeln.
+- [x] `[P1]` Kontovy (`#/konto`, femte platsen i navigeringen) och integritetstext på inloggningen och under Konto.
+- [ ] `[P0]` **Patrik:** registrera en webbapp i Firebase-projektet `flaskor-d3762`, lägg `buildapp.se` under Authorized domains, klistra in `apiKey` och `appId` i `src/config.ts`. Sedan migrering 0008 och 0009 i molnet, sedan Worker och Pages, i den ordningen. Se `HANDOFF.md` §Nästa steg.
+- [ ] `[P1]` Byt grindkoden när Patrik och Julia loggat in (`.dev.vars`, `wrangler secret bulk`, Actions-hemligheten `FLASKOR_GATE_CODE`). Den har legat i två webbläsare och ger fortfarande hushåll 1.
+- [ ] `[P2]` Egen authDomain (`flaskor.buildapp.se` eller liknande) så Googles inloggningsruta inte visar `flaskor-d3762.firebaseapp.com`. Receptet finns i vaultnoten Firebase Consent Screen (Beefcake).
+- [ ] `[P2]` Dygnstak på skanningen per konto. Geminis gratisnivå (cirka 1 500 anrop per dygn) delas av alla; bindningen räknar bara per minut.
+- [ ] `[P3]` Nattens `listAllDrinks` läser alla hushålls rader. Linjärt med användarna; tak eller uppdelning när det blir tusentals rader.
+
 ## Captured
 
 - [x] `[P0]` Minus och plus i tabellens Antal-kolumn, minus före siffran och plus efter (2026-09-15), i Källaren och Barskåpet. Tryck på knapparna öppnar inte detaljvyn. Önskelistan har ingen Antal-kolumn.
-- [ ] `[P0]` Nya ikoner för minus och plus från Claude Design, snygga nog för release. Patriks steg: designrundan körs i Claude Design, sedan lyfts ikonerna in i `src/icons.tsx`.
+- [x] `[P0]` Nya ikoner för minus och plus. Patrik 2026-09-15: "ikonerna är lösta".
