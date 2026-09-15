@@ -116,4 +116,5 @@ Patrik: "Tillfälligt slut i butiken" i Önskelistan går inte att tolka. Utredn
 
 ## Captured
 
-- [ ] [P0] [Wish] + - även i tabellen på antal flaskor (före och efter siffran blir nog bra?) låt claude design göra nya ikoner som syns till vänster (de är inte snygga nog för release)
+- [x] `[P0]` Minus och plus i tabellens Antal-kolumn, minus före siffran och plus efter (2026-09-15), i Källaren och Barskåpet. Tryck på knapparna öppnar inte detaljvyn. Önskelistan har ingen Antal-kolumn.
+- [ ] `[P0]` Nya ikoner för minus och plus från Claude Design, snygga nog för release. Patriks steg: designrundan körs i Claude Design, sedan lyfts ikonerna in i `src/icons.tsx`.

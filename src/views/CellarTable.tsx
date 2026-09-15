@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react'
-import type { Drink } from '../../shared/types.ts'
+import type { Drink, DrinkPatch } from '../../shared/types.ts'
 import { windowState } from '../../shared/window.ts'
 import { Highlight } from '../components/Highlight.tsx'
 import { Pill } from '../components/Pill.tsx'
@@ -7,7 +7,7 @@ import { Rating } from '../components/Rating.tsx'
 import { LastDrunk } from '../components/Tastings.tsx'
 import { articleNo, kr, yearRange } from '../format.ts'
 import { detailPath, navigate } from '../hash.ts'
-import { IconArrow } from '../icons.tsx'
+import { IconArrow, IconMinus, IconPlus } from '../icons.tsx'
 import { usePersisted } from '../persist.ts'
 import { priceOf, valueOf, type SortDir, type SortKey } from '../sort.ts'
 import { S } from '../strings.ts'
@@ -88,7 +88,8 @@ export function CellarTable({
   onShowZero,
   onRemove,
   onRewish,
-  columns = WINE_COLUMNS,
+  onPatch,
+  columns =WINE_COLUMNS,
   hiddenAtStart = HIDDEN_AT_START,
   persistKey = 'flaskor.columns',
   itemLabel = S.cellar.wines,
@@ -105,6 +106,8 @@ export function CellarTable({
   onRemove: (rows: Drink[]) => void
   /** Utelämnad: massåtgärdsraden visar ingen "Lägg på önskelistan igen" (t.ex. Önskelistan, som redan är den listan). */
   onRewish?: (rows: Drink[]) => void
+  /** Utelämnad: antalskolumnen visar bara siffran, utan minus och plus. */
+  onPatch?: (d: Drink, p: DrinkPatch) => void
   columns?: ColumnKey[]
   hiddenAtStart?: ColumnKey[]
   persistKey?: string
@@ -189,13 +192,26 @@ export function CellarTable({
           </thead>
           <tbody>
             {rows.map((d) => (
-              <tr key={d.id} className={d.owned && d.count === 0 && d.open_level === null ? 'fl-table__row fl-table__row--muted' : 'fl-table__row'} onClick={(e) => !(e.target as HTMLElement).closest('a, input') && navigate(detailPath(d.id))}>
+              <tr key={d.id} className={d.owned && d.count === 0 && d.open_level === null ? 'fl-table__row fl-table__row--muted' : 'fl-table__row'} onClick={(e) => !(e.target as HTMLElement).closest('a, input, button') && navigate(detailPath(d.id))}>
                 <td className="fl-table__check">
                   <input type="checkbox" checked={selected.has(d.id)} onChange={() => toggle(d.id)} />
                 </td>
                 {shown.map((c) => (
                   <td key={c.key} className={c.numeric ? 'fl-table__num' : c.wide ? 'fl-table__wide' : undefined}>
-                    {c.render(d, query)}
+                    {c.key === 'count' && onPatch ? (
+                      // Minus före siffran, plus efter (Patriks önskan 2026-09-14). Samma patch som listans CountStepper.
+                      <span className="fl-stepper fl-stepper--cell">
+                        <button type="button" title={S.cellar.drankOne} aria-label={S.cellar.drankOne} disabled={d.count === 0} onClick={() => onPatch(d, { count: d.count - 1 })}>
+                          <IconMinus />
+                        </button>
+                        <span className="fl-stepper__value">{d.count}</span>
+                        <button type="button" title={S.cellar.boughtMore} aria-label={S.cellar.boughtMore} onClick={() => onPatch(d, { count: d.count + 1 })}>
+                          <IconPlus />
+                        </button>
+                      </span>
+                    ) : (
+                      c.render(d, query)
+                    )}
                   </td>
                 ))}
               </tr>

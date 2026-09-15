@@ -129,6 +129,7 @@ export function Bar() {
             onShowZero={(v) => set({ showZero: v })}
             onRemove={removeMany}
             onRewish={rewishMany}
+            onPatch={(d, p) => patch(d.id, p)}
             columns={BAR_COLUMNS}
             hiddenAtStart={BAR_HIDDEN_AT_START}
             persistKey="flaskor.bar.columns"

@@ -682,6 +682,25 @@ p {
   opacity: 0.4;
   cursor: default;
 }
+/* I tabellcellen: minus, siffran, plus, utan att raden blir högre. */
+.fl-stepper--cell {
+  align-items: center;
+  vertical-align: middle;
+}
+.fl-stepper--cell button {
+  width: 26px;
+  height: 26px;
+}
+.fl-stepper--cell button + button {
+  border-left: 0;
+}
+.fl-stepper__value {
+  min-width: 2.2em;
+  padding: 0 4px;
+  text-align: center;
+  border-inline: 1px solid var(--fl-line);
+  line-height: 26px;
+}
 .fl-stepper--touch button {
   width: var(--fl-touch);
   height: var(--fl-touch);
