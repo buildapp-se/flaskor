@@ -3,6 +3,7 @@ import { FatalError } from '../shared/errors.ts'
 import { api, clearGate, findGate } from './api.ts'
 import { isAuthConfigured, signOutUser, subscribeToAuth, type AuthUser } from './auth.ts'
 import { kr } from './format.ts'
+import { localCount, uploadLocal } from './local.ts'
 import { valueOf } from './sort.ts'
 import { PATHS, useRoute } from './hash.ts'
 import { IconAccount, IconAdd, IconBar, IconCellar, IconWishlist, Logo } from './icons.tsx'
@@ -19,6 +20,26 @@ import { Login, Verify } from './views/Login.tsx'
 import { Wishlist } from './views/Wishlist.tsx'
 
 const UID_KEY = 'flaskor.uid'
+/** Gästläget valt på inloggningskortet (2026-09-15). Sparas så appen öppnar som gäst nästa gång också. */
+const GUEST_KEY = 'flaskor.guest'
+const BANNER_KEY = 'flaskor.guestBannerHidden'
+
+function readFlag(key: string, storage: Storage): boolean {
+  try {
+    return storage.getItem(key) === '1'
+  } catch {
+    return false
+  }
+}
+
+function writeFlag(key: string, storage: Storage, on: boolean): void {
+  try {
+    if (on) storage.setItem(key, '1')
+    else storage.removeItem(key)
+  } catch {
+    /* utan lagring gäller valet bara den här sidladdningen */
+  }
+}
 const CACHE_KEY = 'flaskor.drinks'
 
 export function App() {
@@ -45,6 +66,11 @@ function SignedIn() {
   // undefined tills Firebase svarat, sedan användaren eller null.
   const [user, setUser] = useState<AuthUser | null | undefined>(undefined)
   const [ready, setReady] = useState(false)
+  const [guest, setGuestState] = useState(() => readFlag(GUEST_KEY, localStorage))
+  const setGuest = (on: boolean) => {
+    writeFlag(GUEST_KEY, localStorage, on)
+    setGuestState(on)
+  }
   useEffect(() => subscribeToAuth((u) => setUser(u && { uid: u.uid, email: u.email, emailVerified: u.emailVerified })), [])
 
   const uid = user?.emailVerified ? user.uid : null
@@ -71,12 +97,30 @@ function SignedIn() {
           if (err instanceof FatalError) clearGate()
         }
       }
+      // Från gästläget: de lokala flaskorna följer med när kontots hushåll är tomt. Har kontot redan flaskor
+      // frågar Konto i stället, så inget blandas ihop utan att användaren valt det.
+      writeFlag(GUEST_KEY, localStorage, false)
+      if (localCount() > 0) {
+        try {
+          if ((await api.listDrinks()).length === 0) await uploadLocal()
+        } catch (err) {
+          console.error('lokala flaskor kunde inte laddas upp', err)
+        }
+      }
       setReady(true)
     })()
   }, [uid])
 
   if (user === undefined) return <div className="fl-gate fl-muted">{S.login.loading}</div>
-  if (user === null) return <Login />
+  if (user === null) {
+    if (guest)
+      return (
+        <StoreProvider key="guest" guest onLocked={() => setGuest(false)} onSignIn={() => setGuest(false)}>
+          <Shell />
+        </StoreProvider>
+      )
+    return <Login onGuest={() => setGuest(true)} />
+  }
   if (!user.emailVerified) return <Verify user={user} onVerified={setUser} />
   if (!ready) return <div className="fl-gate fl-muted">{S.login.loading}</div>
   return (
@@ -96,11 +140,14 @@ const NAV = [
 
 function Shell() {
   const route = useRoute()
-  const { drinks, error, undo, runUndo, dismissUndo } = useStore()
+  const { drinks, error, undo, runUndo, dismissUndo, guest, signIn, notice, dismissNotice } = useStore()
+  // Påminnelsen överst kan döljas, men bara för den här sessionen: nästa besök syns den igen.
+  const [bannerHidden, setBannerHidden] = useState(() => readFlag(BANNER_KEY, sessionStorage))
   const [household, setHousehold] = useState<string | null>(null)
   const loadHousehold = useCallback(() => {
+    if (guest) return setHousehold(S.guest.householdName)
     api.me().then((me) => setHousehold(me.household.name), () => setHousehold(null))
-  }, [])
+  }, [guest])
   useEffect(loadHousehold, [loadHousehold])
   // Detaljvyn hör till Källaren eller Barskåpet i navigeringen, importen till Lägg till.
   const active = route.view === 'detail' ? (drinks?.find((d) => d.id === route.id)?.kind === 'spirit' ? 'bar' : 'cellar') : route.view === 'import' ? 'add' : route.view
@@ -130,6 +177,28 @@ function Shell() {
         </div>
       </nav>
       <main className="fl-main">
+        {guest && !bannerHidden && (
+          <div className="fl-guestbar" role="note">
+            <span>
+              <strong>{S.guest.banner}</strong>{' '}
+              <button type="button" className="fl-guestbar__cta" onClick={signIn}>
+                {S.guest.bannerCta}
+              </button>{' '}
+              {S.guest.bannerLead}
+            </span>
+            <button
+              type="button"
+              className="fl-guestbar__close"
+              aria-label={S.guest.bannerClose}
+              onClick={() => {
+                writeFlag(BANNER_KEY, sessionStorage, true)
+                setBannerHidden(true)
+              }}
+            >
+              ×
+            </button>
+          </div>
+        )}
         {error && <div className="fl-error fl-error--bar">{error}</div>}
         {route.view === 'cellar' && <Cellar />}
         {route.view === 'wishlist' && <Wishlist />}
@@ -139,6 +208,17 @@ function Shell() {
         {route.view === 'account' && <Account onAccountChanged={loadHousehold} />}
         {route.view === 'detail' && <Detail id={route.id} />}
       </main>
+      {notice && !undo && (
+        <div className="fl-undo" role="status">
+          <span>{notice}</span>
+          <button type="button" onClick={signIn}>
+            {S.guest.bannerCta}
+          </button>
+          <button type="button" className="fl-undo__close" aria-label={S.undo.close} onClick={dismissNotice}>
+            ×
+          </button>
+        </div>
+      )}
       {undo && (
         <div className="fl-undo" role="status">
           <span>{undo}</span>

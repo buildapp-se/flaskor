@@ -52,7 +52,7 @@ function toInput(row: Row): DrinkInput {
 }
 
 export function Import() {
-  const { add, setUndo } = useStore()
+  const { add, remove, setUndo } = useStore()
   const [text, setText] = useState('')
   const [rows, setRows] = useState<Row[] | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -128,7 +128,7 @@ export function Import() {
     if (created.length === 0) return
     const ids = created.map((d) => d.id)
     setUndo(S.import.done(ids.length), async () => {
-      for (const id of ids) await api.deleteDrink(id)
+      for (const id of ids) await remove(id)
     })
     const dests = new Set(chosen.map((r) => r.dest))
     navigate(dests.has('cellar') ? PATHS.cellar : dests.has('bar') ? PATHS.bar : PATHS.wishlist)

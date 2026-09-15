@@ -1,6 +1,6 @@
 import { FatalError, NotFoundError, TransientError, UnauthorizedError } from '../shared/errors.ts'
 import { getIdToken, isAuthConfigured } from './auth.ts'
-import type { Account, Candidate, Drink, DrinkInput, DrinkPatch, Preview, ScanResult, Stock, Tasting, TastingInput } from '../shared/types.ts'
+import type { Account, Candidate, Drink, DrinkInput, DrinkPatch, ExportData, ImportItem, Preview, ScanResult, Stock, Tasting, TastingInput } from '../shared/types.ts'
 
 const API_URL: string = import.meta.env.VITE_API_URL ?? 'http://localhost:8787'
 const GATE_KEY = 'flaskor.gate'
@@ -23,7 +23,8 @@ async function bearer(): Promise<string> {
   try {
     return await getIdToken()
   } catch {
-    throw new UnauthorizedError()
+    // Ingen inloggad (gästläget): inget huvud alls. Workern svarar på uppslag och ger 401 på allt annat.
+    return ''
   }
 }
 
@@ -33,7 +34,7 @@ async function call<T>(method: string, path: string, body?: unknown): Promise<T>
   try {
     response = await fetch(API_URL + path, {
       method,
-      headers: { authorization: `Bearer ${token}`, ...(body === undefined ? {} : { 'content-type': 'application/json' }) },
+      headers: { ...(token === '' ? {} : { authorization: `Bearer ${token}` }), ...(body === undefined ? {} : { 'content-type': 'application/json' }) },
       body: body === undefined ? undefined : JSON.stringify(body),
     })
   } catch (error) {
@@ -56,6 +57,9 @@ export const api = {
   joinHousehold: (code: string) => call<void>('POST', '/api/household/join', { code }),
   /** Tar bort medlemskapet, och hushållet med allt i när ingen annan är kvar. */
   deleteAccount: () => call<void>('DELETE', '/api/me'),
+  /** En gästs lokala rader in i kontot, högst IMPORT_WEIGHT_MAX rader plus avsmakningar per anrop. */
+  importDrinks: (drinks: ImportItem[]) => call<{ imported: number }>('POST', '/api/drinks/import', { drinks }).then((r) => r.imported),
+  exportData: () => call<ExportData>('GET', '/api/export'),
   listDrinks: () => call<{ drinks: Drink[] }>('GET', '/api/drinks').then((r) => r.drinks),
   createDrink: (input: DrinkInput) => call<Drink>('POST', '/api/drinks', input),
   patchDrink: (id: number, patch: DrinkPatch) => call<Drink>('PATCH', `/api/drinks/${id}`, patch),

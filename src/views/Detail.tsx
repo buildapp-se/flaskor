@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { Drink, DrinkPatch } from '../../shared/types.ts'
 import { windowState } from '../../shared/window.ts'
+import { Locked } from '../components/Locked.tsx'
 import { Pill } from '../components/Pill.tsx'
 import { Stock } from '../components/Stock.tsx'
 import { Tastings } from '../components/Tastings.tsx'
@@ -15,7 +16,8 @@ import { SpiritCard } from './Bar.tsx'
 // Vindetalj (design §3 "Vindetalj desktop", beslut 17): foto, namn, fönster som tidslinje, fakta, smak, kommentar, antal, priser, länkar.
 // Mobil saknar artboard: samma block i en kolumn. Redigering saknas i leveransen: "Ändra" byter mittkolumnen mot ett formulär.
 export function Detail({ id }: { id: number }) {
-  const { drinks, patch, refresh, remove } = useStore()
+  const { drinks, patch, refresh, remove, guest } = useStore()
+  const [locked, setLocked] = useState(false)
   const [editing, setEditing] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
   // Ta bort i två tryck i stället för en dialogruta: första trycket byter text, andra tar bort.
@@ -41,6 +43,7 @@ export function Detail({ id }: { id: number }) {
   const distiller = `https://distiller.com/search?term=${encodeURIComponent(drink.name)}`
 
   async function doRefresh() {
+    if (guest) return setLocked(true)
     setRefreshing(true)
     await refresh(drink!.id)
     setRefreshing(false)
@@ -77,7 +80,7 @@ export function Detail({ id }: { id: number }) {
             setEditing(false)
             await patch(drink.id, p)
             // Rättad Vivino-länk: hämta betyget från den nya vinsidan direkt, annars står det gamla kvar till natten.
-            if (p.vivino_url !== undefined && p.vivino_url !== drink.vivino_url) await refresh(drink.id)
+            if (!guest && p.vivino_url !== undefined && p.vivino_url !== drink.vivino_url) await refresh(drink.id)
           }}
         />
       ) : (
@@ -178,6 +181,7 @@ export function Detail({ id }: { id: number }) {
             </button>
           )}
         </div>
+        {locked && <Locked reason="refresh" onClose={() => setLocked(false)} />}
 
         <Stock drink={drink} />
 

@@ -1,11 +1,13 @@
 import { useState, type FormEvent } from 'react'
 import { authErrorMessage, refreshUser, registerWithEmail, resendVerification, sendPasswordReset, signInWithEmail, signInWithGoogle, signOutUser, type AuthUser } from '../auth.ts'
 import { Logo } from '../icons.tsx'
+import { localCount } from '../local.ts'
 import { S } from '../strings.ts'
 
 // Inloggningen (beslut 2, 2026-09-15). Samma kort som grinden: Google först, e-post under. Inget konto skapas i Workern
 // här; första anropet efter inloggningen ger kontot ett eget hushåll.
-export function Login() {
+export function Login({ onGuest }: { onGuest: () => void }) {
+  const carried = localCount()
   const [mode, setMode] = useState<'signIn' | 'register'>('signIn')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -47,6 +49,7 @@ export function Login() {
           <span>{S.appName}</span>
         </div>
         <p className="fl-muted">{S.login.lead}</p>
+        {carried > 0 && <p className="fl-small">{S.guest.carryOver(carried)}</p>}
         <button className="fl-btn fl-btn--primary" type="button" disabled={busy} onClick={() => void run(signInWithGoogle)}>
           {S.login.google}
         </button>
@@ -79,6 +82,12 @@ export function Login() {
               {S.login.forgot}
             </button>
           )}
+        </div>
+        <div className="fl-login__guest">
+          <button type="button" className="fl-btn fl-btn--secondary" onClick={onGuest}>
+            {S.guest.tryIt}
+          </button>
+          <p className="fl-small fl-muted">{S.guest.tryLead}</p>
         </div>
         <Privacy />
       </div>
