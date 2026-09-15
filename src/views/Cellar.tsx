@@ -156,7 +156,7 @@ export function Cellar() {
         </div>
       </div>
 
-      {view === 'table' && wines.length > 0 && (tableRows.length === 0 ? <p className="fl-muted">{S.cellar.noMatch}</p> : <CellarTable rows={tableRows} query={q} sort={sort} dir={dir} onSort={headerSort} showZero={showZero} zeroHidden={zeroHidden} onShowZero={(v) => set({ showZero: v })} onRemove={removeMany} onRewish={rewishMany} />)}
+      {view === 'table' && wines.length > 0 && (tableRows.length === 0 ? <p className="fl-muted">{S.cellar.noMatch}</p> : <CellarTable rows={tableRows} query={q} sort={sort} dir={dir} onSort={headerSort} showZero={showZero} zeroHidden={zeroHidden} onShowZero={(v) => set({ showZero: v })} onRemove={removeMany} onRewish={rewishMany} onPatch={(d, p) => patch(d.id, p)} />)}
       {view === 'table' && wines.length === 0 && <p className="fl-muted">{S.cellar.empty}</p>}
       <div className="fl-groups" hidden={view === 'table'}>
         {wines.length === 0 && <p className="fl-muted">{S.cellar.empty}</p>}
