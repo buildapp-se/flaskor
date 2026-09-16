@@ -17,8 +17,10 @@ export async function householdOf(db: D1Database, who: Identity): Promise<number
   if (found !== null) return found
   const created = await db.prepare("INSERT INTO household (name, invite_code) VALUES ('Mitt hushåll', ?) RETURNING id").bind(newInviteCode()).first<number>('id')
   if (created === null) throw new FatalError('household insert returned no row', 500)
-  // ponytail: två samtidiga första anrop kan ge ett föräldralöst tomt hushåll; ON CONFLICT håller medlemskapet unikt.
-  await db.prepare('INSERT INTO member (uid, household_id, email) VALUES (?, ?, ?) ON CONFLICT (uid) DO NOTHING').bind(who.uid, created, who.email).run()
+  // Två samtidiga första anrop (kontot och flaskorna laddas parallellt) skapar två hushåll; ON CONFLICT håller
+  // medlemskapet unikt, och den som förlorade racet raderar sitt eget hushåll så inget blir föräldralöst.
+  const joined = await db.prepare('INSERT INTO member (uid, household_id, email) VALUES (?, ?, ?) ON CONFLICT (uid) DO NOTHING').bind(who.uid, created, who.email).run()
+  if (joined.meta.changes === 0) await db.prepare('DELETE FROM household WHERE id = ?').bind(created).run()
   const id = await db.prepare('SELECT household_id FROM member WHERE uid = ?').bind(who.uid).first<number>('household_id')
   if (id === null) throw new FatalError('member insert failed', 500)
   return id
