@@ -152,14 +152,11 @@ describe('hushåll', () => {
     expect((await a('POST', '/api/household/join', { code: '0000000000' })).status).toBe(404)
   })
 
-  it('den gamla grindkoden tar kontot till hushåll 1', async () => {
-    const legacy = await (await gate('POST', '/api/drinks', { kind: 'wine', name: 'Hushåll 1:s vin', owned: true, count: 1 })).json<{ id: number }>()
+  it('grindkoden ger inte längre hushåll 1 (borttaget 2026-09-16)', async () => {
     const a = await asUser()
-    expect((await a('POST', '/api/household/join', { code: 'test-kod' })).status).toBe(204)
+    expect((await a('POST', '/api/household/join', { code: 'test-kod' })).status).toBe(404)
     const me = await (await a('GET', '/api/me')).json<Me>()
-    expect(me.household.id).toBe(1)
-    const drinks = await (await a('GET', '/api/drinks')).json<{ drinks: Array<{ id: number }> }>()
-    expect(drinks.drinks.some((d) => d.id === legacy.id)).toBe(true)
+    expect(me.household.id).not.toBe(1)
   })
 
   it('byter namn på hushållet', async () => {

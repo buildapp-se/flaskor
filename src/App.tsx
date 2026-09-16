@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState } from 'react'
-import { FatalError } from '../shared/errors.ts'
 import { api, clearGate, findGate } from './api.ts'
 import { isAuthConfigured, signOutUser, subscribeToAuth, type AuthUser } from './auth.ts'
 import { kr } from './format.ts'
@@ -85,18 +84,8 @@ function SignedIn() {
       } catch {
         /* cachen är en bekvämlighet */
       }
-      // Flytten från grindkoden: en webbläsare som redan var upplåst tar kontot till hushåll 1 en gång, utan klick.
-      const gate = findGate()
-      if (gate) {
-        try {
-          await api.joinHousehold(gate)
-          localStorage.removeItem(CACHE_KEY)
-          clearGate()
-        } catch (err) {
-          // 404 (koden bytt) och 409 (kontot har redan rader) är slutgiltiga svar; nätfel försöker igen nästa gång.
-          if (err instanceof FatalError) clearGate()
-        }
-      }
+      // Grindkoden ger inte längre hushåll 1 (2026-09-16); en sparad kod från förr glöms bara.
+      clearGate()
       // Från gästläget: de lokala flaskorna följer med när kontots hushåll är tomt. Har kontot redan flaskor
       // frågar Konto i stället, så inget blandas ihop utan att användaren valt det.
       writeFlag(GUEST_KEY, localStorage, false)
@@ -158,10 +147,10 @@ function Shell() {
   return (
     <div className="fl-app">
       <nav className="fl-side">
-        <div className="fl-wordmark fl-wordmark--side">
+        <a href={PATHS.cellar} className="fl-wordmark fl-wordmark--side">
           <Logo size={28} />
           <span>{S.appName}</span>
-        </div>
+        </a>
         <div className="fl-side__links">
           {NAV.map(({ key, path, label, Icon }) => (
             <a key={key} href={path} className="fl-side__link" aria-current={active === key ? 'page' : undefined}>
