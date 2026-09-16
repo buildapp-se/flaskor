@@ -9,6 +9,16 @@ reviewedAt: 2026-09-16
 
 # Handoff: Flaskor
 
+**2026-09-16, granskningsbatchen (chunkläge):** tak per textfält och på
+kroppen (`readJson`), dagstak på Gemini-foton i `sb_meta` (`countScan`),
+500-svar utan detaljer, produkt-id bara siffror, Caviste bara https utan
+omdirigering, CSV-formeltecken neutraliserade, localhost-ursprungen flyttade
+till `.dev.vars`, 44 px på textknapparna och en primär knapp på grinden,
+wrangler 4.132. Fyra commits `7727340` till `32e7505`, `npm run check` grönt
+(72 + 85 tester). Pages via CI, Workern deployad för hand. **Inte gjort:**
+grindkodens tre roller (medlemstabellen är tom, rotationen kräver ditt ja) och
+Firebase SDK-bytet (kräver inloggningstest).
+
 Senast uppdaterad: 2026-09-15, tredje omgången. **Gästläge och export** (Patrik: leka runt utan konto, spara lokalt, logga in för det som kräver synk, med förklaring och påminnelser; plus export i JSON och CSV). Commits `c0df8e0` Worker och `891feea` klient, Worker `a8d81a81`, Pages 34985232885 grön, bundeln `index-Dg_xJSRg.js`.
 
 - **Worker:** uppslagen `/api/systembolaget`, `/api/search`, `/api/caviste`, `/api/vivino` svarar utan `Authorization`, med `LOOKUP_LIMIT` per IP. `POST /api/drinks/import` (en gästs rader med avsmakningar, högst 40 per anrop, allt kontrolleras innan något skrivs) och `GET /api/export`.

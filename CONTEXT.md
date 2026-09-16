@@ -128,10 +128,10 @@ Verifierat 2026-09-05, detaljer i [docs/RESEARCH.md](docs/RESEARCH.md):
 
 ## Audits
 Read by the cockpit Audits tab. One `- Label: YYYY-MM-DD, result` per check; conventions in elwyn-dash `docs/security.md`.
-- OWASP Top 10: 2026-09-16, warn, 0 high, 3 medium open, server-side auth and household isolation hold; open items are size caps, shared gate code, Gemini daily cap
+- OWASP Top 10: 2026-09-16, warn, 0 high, 1 medium open, size caps and Gemini daily cap deployed; the shared gate code waits for the owners' first login and a rotation
 - Headers: 2026-09-16, pass, 6 of 6 on buildapp.se via a host-scoped Transform Rule on the zone, measured after the change
 - TLS: 2026-09-16, pass, SSL Labs A+ on buildapp.se, TLS 1.2 minimum and HSTS since today
-- Lighthouse: 2026-09-16, warn, a11y 98 (no main landmark), best practices 100, SEO 60 by design (noindex) (mobile, no perf)
+- Lighthouse: 2026-09-16, warn, a11y 98 (main landmark added to the gate 2026-09-16, not remeasured), best practices 100, SEO 60 by design (noindex) (mobile, no perf)
 - Markup: 2026-09-16, pass, W3C 0 errors, 15 warnings, 0 broken links
-- UX: 2026-09-16, warn, 4 of 6 script checks pass, login links 24 px, two primary actions on the gate, no --interact
+- UX: 2026-09-16, warn, 4 of 6 script checks pass; login links now 44 px and one primary action on the gate (fixed 2026-09-16, remeasure pending), no --interact
 - npm audit: 2026-09-16, pass, 0 in production, 4 high in the dev chain
