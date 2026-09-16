@@ -59,6 +59,13 @@ describe('drinks', () => {
     expect((await api('POST', '/api/drinks', { kind: 'beer', name: 'Pilsner', owned: true, count: 1 })).status).toBe(200)
     expect((await api('POST', '/api/drinks', { kind: 'wine', name: 'x', count: 'två' })).status).toBe(400)
   })
+  // OWASP 2026-09-16, A04: tak per textfält och på kroppen.
+  it('avvisar för lång text och för stor kropp', async () => {
+    expect((await api('POST', '/api/drinks', { kind: 'wine', name: 'x'.repeat(201) })).status).toBe(400)
+    expect((await api('POST', '/api/drinks', { kind: 'wine', name: 'x', note: 'n'.repeat(4001) })).status).toBe(400)
+    expect((await api('POST', '/api/drinks', { kind: 'wine', name: 'x', note: 'n'.repeat(4000) })).status).toBe(200)
+    expect((await api('POST', '/api/drinks', { kind: 'wine', name: 'x', taste: 't'.repeat(70_000) })).status).toBe(413)
+  })
   it('okänt id: 404', async () => {
     expect((await api('PATCH', '/api/drinks/999', { count: 1 })).status).toBe(404)
     expect((await api('DELETE', '/api/drinks/999')).status).toBe(404)

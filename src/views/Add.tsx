@@ -137,6 +137,7 @@ export function Add() {
     } catch (err) {
       if (err instanceof NotFoundError) setError(body.image ? S.scan.noBottle : S.scan.unknownEan)
       else if (err instanceof FatalError && err.status === 400) setError(S.add.badInput)
+      else if (err instanceof FatalError && err.status === 429) setError(S.scan.tooMany)
       else setError(S.scan.failed)
     } finally {
       setBusy(null)

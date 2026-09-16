@@ -25,6 +25,13 @@ const SEARCH_TTL = 1800
 const STOCK_TTL = 600
 /** Vivino: så många viner får nytt betyg per natt (saknat eller äldre än 30 dagar). */
 const VIVINO_CAP = 20
+/** Tak på kroppen före JSON-tolkningen (OWASP 2026-09-16, A04). Ett foto får 3 MB, spegelbitarna 2 MB, allt annat 64 KB. */
+const BODY_MAX = 65_536
+const SCAN_BODY_MAX = 3_000_000
+/** Spegelbitarna (300 rader) och testets överfulla bit: bara grindkoden når routen. */
+const ASSORTMENT_BODY_MAX = 2_000_000
+/** Geminis fria nivå är gemensam (~1 500 foton per dag): tak per konto och dygn, och ett globalt (OWASP 2026-09-16, A04). */
+export const SCAN_DAILY = { perUid: 50, total: 1_200 }
 
 export default {
   async fetch(request: Request, env: GateEnv): Promise<Response> {
@@ -39,7 +46,8 @@ export default {
     } catch (error) {
       const status = error instanceof FatalError ? error.status : error instanceof TransientError ? 503 : 500
       if (status === 500) console.error(error)
-      const message = error instanceof Error ? error.message : 'unknown error'
+      // Ett oväntat fel loggas men ekas inte: meddelandet kan bära SQL eller en leverantörs svar (OWASP 2026-09-16, låg).
+      const message = status === 500 ? 'internal error' : error instanceof Error ? error.message : 'unknown error'
       return Response.json({ error: message }, { status, headers })
     }
   },
@@ -79,13 +87,13 @@ async function route(request: Request, env: GateEnv): Promise<unknown> {
     return null
   }
   if (method === 'PATCH' && path === '/api/household') {
-    await renameHousehold(env.DB, hh, await request.json())
+    await renameHousehold(env.DB, hh, await readJson(request))
     return null
   }
   if (method === 'POST' && path === '/api/household/join') {
     // Samma snäva tak som skanningen: en inbjudningskod (och grindkoden) ska inte gå att gissa i en loop.
     await throttle(env.SCAN_LIMIT, who)
-    await joinHousehold(env.DB, user(), hh, await request.json(), env.GATE_CODE)
+    await joinHousehold(env.DB, user(), hh, await readJson(request), env.GATE_CODE)
     return null
   }
   if (method === 'GET' && path === '/api/drinks') return { drinks: await listDrinks(env.DB, hh) }
@@ -94,23 +102,23 @@ async function route(request: Request, env: GateEnv): Promise<unknown> {
   // En gästs lokala flaskor in i kontot (2026-09-15), i bitar om högst 40 rader och avsmakningar per anrop.
   if (method === 'POST' && path === '/api/drinks/import') {
     await throttle(env.LOOKUP_LIMIT, who)
-    return { imported: await importDrinks(env.DB, hh, await request.json()) }
+    return { imported: await importDrinks(env.DB, hh, await readJson(request)) }
   }
   if (method === 'POST' && path === '/api/drinks') {
     await throttle(env.LOOKUP_LIMIT, who)
-    return insertDrink(env.DB, hh, await withVivino(sanitize(await request.json())))
+    return insertDrink(env.DB, hh, await withVivino(sanitize(await readJson(request))))
   }
   // Nattjobbet och spegelimporten rör alla hushåll och hela spegeln: bara grindkoden, aldrig ett konto.
   if (method === 'POST' && path === '/api/refresh-all') return refreshAll(env.DB, service(who))
   // Spegelimporten (migrering 0006): nattskriptet postar dumpen i bitar, sist done. Se worker/src/assortment.ts.
-  if (method === 'POST' && path === '/api/assortment') return assortment(await request.json(), env.DB, service(who))
+  if (method === 'POST' && path === '/api/assortment') return assortment(await readJson(request, ASSORTMENT_BODY_MAX), env.DB, service(who))
   if (method === 'POST' && path === '/api/scan') {
     await throttle(env.SCAN_LIMIT, who)
-    return scan(await request.json(), env)
+    return scan(await readJson(request, SCAN_BODY_MAX), env, who)
   }
 
   const single = path.match(/^\/api\/drinks\/(\d+)$/)
-  if (single?.[1] && method === 'PATCH') return updateDrink(env.DB, hh, Number(single[1]), sanitize(await request.json()))
+  if (single?.[1] && method === 'PATCH') return updateDrink(env.DB, hh, Number(single[1]), sanitize(await readJson(request)))
   if (single?.[1] && method === 'DELETE') {
     await deleteDrink(env.DB, hh, Number(single[1]))
     return null
@@ -121,7 +129,7 @@ async function route(request: Request, env: GateEnv): Promise<unknown> {
   if (tastings?.[1]) {
     const drink = await getDrink(env.DB, hh, Number(tastings[1]))
     if (method === 'GET') return { tastings: (await listTastings(env.DB, drink.id)) satisfies Tasting[] }
-    if (method === 'POST') return insertTasting(env.DB, drink.id, sanitizeTasting(await request.json()))
+    if (method === 'POST') return insertTasting(env.DB, drink.id, sanitizeTasting(await readJson(request)))
   }
 
   const tasting = path.match(/^\/api\/drinks\/(\d+)\/tastings\/(\d+)$/)
@@ -196,6 +204,32 @@ async function throttle(limiter: RateLimit, who: Identity): Promise<void> {
   if (!success) throw new FatalError('too many requests, wait a minute', 429)
 }
 
+/** Kroppen som JSON, avvisad före läsningen på content-length och efter på längden: en klient utan content-length får inte förbi taket. */
+async function readJson(request: Request, max = BODY_MAX): Promise<unknown> {
+  if (Number(request.headers.get('content-length') ?? 0) > max) throw new FatalError('body too large', 413)
+  const text = await request.text()
+  if (text.length > max) throw new FatalError('body too large', 413)
+  try {
+    return JSON.parse(text) as unknown
+  } catch {
+    throw new FatalError('body must be JSON')
+  }
+}
+
+/**
+ * Dagsräknare för fotoskanningar i sb_meta: en rad per konto och dygn och en global, gamla dygn städas när ett nytt börjar.
+ * Kastar 429 över taket. Två skrivningar per foto: fotona är få, och Gemini-kvoten är den knappa resursen.
+ */
+export async function countScan(db: D1Database, uid: string, now = new Date(), limits = SCAN_DAILY): Promise<void> {
+  const day = now.toISOString().slice(0, 10)
+  const bump = (key: string) =>
+    db.prepare("INSERT INTO sb_meta (key, value) VALUES (?, '1') ON CONFLICT (key) DO UPDATE SET value = CAST(value AS INTEGER) + 1 RETURNING CAST(value AS INTEGER) AS n").bind(key).first<number>('n')
+  const total = (await bump(`scan:${day}:total`)) ?? 0
+  if (total === 1) await db.prepare("DELETE FROM sb_meta WHERE key LIKE 'scan:%' AND key < ?").bind(`scan:${day}`).run()
+  const mine = (await bump(`scan:${day}:${uid}`)) ?? 0
+  if (mine > limits.perUid || total > limits.total) throw new FatalError('daily scan limit reached, try again tomorrow', 429)
+}
+
 function allowedOrigins(list: string): string[] {
   return list.split(',').map((s) => s.trim()).filter(Boolean)
 }
@@ -226,7 +260,7 @@ async function withVivino(input: DrinkPatch): Promise<DrinkPatch> {
  * Streckkod eller etikett (BACKLOG 37): först en gissning om flaskan (Open Food Facts för streckkoden, Gemini för fotot),
  * sedan Systembolagets bästa träffar på namnet som kandidater. Vin utan träff får Vivinos vinsida så klienten kan hämta den.
  */
-async function scan(body: unknown, env: GateEnv): Promise<ScanResult> {
+async function scan(body: unknown, env: GateEnv, who: Identity): Promise<ScanResult> {
   const { image, ean } = (typeof body === 'object' && body !== null ? body : {}) as { image?: unknown; ean?: unknown }
   if (typeof image !== 'string' && typeof ean !== 'string') throw new FatalError('image or ean required')
   let guess: LabelGuess | null = null
@@ -239,6 +273,7 @@ async function scan(body: unknown, env: GateEnv): Promise<ScanResult> {
   }
   if (!guess && typeof image === 'string' && image !== '') {
     if (!env.GEMINI_API_KEY) throw new FatalError('GEMINI_API_KEY is not configured', 500)
+    await countScan(env.DB, who.kind === 'user' ? who.uid : 'service')
     guess = await readLabel(image, env.GEMINI_API_KEY)
     via = 'label'
   }
