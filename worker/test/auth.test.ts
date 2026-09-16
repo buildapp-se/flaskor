@@ -1,6 +1,7 @@
 import { SELF, env } from 'cloudflare:test'
 import { importJWK, SignJWT } from 'jose'
 import { describe, expect, it } from 'vitest'
+import { householdOf } from '../src/household.ts'
 
 // Inloggningen (beslut 2, 2026-09-15): riktiga RS256-token signerade med testnyckeln, verifierade av Workern mot
 // "Googles" nyckeladress som testmiljön besvarar med den publika halvan. Se worker/vitest.config.ts.
@@ -33,6 +34,18 @@ const gate = (method: string, path: string, body?: unknown) =>
 type Me = { email: string | null; household: { id: number; name: string; invite_code: string; members: string[] } }
 
 describe('Firebase-token', () => {
+  it('två parallella första anrop lämnar inget föräldralöst hushåll', async () => {
+    // SELF.fetch kör anropen i tur och ordning, så racet måste göras direkt mot funktionen.
+    const before = await env.DB.prepare('SELECT COUNT(*) AS n FROM household').first<number>('n')
+    const who = { kind: 'user' as const, uid: `race-${crypto.randomUUID()}`, email: 'race@example.se' }
+    const [x, y] = await Promise.all([householdOf(env.DB, who), householdOf(env.DB, who)])
+    expect(x).toBe(y)
+    const after = await env.DB.prepare('SELECT COUNT(*) AS n FROM household').first<number>('n')
+    expect(after).toBe((before ?? 0) + 1)
+    const orphans = await env.DB.prepare('SELECT COUNT(*) AS n FROM household h WHERE h.id != 1 AND NOT EXISTS (SELECT 1 FROM member m WHERE m.household_id = h.id)').first<number>('n')
+    expect(orphans).toBe(0)
+  })
+
   it('ett nytt konto får ett eget tomt hushåll med inbjudningskod', async () => {
     const a = await asUser()
     const me = await (await a('GET', '/api/me')).json<Me>()
