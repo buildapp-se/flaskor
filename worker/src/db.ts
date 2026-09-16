@@ -22,6 +22,17 @@ const NUMBER_FIELDS = new Set<keyof DrinkInput>([
 
 const URL_FIELDS = new Set<keyof DrinkInput>(['source_url', 'image_url', 'vivino_url', 'rating_url'])
 
+// Tak per textfält (OWASP 2026-09-16, A04): ett verifierat konto ska inte kunna fylla den delade D1-kvoten med
+// en enda rad. Fritext (anteckning, smak, mat) får 4 000 tecken, allt annat 200; länkar 500.
+export const TEXT_MAX = 200
+export const LONG_TEXT_MAX = 4_000
+export const URL_MAX = 500
+const LONG_TEXT_FIELDS = new Set<keyof DrinkInput>(['note', 'taste', 'food'])
+
+function textMax(key: keyof DrinkInput): number {
+  return LONG_TEXT_FIELDS.has(key) ? LONG_TEXT_MAX : URL_FIELDS.has(key) ? URL_MAX : TEXT_MAX
+}
+
 /** Släpper bara igenom kända fält med rätt grovtyp. Databasens CHECK tar resten. */
 export function sanitize(body: unknown): DrinkPatch {
   if (typeof body !== 'object' || body === null) throw new FatalError('body must be an object')
@@ -39,6 +50,7 @@ export function sanitize(body: unknown): DrinkPatch {
       out[key] = value
     } else {
       if (typeof value !== 'string') throw new FatalError(`${key} must be a string`)
+      if (value.length > textMax(key)) throw new FatalError(`${key} must be at most ${textMax(key)} characters`)
       // Länkfält renderas som href i klienten: bara http(s), aldrig javascript: eller data:.
       if (URL_FIELDS.has(key) && !/^https?:\/\//.test(value)) throw new FatalError(`${key} must be an http(s) url`)
       out[key] = value
@@ -166,7 +178,7 @@ export function sanitizeTasting(body: unknown): TastingInput {
   if (rating !== undefined && rating !== null && (typeof rating !== 'number' || !Number.isInteger(rating) || rating < 1 || rating > 5)) {
     throw new FatalError('rating must be a whole number 1 to 5')
   }
-  if (note !== undefined && note !== null && typeof note !== 'string') throw new FatalError('note must be text')
+  if (note !== undefined && note !== null && (typeof note !== 'string' || note.length > LONG_TEXT_MAX)) throw new FatalError(`note must be text of at most ${LONG_TEXT_MAX} characters`)
   return { drunk_on, rating: (rating as number | null | undefined) ?? null, note: (note as string | null | undefined) ?? null }
 }
 

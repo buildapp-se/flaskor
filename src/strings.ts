@@ -228,6 +228,7 @@ export const S = {
     unknownEan: 'Okänd streckkod. Fota etiketten i stället.',
     noBottle: 'Ingen flaska i bilden. Försök igen.',
     failed: 'Kunde inte läsa fotot. Försök igen, gärna med bättre ljus.',
+    tooMany: 'Dagens fotokvot är slut. Skriv in flaskan själv, eller fota igen i morgon.',
   },
   detail: {
     serving: 'Servering',

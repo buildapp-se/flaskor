@@ -1,5 +1,6 @@
-import { SELF } from 'cloudflare:test'
+import { SELF, env } from 'cloudflare:test'
 import { describe, expect, it } from 'vitest'
+import { countScan } from '../src/index.ts'
 import type { LabelGuess, ScanResult } from '../../shared/types.ts'
 import { normalizeEan, parseGuess, parseSearch, parseVolume, queries, rank, terms, validEan } from '../src/scan.ts'
 // Testerna kör inne i workerd utan filsystem, så fixturen importeras i stället för att läsas.
@@ -31,6 +32,21 @@ describe('streckkod', () => {
     expect(parseVolume('0,75 l')).toBe(750)
     expect(parseVolume('sex flaskor')).toBeNull()
     expect(parseVolume(undefined)).toBeNull()
+  })
+})
+
+// OWASP 2026-09-16, A04: Geminis gemensamma kvot skyddas av ett dagstak per konto och ett globalt.
+describe('dagstak på foton', () => {
+  it('räknar per konto och dygn, städar gårdagen och kastar 429 över taket', async () => {
+    const day = new Date('2026-09-16T10:00:00Z')
+    await env.DB.prepare("INSERT INTO sb_meta (key, value) VALUES ('scan:2026-09-15:total', '7')").run()
+    for (let i = 0; i < 3; i++) await countScan(env.DB, 'a', day, { perUid: 3, total: 5 })
+    await expect(countScan(env.DB, 'a', day, { perUid: 3, total: 5 })).rejects.toMatchObject({ status: 429 })
+    await countScan(env.DB, 'b', day, { perUid: 3, total: 5 })
+    // Global: a har 4 försök räknade, b 1, alltså 5; nästa är det sjätte
+    await expect(countScan(env.DB, 'b', day, { perUid: 3, total: 5 })).rejects.toMatchObject({ status: 429 })
+    expect(await env.DB.prepare("SELECT value FROM sb_meta WHERE key = 'scan:2026-09-15:total'").first()).toBeNull()
+    await env.DB.prepare("DELETE FROM sb_meta WHERE key LIKE 'scan:%'").run()
   })
 })
 
