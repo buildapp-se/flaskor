@@ -42,7 +42,7 @@ export function Login({ onGuest }: { onGuest: () => void }) {
   }
 
   return (
-    <div className="fl-gate">
+    <main className="fl-gate">
       <div className="fl-gate__card">
         <div className="fl-wordmark">
           <Logo size={40} />
@@ -84,14 +84,15 @@ export function Login({ onGuest }: { onGuest: () => void }) {
           )}
         </div>
         <div className="fl-login__guest">
-          <button type="button" className="fl-btn fl-btn--secondary" onClick={onGuest}>
+          {/* Textknapp, inte en tredje knapp i knappstil: en primär åtgärd per vy (Von Restorff, granskningen 2026-09-16) */}
+          <button type="button" className="fl-textbtn" onClick={onGuest}>
             {S.guest.tryIt}
           </button>
           <p className="fl-small fl-muted">{S.guest.tryLead}</p>
         </div>
         <Privacy />
       </div>
-    </div>
+    </main>
   )
 }
 
@@ -114,7 +115,7 @@ export function Verify({ user, onVerified }: { user: AuthUser; onVerified: (user
   }
 
   return (
-    <div className="fl-gate">
+    <main className="fl-gate">
       <div className="fl-gate__card">
         <div className="fl-wordmark">
           <Logo size={40} />
@@ -137,7 +138,7 @@ export function Verify({ user, onVerified }: { user: AuthUser; onVerified: (user
           </button>
         </div>
       </div>
-    </div>
+    </main>
   )
 }
 
