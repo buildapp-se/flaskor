@@ -4,7 +4,7 @@ status: active
 currentGoal: 2026-09-15 kväll: gästläge och export live (commits c0df8e0, 891feea, Worker a8d81a81, bundeln index-Dg_xJSRg.js). Utan konto sparas allt i localStorage, uppslag fungerar utan konto med tak per IP, skanning, lager, uppdatering och hushåll visar ett kort "Kräver konto", påminnelser om lokal lagring, lokala rader följer med vid inloggning, export JSON och CSV under Konto. 2026-09-15 Flaskor öppen för fler hushåll, byggd i batch-läge och live utom själva inloggningen. Firebase-inloggning (Google, e-post), ett hushåll per konto med inbjudningskod, radera konto, integritetstext, tak per konto, nattjobb och spegelimport bara för grindkoden, FTS5 i spegeln (commits 6e61858, fafc1ee, 62730d7, b352481, pushade; migrering 0008 och 0009 körda i molnet kl. 14:40, Worker 20fd7bc3, bundeln index-9qwUTQcI.js). Före det minus och plus i tabellens Antal-kolumn (5da909c, live) och D1-fixen bekräftad av nattens spegelkörning (2 ändrade, 166 borttagna).
 nextAction: Patrik provar gästläget live (Prova utan konto, lägg in en flaska, skapa konto och se att den följer med), och loggar in med Julia i redan upplåsta webbläsare så kontona hamnar i hushåll 1. Sedan byts grindkoden. Därefter kan appen delas på forum.
 blockers: []
-reviewedAt: 2026-09-15
+reviewedAt: 2026-09-16
 ---
 
 # Handoff: Flaskor
@@ -254,3 +254,7 @@ Backloggen har **inget fritt kvar att bygga**. Det som står öppet är antingen
 - **Vivinos söksida är 1,7 MB** per vin. Nattens tak på 20 håller cronen kort; höj inte utan att kolla körtiden i `wrangler tail`.
 - **Caviste-bilden är en liggande banner**, inte en flaska. Backlog P2.
 - **Skärmbilder av utvecklingsservern visar cachad lista** tills sidan laddas om; `location.hash`-byten hämtar inte om.
+
+## Granskning 2026-09-16
+
+Cross-project audit run from elwyn-dash (session 5 in the daily note). Results written to `## Audits` in CONTEXT.md, findings appended to BACKLOG.md under `## Granskning 2026-09-16`. Headers on buildapp.se and the TLS grade are zone-level and are fixed once in Cloudflare, not here. OWASP by a read-only subagent, 17 live requests, findings in BACKLOG P2 and P3.

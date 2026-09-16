@@ -143,3 +143,13 @@ Patrik: "Jag vill att man ska kunna leka runt i appen och att det ska sparas i l
 
 - [x] `[P0]` Minus och plus i tabellens Antal-kolumn, minus före siffran och plus efter (2026-09-15), i Källaren och Barskåpet. Tryck på knapparna öppnar inte detaljvyn. Önskelistan har ingen Antal-kolumn.
 - [x] `[P0]` Nya ikoner för minus och plus. Patrik 2026-09-15: "ikonerna är lösta".
+
+## Granskning 2026-09-16
+
+Fynd från cockpitens granskningskolumner (Lighthouse mobil, W3C, UX-skript, headers, TLS, OWASP). Mätvärdena står under `## Audits` i CONTEXT.md.
+
+- [ ] `[P2]` OWASP A04, granskning 2026-09-16: inga längdtak på textfält i `sanitize` (`worker/src/db.ts`) och inget tak på kroppen före `request.json()` (`index.ts`). Ett verifierat konto kan fylla den delade D1-kvoten. Fix: tak per fält (namn 200, anteckning 4 000), avvisa content-length över 64 KB utom `/api/scan` (3 MB).
+- [ ] `[P2]` OWASP A04, granskning 2026-09-16: `GATE_CODE` gör tre jobb: full skrivning i hushåll 1, `POST /api/assortment` och `refresh-all`, plus inträde i hushåll 1 via `/api/household/join` (`household.ts`). Ligger i Actions-secret, `.dev.vars` och två webbläsares localStorage. Rotera (P1 finns redan), ta sedan bort grindkodsgrenen i `joinHousehold` när Patrik och Julia är medlemmar.
+- [ ] `[P2]` OWASP A04, granskning 2026-09-16: `SCAN_LIMIT` 10/min per uid utan dagstak (`index.ts`, `wrangler.jsonc`). Ett konto kan tömma Geminis fria nivå (~1 500/dag) på 2,5 h. Fix: dagsräknare per uid och globalt i `sb_meta`, neka över 50/uid/dag och 1 200/dag.
+- [ ] `[P3]` OWASP, låga: 500-svar ekar `error.message` (`index.ts`); `sb_product_id` interpoleras rått i `stockUrl` (`stock.ts`), kräv `^\d+$`; CSV-export citerar inte inledande `= + - @` (`src/export.ts`); Caviste-hämtning utan `https:`-krav och med följda redirects (`caviste.ts`); localhost-origins i prod `FRONTEND_ORIGINS`; wrangler 4.129 (fix i 4.131) och Firebase SDK 11.6.1 mot 12.19.
+- [ ] `[P3]` UX, Fitts: "Nytt här? Skapa konto" och "Glömt lösenordet?" är 24 px på inloggningen. Von Restorff: två knappar med primärstil på samma vy. Lighthouse: inget `<main>`-landmärke.
