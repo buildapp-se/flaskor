@@ -1,13 +1,15 @@
 ---
 schemaVersion: 1
 status: active
-currentGoal: 2026-09-15 kväll: gästläge och export live (commits c0df8e0, 891feea, Worker a8d81a81, bundeln index-Dg_xJSRg.js). Utan konto sparas allt i localStorage, uppslag fungerar utan konto med tak per IP, skanning, lager, uppdatering och hushåll visar ett kort "Kräver konto", påminnelser om lokal lagring, lokala rader följer med vid inloggning, export JSON och CSV under Konto. 2026-09-15 Flaskor öppen för fler hushåll, byggd i batch-läge och live utom själva inloggningen. Firebase-inloggning (Google, e-post), ett hushåll per konto med inbjudningskod, radera konto, integritetstext, tak per konto, nattjobb och spegelimport bara för grindkoden, FTS5 i spegeln (commits 6e61858, fafc1ee, 62730d7, b352481, pushade; migrering 0008 och 0009 körda i molnet kl. 14:40, Worker 20fd7bc3, bundeln index-9qwUTQcI.js). Före det minus och plus i tabellens Antal-kolumn (5da909c, live) och D1-fixen bekräftad av nattens spegelkörning (2 ändrade, 166 borttagna).
-nextAction: Julia loggar in i en redan upplåst webbläsare (eller går med via inbjudningskoden under Konto), sedan byts grindkoden och grindkodsgrenen i joinHousehold tas bort. Det tomma hushållet 2 (Patriks första inloggning) kan raderas för hand. Patrik provar gästläget live (Prova utan konto, lägg in en flaska, skapa konto och se att den följer med), och loggar in med Julia i redan upplåsta webbläsare så kontona hamnar i hushåll 1. Sedan byts grindkoden. Därefter kan appen delas på forum.
+currentGoal: 2026-09-16 kväll: titeln i sidopanelen länkar nu till Källaren (commit 8d3e5dd, redan pushad), och OG-bildens första rad bytt från Moët & Chandon till en Barolo (den här sessionens commit, se nedan). Tidigare: 2026-09-15 kväll gästläge och export live (commits c0df8e0, 891feea, Worker a8d81a81, bundeln index-Dg_xJSRg.js). 2026-09-15 Flaskor öppen för fler hushåll, Firebase-inloggning, FTS5 i spegeln (commits 6e61858, fafc1ee, 62730d7, b352481; migrering 0008/0009 körda, Worker 20fd7bc3).
+nextAction: Julia loggar in i en redan upplåst webbläsare (eller går med via inbjudningskoden under Konto), sedan byts grindkoden och grindkodsgrenen i joinHousehold tas bort. Det tomma hushållet 2 (Patriks första inloggning) kan raderas för hand.
 blockers: []
 reviewedAt: 2026-09-16
 ---
 
 # Handoff: Flaskor
+
+**2026-09-16 kl. 16:10, OG-bilden:** Första raden bytt: Moët & Chandon Brut Impérial (Okänt, 559 kr) ersatt med Barolo Bussia 2021 (Poderi Colla, Vänta · 2028–2036, 429 kr), så bilden visar en av varje pilltillstånd (Vänta/Drick/Snart) i stället för två okända. Bytt genom att rendera bara den nya raden i en headless webbläsare (samma typsnitt/toner) och klistra in pixel-exakt på originalbilden (`public/og-image.png`), resten orörd. Titeln i sidopanelen länkar sedan tidigare på kvällen till Källaren (commit 8d3e5dd). Verifierat: `npm run check` (tsc, 72 + 85 tester, torrdeploy), zoomad pixelkoll av fogen mellan rad 1 och rad 2 (ingen synlig skarv), `og-image.png` fortfarande 1200×630 RGB PNG.
 
 **2026-09-16 kl. 15:40, Patrik i hushåll 1:** Google-inloggningen skapade hushåll 2 (tomt) eftersom webbläsaren saknade grindkoden. Medlemsraden flyttad till hushåll 1 med `wrangler d1 execute --remote` (Cloudflare-MCP:n stoppades av klassificeraren), verifierat: 60 rader synliga. Hushåll 2 ligger kvar tomt. Julias konto återstår.
 
