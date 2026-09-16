@@ -7,7 +7,7 @@ interface __BaseEnv_Env {
 	LOOKUP_LIMIT: RateLimit;
 	FRONTEND_ORIGINS: "https://buildapp.se,https://www.buildapp.se,http://localhost:5173,http://localhost:5180,http://127.0.0.1:5173,http://127.0.0.1:5180";
 	FIREBASE_PROJECT_ID: "flaskor-d3762";
-	GATE_CODE: string;
+	SERVICE_TOKEN: string;
 	SB_API_KEY: string;
 	GEMINI_API_KEY: string;
 }
@@ -22,7 +22,7 @@ type StringifyValues<EnvType extends Record<string, unknown>> = {
 	[Binding in keyof EnvType]: EnvType[Binding] extends string ? EnvType[Binding] : string;
 };
 declare namespace NodeJS {
-	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "FRONTEND_ORIGINS" | "FIREBASE_PROJECT_ID" | "GATE_CODE" | "SB_API_KEY" | "GEMINI_API_KEY">> {}
+	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "FRONTEND_ORIGINS" | "FIREBASE_PROJECT_ID" | "SERVICE_TOKEN" | "SB_API_KEY" | "GEMINI_API_KEY">> {}
 }
 
 // Begin runtime types

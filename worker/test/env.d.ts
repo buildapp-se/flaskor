@@ -2,7 +2,7 @@
 declare namespace Cloudflare {
   interface Env {
     TEST_MIGRATIONS: import('cloudflare:test').D1Migration[]
-    GATE_CODE: string
+    SERVICE_TOKEN: string
     GEMINI_API_KEY: string
     SB_API_KEY: string
     FIREBASE_TEST_KEY: JsonWebKey

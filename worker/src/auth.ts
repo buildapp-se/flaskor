@@ -9,7 +9,7 @@ import { FatalError, UnauthorizedError } from '../../shared/errors.ts'
 export type Identity = { kind: 'service' } | { kind: 'user'; uid: string; email: string }
 
 export interface AuthEnv {
-  GATE_CODE?: string
+  SERVICE_TOKEN?: string
   FIREBASE_PROJECT_ID?: string
 }
 
@@ -20,7 +20,7 @@ export async function authenticate(request: Request, env: AuthEnv): Promise<Iden
   const header = request.headers.get('authorization') ?? ''
   const token = header.startsWith('Bearer ') ? header.slice(7) : ''
   if (token === '') throw new UnauthorizedError()
-  if (env.GATE_CODE && timingSafeEqual(token, env.GATE_CODE)) return { kind: 'service' }
+  if (env.SERVICE_TOKEN && timingSafeEqual(token, env.SERVICE_TOKEN)) return { kind: 'service' }
   if (!env.FIREBASE_PROJECT_ID) throw new UnauthorizedError()
 
   let payload

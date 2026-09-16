@@ -9,8 +9,8 @@ import { pickCavisteImage } from './caviste.ts'
 
 const write = process.argv.includes('--write')
 const api = process.argv.find((a) => a.startsWith('http')) ?? 'https://flaskor-api.buildapp.se'
-const code = readFileSync('.dev.vars', 'utf8').match(/^GATE_CODE\s*=\s*"?([^"\r\n]+)"?/m)?.[1]
-if (!code) throw new Error('GATE_CODE saknas i .dev.vars')
+const code = readFileSync('.dev.vars', 'utf8').match(/^SERVICE_TOKEN\s*=\s*"?([^"\r\n]+)"?/m)?.[1]
+if (!code) throw new Error('SERVICE_TOKEN saknas i .dev.vars')
 const headers = { authorization: `Bearer ${code}`, 'content-type': 'application/json' }
 
 type Row = { id: number; name: string; source_kind: string; source_id: string | null; source_url: string | null; image_url: string | null }
