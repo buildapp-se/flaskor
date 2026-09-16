@@ -125,3 +125,14 @@ Verifierat 2026-09-05, detaljer i [docs/RESEARCH.md](docs/RESEARCH.md):
 - Namnsökningen fungerar med frontendnyckeln i huvudet `ocp-apim-subscription-key` mot `api-extern.systembolaget.se/sb-api-ecommerce/v1/productsearch/search?textQuery=`. Nyckeln stod i klartext i det publika repot `oliverlevay/barcode-to-kcal` och behövde inte grävas ur deras bundle. Den ligger som secreten `SB_API_KEY` sedan 2026-09-08. Samma nyckel öppnar lager per butik: `stockbalance/store/<butik>/<produkt>/`.
 - Streckkodsläsning i webbläsaren: `BarcodeDetector` finns i Android Chrome men inte på iPhone (WebKit, trasig sedan iOS 18). Därför är fotot huvudvägen och streckkodsläsningen en bonus; siffrorna går också att skriva i rutan.
 - Gemini (verifierat 2026-09-08): Google AI Pro är en konsumentprenumeration utan API-åtkomst, men gratisnivån i AI Studio räcker (cirka 1 500 anrop per dygn på Flash). Flash-Lite läser en etikett på cirka en sekund; de större Flash-modellerna tar 10 till 25 sekunder på samma bild utan att läsa bättre.
+
+## Audits
+
+Read by the cockpit Audits tab. One `- Label: YYYY-MM-DD, result` per check; conventions in elwyn-dash `docs/security.md`.
+- OWASP Top 10: 2026-09-16, warn, 0 high, 3 medium open, server-side auth and household isolation hold; open items are size caps, shared gate code, Gemini daily cap
+- Headers: 2026-09-16, fail, 0 of 6 on buildapp.se (GitHub Pages), one hostname-scoped Transform Rule on the zone fixes every buildapp.se path
+- TLS: 2026-09-16, warn, SSL Labs B on buildapp.se, TLS 1.0 and 1.1 still enabled on the zone, no HSTS
+- Lighthouse: 2026-09-16, warn, a11y 98 (no main landmark), best practices 100, SEO 60 by design (noindex) (mobile, no perf)
+- Markup: 2026-09-16, pass, W3C 0 errors, 15 warnings, 0 broken links
+- UX: 2026-09-16, warn, 4 of 6 script checks pass, login links 24 px, two primary actions on the gate, no --interact
+- npm audit: 2026-09-16, pass, 0 in production, 4 high in the dev chain
