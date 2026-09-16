@@ -556,7 +556,9 @@ p {
   font-size: 12px;
   font-weight: 500;
   color: var(--fl-accent);
-  min-height: 24px;
+  /* 44 px tryckyta (Fitts, granskningen 2026-09-16); texten är fortfarande liten */
+  min-height: 44px;
+  padding: 0 var(--fl-s2);
 }
 .fl-textbtn:hover {
   color: var(--fl-accent-hover);
