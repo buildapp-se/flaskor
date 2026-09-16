@@ -2,7 +2,7 @@
 schemaVersion: 1
 status: active
 currentGoal: 2026-09-16 kväll: titeln i sidopanelen länkar nu till Källaren (commit 8d3e5dd, redan pushad), och OG-bildens första rad bytt från Moët & Chandon till en Barolo (den här sessionens commit, se nedan). Tidigare: 2026-09-15 kväll gästläge och export live (commits c0df8e0, 891feea, Worker a8d81a81, bundeln index-Dg_xJSRg.js). 2026-09-15 Flaskor öppen för fler hushåll, Firebase-inloggning, FTS5 i spegeln (commits 6e61858, fafc1ee, 62730d7, b352481; migrering 0008/0009 körda, Worker 20fd7bc3).
-nextAction: Julia loggar in i en redan upplåst webbläsare (eller går med via inbjudningskoden under Konto), sedan byts grindkoden och grindkodsgrenen i joinHousehold tas bort. Det tomma hushållet 2 (Patriks första inloggning) kan raderas för hand.
+nextAction: Patrik roterar grindkoden (kommandot nedan), ger Julia inbjudningskoden under Konto, och säger ja eller nej till att radera det tomma hushållet 2. Det tomma hushållet 2 (Patriks första inloggning) kan raderas för hand.
 blockers: []
 reviewedAt: 2026-09-16
 ---
@@ -10,6 +10,14 @@ reviewedAt: 2026-09-16
 # Handoff: Flaskor
 
 **2026-09-16 kl. 16:10, OG-bilden:** Första raden bytt: Moët & Chandon Brut Impérial (Okänt, 559 kr) ersatt med Barolo Bussia 2021 (Poderi Colla, Vänta · 2028–2036, 429 kr), så bilden visar en av varje pilltillstånd (Vänta/Drick/Snart) i stället för två okända. Bytt genom att rendera bara den nya raden i en headless webbläsare (samma typsnitt/toner) och klistra in pixel-exakt på originalbilden (`public/og-image.png`), resten orörd. Titeln i sidopanelen länkar sedan tidigare på kvällen till Källaren (commit 8d3e5dd). Verifierat: `npm run check` (tsc, 72 + 85 tester, torrdeploy), zoomad pixelkoll av fogen mellan rad 1 och rad 2 (ingen synlig skarv), `og-image.png` fortfarande 1200×630 RGB PNG.
+
+**2026-09-16 kl. 16:10, grindkodsgrenen borta och titeln klickbar** (`8d3e5dd`, Pages via CI, Worker `8c940b75`): `joinHousehold` tar bara inbjudningskod, klientens autoinloggning med sparad grindkod ersatt av `clearGate()`, testet vänt (grindkoden ger 404). Titeln i sidnavigeringen är `<a href="#/">`: ändringen låg ocommittad i arbetsträdet sedan okänd session, därför "fortfarande inte klickbar" live. Verifierat live med Playwright: `<a>` i appen, klick från Konto ger `#/`. **Rotationen är inte gjord**, klassificeraren stoppar hemlighetsskrivning; Patrik kör i repots rot:
+
+```
+NEW=$(openssl rand -hex 16); printf '%s' "$NEW" | npx wrangler secret put GATE_CODE; gh secret set FLASKOR_GATE_CODE -R buildapp-se/flaskor --body "$NEW"; sed -i "s/^GATE_CODE=.*/GATE_CODE=$NEW/" .dev.vars
+```
+
+`public/og-image.png` ligger ändrad och ocommittad (94 KB till 76 KB) utan spår i dagbok eller HANDOFF; orörd.
 
 **2026-09-16 kl. 15:40, Patrik i hushåll 1:** Google-inloggningen skapade hushåll 2 (tomt) eftersom webbläsaren saknade grindkoden. Medlemsraden flyttad till hushåll 1 med `wrangler d1 execute --remote` (Cloudflare-MCP:n stoppades av klassificeraren), verifierat: 60 rader synliga. Hushåll 2 ligger kvar tomt. Julias konto återstår.
 
