@@ -17,8 +17,6 @@ reviewedAt: 2026-09-16
 NEW=$(openssl rand -hex 16); printf '%s' "$NEW" | npx wrangler secret put SERVICE_TOKEN; gh secret set FLASKOR_SERVICE_TOKEN -R buildapp-se/flaskor --body "$NEW"; sed -i "s/^SERVICE_TOKEN=.*/SERVICE_TOKEN=$NEW/" .dev.vars; npx wrangler secret delete GATE_CODE --force; gh secret delete FLASKOR_GATE_CODE -R buildapp-se/flaskor
 ```
 
-`public/og-image.png` ligger ändrad och ocommittad (94 KB till 76 KB) utan spår i dagbok eller HANDOFF; orörd.
-
 **2026-09-16 kl. 15:40, Patrik i hushåll 1:** Google-inloggningen skapade hushåll 2 (tomt) eftersom webbläsaren saknade grindkoden. Medlemsraden flyttad till hushåll 1 med `wrangler d1 execute --remote` (Cloudflare-MCP:n stoppades av klassificeraren), verifierat: 60 rader synliga. Hushåll 2 ligger kvar tomt. Julias konto återstår.
 
 **2026-09-16, granskningsbatchen (chunkläge):** tak per textfält och på
