@@ -1,6 +1,6 @@
 // Nattens spegelimport (migrering 0006, beslut 23). Körs av GitHub Actions (.github/workflows/assortment.yml)
 // 03:30 svensk sommartid, och för hand med:
-//   FLASKOR_GATE_CODE=<grindkoden> npm run assortment
+//   FLASKOR_SERVICE_TOKEN=<grindkoden> npm run assortment
 //   FLASKOR_API=http://127.0.0.1:8787 för en lokal Worker.
 // Laddar hela dumpen (100 MB, 8 MB gzip), skalar varje rad till fälten Workern läser och postar 300 rader åt gången
 // till POST /api/assortment, sist ett avslutningsanrop med alla artikelnummer som rensar utgångna rader och stämplar
@@ -10,9 +10,9 @@ import { CHUNK_ROWS, slim, type AssortmentChunk, type AssortmentResult } from '.
 
 const DUMP_URL = 'https://susbolaget.emrik.org/v1/products'
 const api = (process.env['FLASKOR_API'] ?? 'https://flaskor-api.buildapp.se').replace(/\/$/, '')
-const code = process.env['FLASKOR_GATE_CODE']
+const code = process.env['FLASKOR_SERVICE_TOKEN']
 if (!code) {
-  console.error('FLASKOR_GATE_CODE saknas')
+  console.error('FLASKOR_SERVICE_TOKEN saknas')
   process.exit(2)
 }
 

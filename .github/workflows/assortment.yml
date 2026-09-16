@@ -1,6 +1,6 @@
 # Nattens spegelimport (beslut 23): laddar Systembolagsdumpen och postar den till Workern i bitar.
 # 01:30 UTC är 03:30 svensk sommartid och 02:30 vintertid, i båda fallen efter dumpens förnyelse kl. 03:00.
-# Kräver hemligheten FLASKOR_GATE_CODE (grindkoden) i repots Actions-secrets.
+# Kräver hemligheten FLASKOR_SERVICE_TOKEN (tjänstenyckeln, före 2026-09-16 grindkoden) i repots Actions-secrets.
 name: Spegla Systembolagets sortiment
 
 on:
@@ -26,4 +26,4 @@ jobs:
           node-version: 24
       - run: node scripts/assortment.ts
         env:
-          FLASKOR_GATE_CODE: ${{ secrets.FLASKOR_GATE_CODE }}
+          FLASKOR_SERVICE_TOKEN: ${{ secrets.FLASKOR_SERVICE_TOKEN }}

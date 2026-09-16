@@ -12,11 +12,11 @@ import { fetchStock } from './stock.ts'
 import { fetchProduct, parseProductNumber, toPreview, type Product } from './systembolaget.ts'
 import { fetchWine, findVivino, parseVivinoUrl, parseWinePage, queryFor, refreshVivino, vivinoDue, vivinoPatch, vivinoToPreview } from './vivino.ts'
 
-// Inloggning (beslut 2, 2026-09-15): Firebase ID-token per användare, eller grindkoden (secreten GATE_CODE) som tjänsteåtkomst
+// Inloggning (beslut 2, 2026-09-15): Firebase ID-token per användare, eller grindkoden (secreten SERVICE_TOKEN) som tjänsteåtkomst
 // till hushåll 1 för nattskriptet och skripten. Se worker/src/auth.ts och household.ts.
 // GEMINI_API_KEY och SB_API_KEY (2026-09-08) är secrets för skanningen: saknas Gemini svarar /api/scan 500 på foton,
 // saknas Systembolagsnyckeln blir kandidatlistan tom och användaren får fylla i själv.
-type GateEnv = Env & { GATE_CODE?: string; GEMINI_API_KEY?: string; SB_API_KEY?: string }
+type GateEnv = Env & { SERVICE_TOKEN?: string; GEMINI_API_KEY?: string; SB_API_KEY?: string }
 
 /** Nattens tak (beslut 23): så många produktsidor hämtas per körning. Rader som spegeln känner till kostar ingen sida och räknas inte. */
 const NIGHTLY_CAP = 50

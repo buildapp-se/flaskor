@@ -7,8 +7,8 @@
 import { readFileSync } from 'node:fs'
 
 const api = process.argv[2] ?? 'https://flaskor-api.buildapp.se'
-const code = readFileSync('.dev.vars', 'utf8').match(/^GATE_CODE\s*=\s*"?([^"\r\n]+)"?/m)?.[1]
-if (!code) throw new Error('GATE_CODE saknas i .dev.vars')
+const code = readFileSync('.dev.vars', 'utf8').match(/^SERVICE_TOKEN\s*=\s*"?([^"\r\n]+)"?/m)?.[1]
+if (!code) throw new Error('SERVICE_TOKEN saknas i .dev.vars')
 const headers = { authorization: `Bearer ${code}`, 'content-type': 'application/json' }
 
 const [header, ...lines] = readFileSync('seed/barskap.tsv', 'utf8').trim().split(/\r?\n/)

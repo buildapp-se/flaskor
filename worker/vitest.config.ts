@@ -14,7 +14,7 @@ export default defineConfig({
       wrangler: { configPath: './wrangler.jsonc' },
       miniflare: {
         d1Databases: ['DB'],
-        bindings: { TEST_MIGRATIONS: migrations, GATE_CODE: 'test-kod', GEMINI_API_KEY: 'test-gemini', SB_API_KEY: 'test-sb', FIREBASE_TEST_KEY: firebaseKey },
+        bindings: { TEST_MIGRATIONS: migrations, SERVICE_TOKEN: 'test-kod', GEMINI_API_KEY: 'test-gemini', SB_API_KEY: 'test-sb', FIREBASE_TEST_KEY: firebaseKey },
         // Inget test får nå internet. Systembolaget svarar ur fixturerna, allt annat är ett fel.
         async outboundService(request) {
           const url = new URL(request.url)
