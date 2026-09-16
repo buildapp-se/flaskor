@@ -13,6 +13,13 @@ describe('CSV för svensk Excel', () => {
     expect(row).toContain(';13,5;')
     expect(row).toContain('"rad ett\nrad två"')
   })
+  // OWASP 2026-09-16, låg: en cell som börjar med formeltecken blir text i Excel, minustal är fortfarande tal.
+  it('formeltecken först i text får en apostrof, tal lämnas', () => {
+    const csv = toCsv([{ ...blankDrink('wine'), name: '=HYPERLINK("https://evil.example")', producer: '+Plus', price_paid: -5 }])
+    const row = csv.split('\r\n')[1]!
+    expect(row).toContain(`;"'=HYPERLINK(""https://evil.example"")";'+Plus;`)
+    expect(row).toContain(';-5;')
+  })
   it('tomma fält är tomma, inte "null"', () => {
     expect(toCsv([blankDrink('beer')])).not.toContain('null')
   })

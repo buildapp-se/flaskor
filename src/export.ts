@@ -36,7 +36,11 @@ const COLUMNS: ReadonlyArray<Column> = [
 
 function cell(value: string | number | boolean | null): string {
   if (value === null) return ''
-  const text = typeof value === 'boolean' ? (value ? 'ja' : 'nej') : typeof value === 'number' ? String(value).replace('.', ',') : value
+  if (typeof value === 'number') return String(value).replace('.', ',')
+  if (typeof value === 'boolean') return value ? 'ja' : 'nej'
+  // Text som börjar med = + - @ eller tab tolkar Excel som en formel (OWASP 2026-09-16, låg): ett inledande
+  // apostroftecken gör den till text, som när man skriver det i en cell för hand.
+  const text = /^[=+\-@\t\r]/.test(value) ? `'${value}` : value
   return /[;"\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text
 }
 

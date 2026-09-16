@@ -18,7 +18,7 @@ export function parseCavisteUrl(input: string): { number: string; url: string } 
   } catch {
     throw new FatalError('not a caviste link')
   }
-  if (!/(^|\.)caviste\.se$/i.test(url.hostname)) throw new FatalError('not a caviste link')
+  if (url.protocol !== 'https:' || !/(^|\.)caviste\.se$/i.test(url.hostname)) throw new FatalError('not a caviste link')
   const nr = url.pathname.match(/\/cav0*(\d+)/i)?.[1]
   if (!nr) throw new FatalError('no cav number in caviste link')
   return { number: nr, url: url.toString() }
@@ -150,7 +150,8 @@ export function parseCavistePage(html: string, cavNr: string, url: string, now =
 export async function fetchCaviste(url: string): Promise<string> {
   let response: Response
   try {
-    response = await fetch(url, { headers: { 'user-agent': USER_AGENT, accept: 'text/html' } })
+    // Ingen omdirigering följs: adressen är kontrollerad, ett hopp därifrån är det inte (OWASP 2026-09-16, låg).
+    response = await fetch(url, { headers: { 'user-agent': USER_AGENT, accept: 'text/html' }, redirect: 'manual' })
   } catch (error) {
     throw new TransientError(`caviste unreachable: ${String(error)}`)
   }

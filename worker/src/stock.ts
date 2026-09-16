@@ -34,6 +34,8 @@ export function parseStock(json: unknown): Omit<Stock, 'store'> {
 
 export async function fetchStock(store: string, productId: string, apiKey: string): Promise<Omit<Stock, 'store'>> {
   if (!validStore(store)) throw new FatalError('store must be four digits')
+  // Id:t kommer ur en sparad rad, men raden kom en gång ur en produktsida: inget som inte är siffror går in i adressen.
+  if (!/^\d+$/.test(productId)) throw new FatalError('product id must be digits', 502)
   let response: Response
   try {
     response = await fetch(stockUrl(store, productId), { headers: { 'ocp-apim-subscription-key': apiKey, accept: 'application/json' } })
