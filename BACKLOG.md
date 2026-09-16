@@ -153,3 +153,17 @@ Fynd från cockpitens granskningskolumner (Lighthouse mobil, W3C, UX-skript, hea
 - [ ] `[P2]` OWASP A04, granskning 2026-09-16: `SCAN_LIMIT` 10/min per uid utan dagstak (`index.ts`, `wrangler.jsonc`). Ett konto kan tömma Geminis fria nivå (~1 500/dag) på 2,5 h. Fix: dagsräknare per uid och globalt i `sb_meta`, neka över 50/uid/dag och 1 200/dag.
 - [ ] `[P3]` OWASP, låga: 500-svar ekar `error.message` (`index.ts`); `sb_product_id` interpoleras rått i `stockUrl` (`stock.ts`), kräv `^\d+$`; CSV-export citerar inte inledande `= + - @` (`src/export.ts`); Caviste-hämtning utan `https:`-krav och med följda redirects (`caviste.ts`); localhost-origins i prod `FRONTEND_ORIGINS`; wrangler 4.129 (fix i 4.131) och Firebase SDK 11.6.1 mot 12.19.
 - [ ] `[P3]` UX, Fitts: "Nytt här? Skapa konto" och "Glömt lösenordet?" är 24 px på inloggningen. Von Restorff: två knappar med primärstil på samma vy. Lighthouse: inget `<main>`-landmärke.
+
+## Ägar-QA, flyttad från Active Priorities 2026-09-16
+
+Bara Patrik kan göra dessa: de kräver telefonen, riktiga flaskor eller ett öga på live-sidan. Flyttade hit från vaultens Active Priorities, som annars läses in i varje session i alla projekt.
+
+- [ ] `[P1]` Prova minus och plus i tabellens Antal-kolumn live (`5da909c`, 2026-09-15).
+- [ ] `[P1]` Läs Önskelistan live (tillgängligheten 2026-09-13): två rader ska säga "Ordervara · Slut hos leverantören", resten sitt sortiment plus "Finns hos Systembolaget".
+- [ ] `[P1]` Skanningen, omgång två: matchningen rättad 2026-09-08 efter att första testet gav streckkod 2/3 och foto 0/3 (tolv riktiga flaskor ger nu 12/12 rätt bland kandidaterna). Skanna om samma flaskor som missade. Streckkod i kameran bara på Android; på iPhone läser AI:n siffrorna ur fotot.
+- [ ] `[P1]` Prova Caviste-importen (klistra in en lådlänk i Lägg till, välj vinet) och drucken-loggen (blocket "Drucket" i detaljvyn). Anteckningen syns på raden i Källaren, sorteringen "Senast drucken" är flödet över allt druckt.
+- [ ] `[P1]` Prova "Kolla lagret för alla" i Önskelistan med din butik vald: vad av det du vill ha finns i butiken just nu, med hyllplats.
+- [ ] `[P1]` Prova lagersaldot och namnsöket: välj butik i en flaskas detaljvy och tryck Kolla lagret; skriv ett namn i Lägg till i stället för ett artikelnummer.
+- [ ] `[P2]` Rätta tre Caviste-bildlänkar i Ändra (Chianti Classico, Côtes du Rhône, La Butte 'O'): Caviste förkortar dem `CC`, `CDR` och `CNP`. Adresserna står i `HANDOFF.md`. Övriga 18 rättades automatiskt 2026-09-09.
+- [ ] `[P2]` Prova bulkimporten med en riktig Systembolagslista (Lägg till, "Importera en hel lista via din AI"), massåtgärderna i tabellen, Vivino-länk, ta bort, och barskåpet (18 sorter från Sipdeck, "Öppna en" på de öppnade). Installera på telefonen. Ja eller nej på §Val tagna åt Patrik i `HANDOFF.md`.
+- Gästläget: uppladdningen vid riktig inloggning står redan som `[P3]` under §Gästläge och export.
