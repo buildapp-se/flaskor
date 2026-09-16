@@ -93,7 +93,7 @@ async function route(request: Request, env: GateEnv): Promise<unknown> {
   if (method === 'POST' && path === '/api/household/join') {
     // Samma snäva tak som skanningen: en inbjudningskod (och grindkoden) ska inte gå att gissa i en loop.
     await throttle(env.SCAN_LIMIT, who)
-    await joinHousehold(env.DB, user(), hh, await readJson(request), env.GATE_CODE)
+    await joinHousehold(env.DB, user(), hh, await readJson(request))
     return null
   }
   if (method === 'GET' && path === '/api/drinks') return { drinks: await listDrinks(env.DB, hh) }

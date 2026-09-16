@@ -2,7 +2,7 @@ import { FatalError, NotFoundError } from '../../shared/errors.ts'
 import type { Account } from '../../shared/types.ts'
 import type { Identity } from './auth.ts'
 
-/** Hushållet grindkoden ger (migrering 0001), och det Patrik och Julia går med i med den gamla koden. */
+/** Hushållet grindkoden ger som tjänsteidentitet (migrering 0001): nattjobbet och spegelimporten skriver hit. */
 export const LEGACY_HOUSEHOLD = 1
 
 const newInviteCode = (): string => [...crypto.getRandomValues(new Uint8Array(5))].map((b) => b.toString(16).padStart(2, '0')).join('')
@@ -38,13 +38,14 @@ export async function renameHousehold(db: D1Database, householdId: number, body:
 }
 
 /**
- * Går med i ett annat hushåll med dess inbjudningskod, eller med den gamla grindkoden för hushåll 1.
- * Nekas när det nuvarande hushållet har rader: de skulle bli osynliga för alltid, och ingen ska tappa sin källare på ett felklick.
+ * Går med i ett annat hushåll med dess inbjudningskod. Grindkoden gav hushåll 1 fram till 2026-09-16, då ägarna var
+ * inloggade; nu ger den bara tjänsteidentiteten (nattjobbet). Nekas när det nuvarande hushållet har rader: de skulle
+ * bli osynliga för alltid, och ingen ska tappa sin källare på ett felklick.
  */
-export async function joinHousehold(db: D1Database, who: Identity & { kind: 'user' }, current: number, body: unknown, gateCode: string | undefined): Promise<void> {
+export async function joinHousehold(db: D1Database, who: Identity & { kind: 'user' }, current: number, body: unknown): Promise<void> {
   const code = typeof body === 'object' && body !== null ? (body as { code?: unknown }).code : undefined
   if (typeof code !== 'string' || code.trim() === '') throw new FatalError('code is required')
-  const target = gateCode && code.trim() === gateCode ? LEGACY_HOUSEHOLD : await db.prepare('SELECT id FROM household WHERE invite_code = ?').bind(code.trim().toLowerCase()).first<number>('id')
+  const target = await db.prepare('SELECT id FROM household WHERE invite_code = ?').bind(code.trim().toLowerCase()).first<number>('id')
   if (target === null) throw new NotFoundError('no household with that code')
   if (target === current) return
   const rows = await db.prepare('SELECT COUNT(*) AS n FROM drink WHERE household_id = ?').bind(current).first<number>('n')
