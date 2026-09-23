@@ -2,7 +2,7 @@
 schemaVersion: 1
 status: active
 currentGoal: "2026-09-23: Flaskor redo för en publik dörr på buildapp.se. SDK 12.19.0 live (14c15dd), authhost för flaskor.buildapp.se deployad, dörren committad lokalt i buildapp-se.github.io (27d4dc5, inte pushad)."
-nextAction: "Patrik: custom domain flaskor.buildapp.se i Firebase Hosting, se §2026-09-23. Därefter Claude: DNS, authDomain, push av dörren."
+nextAction: "Patrik: flaskor.buildapp.se under Authorized domains och handler-URL:en under redirect URIs, se §2026-09-23 steg 3. Därefter Claude: authDomain, push av dörren."
 blockers: []
 reviewedAt: 2026-09-23
 ---
@@ -14,7 +14,7 @@ reviewedAt: 2026-09-23
 - **SDK 12.19.0** (`14c15dd`, Pages grön, live-bundeln `index-61NdqnYw.js` bär `firebasejs/12.19.0`). Verifierat: `npm run check` grönt, lokalt i Chromium laddas båda modulerna och en påhittad inloggning ger "Fel e-post eller lösenord.". **Overifierat:** en lyckad inloggning.
 - **authDomain `flaskor.buildapp.se`, halvvägs.** `authhost/` (Beefcake-mönstret) deployad till Firebase Hosting, `https://flaskor-d3762.web.app`. Registreringen av custom domain via Hosting-API:t stoppades av klassificeraren (kräver firebase-tools token). Kvar, i ordning:
   1. **Patrik:** Add custom domain `flaskor.buildapp.se`: https://console.firebase.google.com/project/flaskor-d3762/hosting/sites/flaskor-d3762 . Ge Claude CNAME- och TXT-värdena konsolen visar.
-  2. **Claude:** båda posterna i Cloudflare, **DNS only**, vänta på certifikatet.
+  2. ~~Claude: DNS~~: gjort 2026-09-23. Patrik lade till domänen i konsolen, som bara bad om en CNAME `flaskor` → `flaskor-d3762.web.app` (DNS only, inlagd via Cloudflare-API:t). Certifikatet var klart kl. 19:01 (handlern svarar 200). Fälla: lokala resolvern cachade NXDOMAIN från en tidigare uppslagning, testa med `curl --resolve flaskor.buildapp.se:443:199.36.158.100`.
   3. **Patrik:** `flaskor.buildapp.se` under Authorized domains: https://console.firebase.google.com/project/flaskor-d3762/authentication/settings , och `https://flaskor.buildapp.se/__/auth/handler` under Authorized redirect URIs på webbklienten: https://console.cloud.google.com/apis/credentials?project=flaskor-d3762
   4. **Claude:** `authDomain` i `src/config.ts`, push, prova Google-rutan live. Sedan push av dörren (`27d4dc5` i `buildapp-se.github.io`).
 - **Gäst till konto** med ett riktigt nytt konto: BACKLOG P3, Patriks.
