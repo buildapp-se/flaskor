@@ -1,8 +1,8 @@
 ---
 schemaVersion: 1
 status: active
-currentGoal: "2026-09-23: Flaskor redo för en publik dörr på buildapp.se. SDK 12.19.0 live (14c15dd), authhost för flaskor.buildapp.se deployad, dörren committad lokalt i buildapp-se.github.io (27d4dc5, inte pushad)."
-nextAction: "Patrik: flaskor.buildapp.se under Authorized domains och handler-URL:en under redirect URIs, se §2026-09-23 steg 3. Därefter Claude: authDomain, push av dörren."
+currentGoal: "2026-09-23: Flaskor publik på buildapp.se. Dörren överst på startsidan (27d4dc5), authDomain flaskor.buildapp.se live, SDK 12.19.0."
+nextAction: "Patrik: logga in med Google live och se att rutan säger buildapp.se; prova gäst till nytt konto (BACKLOG P3)."
 blockers: []
 reviewedAt: 2026-09-23
 ---
@@ -16,7 +16,7 @@ reviewedAt: 2026-09-23
   1. **Patrik:** Add custom domain `flaskor.buildapp.se`: https://console.firebase.google.com/project/flaskor-d3762/hosting/sites/flaskor-d3762 . Ge Claude CNAME- och TXT-värdena konsolen visar.
   2. ~~Claude: DNS~~: gjort 2026-09-23. Patrik lade till domänen i konsolen, som bara bad om en CNAME `flaskor` → `flaskor-d3762.web.app` (DNS only, inlagd via Cloudflare-API:t). Certifikatet var klart kl. 19:01 (handlern svarar 200). Fälla: lokala resolvern cachade NXDOMAIN från en tidigare uppslagning, testa med `curl --resolve flaskor.buildapp.se:443:199.36.158.100`.
   3. **Patrik:** `flaskor.buildapp.se` under Authorized domains: https://console.firebase.google.com/project/flaskor-d3762/authentication/settings , och `https://flaskor.buildapp.se/__/auth/handler` under Authorized redirect URIs på webbklienten: https://console.cloud.google.com/apis/credentials?project=flaskor-d3762
-  4. **Claude:** `authDomain` i `src/config.ts`, push, prova Google-rutan live. Sedan push av dörren (`27d4dc5` i `buildapp-se.github.io`).
+  4. ~~Claude: authDomain och dörren~~: gjort kl. 19:10. Patrik lade till domänen, redirect URI:n och JavaScript origin `https://flaskor.buildapp.se`. `authDomain` bytt, Pages grön, live-bundeln bär domänen. Klick på Google live öppnar `flaskor.buildapp.se/__/auth/handler` och sedan Googles inloggningssida med `redirect_uri` godtagen och `context_uri=buildapp.se`. Dörren pushad (`27d4dc5`), live på buildapp.se, Flaskor i sitemappen. **Overifierat:** en fullständig Google-inloggning.
 - **Gäst till konto** med ett riktigt nytt konto: BACKLOG P3, Patriks.
 
 **2026-09-16 kl. 18:10, förstainloggningens race rättat** (`2384e1f`, Worker `3cbae156`): klienten laddar konto och flaskor parallellt, båda anropen såg inget medlemskap och skapade var sitt hushåll; medlemsraden vann bara en av dem, det andra hushållet blev föräldralöst (rad 2 och 3 i molnet från Patriks inloggning). Nu raderar förloraren sitt eget hushåll när `INSERT INTO member` skrev 0 rader. Testet anropar `householdOf` två gånger i `Promise.all` (HTTP-anrop via `SELF.fetch` körs i tur och ordning i testmiljön och visar aldrig racet); bevisat rött utan rättningen, grönt med. Hushåll 2 och 3 raderade i molnet på Patriks ja med skyddad DELETE (bara utan medlem och flaskor); kvar: hushåll 1, en medlem, 60 flaskor.
