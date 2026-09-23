@@ -36,7 +36,7 @@ interface AuthModule {
   deleteUser(user: FirebaseUser): Promise<void>
 }
 
-const SDK = 'https://www.gstatic.com/firebasejs/11.6.1'
+const SDK = 'https://www.gstatic.com/firebasejs/12.19.0'
 let loading: Promise<{ auth: Auth; mod: AuthModule }> | null = null
 
 export function isAuthConfigured(): boolean {
