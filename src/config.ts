@@ -5,7 +5,8 @@
  */
 export const FIREBASE = {
   apiKey: 'AIzaSyBHHc0LJN1ofGWesjd0oyXMyHZFtmxux1Q',
-  authDomain: 'flaskor-d3762.firebaseapp.com',
+  // Egen domän (authhost/, Firebase Hosting) så Googles ruta säger buildapp.se, inte flaskor-d3762.firebaseapp.com.
+  authDomain: 'flaskor.buildapp.se',
   projectId: 'flaskor-d3762',
   appId: '1:460125004076:web:1dd87edc54ae279a334c89',
 }
