@@ -8,3 +8,6 @@ seed/seed.sql
 .playwright-cli/
 worker/dist/
 .playwright-mcp/
+
+# Firebase Hosting deploy-cache i authhost, regenereras vid deploy.
+authhost/.firebase/

@@ -1,0 +1,7 @@
+{
+  "hosting": {
+    "site": "flaskor-d3762",
+    "public": "public",
+    "ignore": ["firebase.json", "**/.*"]
+  }
+}
