@@ -1,13 +1,23 @@
 ---
 schemaVersion: 1
 status: active
-currentGoal: 2026-09-16 kväll: titeln i sidopanelen länkar nu till Källaren (commit 8d3e5dd, redan pushad), och OG-bildens första rad bytt från Moët & Chandon till en Barolo (den här sessionens commit, se nedan). Tidigare: 2026-09-15 kväll gästläge och export live (commits c0df8e0, 891feea, Worker a8d81a81, bundeln index-Dg_xJSRg.js). 2026-09-15 Flaskor öppen för fler hushåll, Firebase-inloggning, FTS5 i spegeln (commits 6e61858, fafc1ee, 62730d7, b352481; migrering 0008/0009 körda, Worker 20fd7bc3).
-nextAction: Patrik ger Julia inbjudningskoden under Konto. Det tomma hushållet 2 (Patriks första inloggning) kan raderas för hand.
+currentGoal: "2026-09-23: Flaskor redo för en publik dörr på buildapp.se. SDK 12.19.0 live (14c15dd), authhost för flaskor.buildapp.se deployad, dörren committad lokalt i buildapp-se.github.io (27d4dc5, inte pushad)."
+nextAction: "Patrik: custom domain flaskor.buildapp.se i Firebase Hosting, se §2026-09-23. Därefter Claude: DNS, authDomain, push av dörren."
 blockers: []
-reviewedAt: 2026-09-16
+reviewedAt: 2026-09-23
 ---
 
 # Handoff: Flaskor
+
+**2026-09-23, mot en publik dörr på buildapp.se.** Tre steg före dörren: egen authDomain, SDK-bytet, gäst till konto provat på riktigt.
+
+- **SDK 12.19.0** (`14c15dd`, Pages grön, live-bundeln `index-61NdqnYw.js` bär `firebasejs/12.19.0`). Verifierat: `npm run check` grönt, lokalt i Chromium laddas båda modulerna och en påhittad inloggning ger "Fel e-post eller lösenord.". **Overifierat:** en lyckad inloggning.
+- **authDomain `flaskor.buildapp.se`, halvvägs.** `authhost/` (Beefcake-mönstret) deployad till Firebase Hosting, `https://flaskor-d3762.web.app`. Registreringen av custom domain via Hosting-API:t stoppades av klassificeraren (kräver firebase-tools token). Kvar, i ordning:
+  1. **Patrik:** Add custom domain `flaskor.buildapp.se`: https://console.firebase.google.com/project/flaskor-d3762/hosting/sites/flaskor-d3762 . Ge Claude CNAME- och TXT-värdena konsolen visar.
+  2. **Claude:** båda posterna i Cloudflare, **DNS only**, vänta på certifikatet.
+  3. **Patrik:** `flaskor.buildapp.se` under Authorized domains: https://console.firebase.google.com/project/flaskor-d3762/authentication/settings , och `https://flaskor.buildapp.se/__/auth/handler` under Authorized redirect URIs på webbklienten: https://console.cloud.google.com/apis/credentials?project=flaskor-d3762
+  4. **Claude:** `authDomain` i `src/config.ts`, push, prova Google-rutan live. Sedan push av dörren (`27d4dc5` i `buildapp-se.github.io`).
+- **Gäst till konto** med ett riktigt nytt konto: BACKLOG P3, Patriks.
 
 **2026-09-16 kl. 18:10, förstainloggningens race rättat** (`2384e1f`, Worker `3cbae156`): klienten laddar konto och flaskor parallellt, båda anropen såg inget medlemskap och skapade var sitt hushåll; medlemsraden vann bara en av dem, det andra hushållet blev föräldralöst (rad 2 och 3 i molnet från Patriks inloggning). Nu raderar förloraren sitt eget hushåll när `INSERT INTO member` skrev 0 rader. Testet anropar `householdOf` två gånger i `Promise.all` (HTTP-anrop via `SELF.fetch` körs i tur och ordning i testmiljön och visar aldrig racet); bevisat rött utan rättningen, grönt med. Hushåll 2 och 3 raderade i molnet på Patriks ja med skyddad DELETE (bara utan medlem och flaskor); kvar: hushåll 1, en medlem, 60 flaskor.
 
