@@ -397,7 +397,7 @@ async function assortment(body: unknown, db: D1Database, _proof: { kind: 'servic
   return { upserted, ...(await finishAssortment(db, run, numbers)) }
 }
 
-export async function refreshAll(db: D1Database, _proof: { kind: 'service' }): Promise<{ refreshed: number; mirrored: number; failed: number; vivino: number }> {
+export async function refreshAll(db: D1Database, _proof: { kind: 'service' }): Promise<{ refreshed: number; mirrored: number; failed: number; vivino: number; written: number }> {
   // ponytail: läser alla hushålls rader varje natt, linjärt med användarna; tak per hushåll när det blir tusentals.
   const drinks = await listAllDrinks(db)
   // En hämtning per artikelnummer, oavsett hur många rader som delar det (beslut 23).
@@ -412,13 +412,19 @@ export async function refreshAll(db: D1Database, _proof: { kind: 'service' }): P
   let mirrored = 0
   let failed = 0
   let pages = 0
+  let written = 0
   for (const [number, rows] of byNumber) {
     try {
       const fromMirror = useMirror ? await mirroredFresh(db, number) : null
       if (!fromMirror && pages >= NIGHTLY_CAP) continue
       if (!fromMirror) pages++
       const fresh = fromMirror ?? (await fetchFresh(db, number))
-      for (const row of rows) await updateDrink(db, row.household_id, row.id, refreshPatch(fresh, row))
+      for (const row of rows) {
+        const patch = refreshPatch(fresh, row)
+        if (unchanged(patch, row)) continue
+        await updateDrink(db, row.household_id, row.id, patch)
+        written++
+      }
       refreshed++
       if (fromMirror) mirrored++
     } catch (error) {
@@ -437,5 +443,19 @@ export async function refreshAll(db: D1Database, _proof: { kind: 'service' }): P
       console.error(`vivino ${row.id} failed`, error)
     }
   }
-  return { refreshed, mirrored, failed, vivino }
+  return { refreshed, mirrored, failed, vivino, written }
+}
+
+/** Så gammal får "Pris kollat" bli innan natten skriver raden bara för datumets skull. */
+const STAMP_MAX_AGE_MS = 7 * 86_400_000
+
+/**
+ * Sant när nattens patch inte ändrar något utom kontrolldatumet, och datumet är färskare än en vecka (2026-09-24).
+ * D1:s skrivkvot delas av hela Cloudflare-kontot, Sipdeck med: en skrivning per rad och natt växer linjärt med
+ * användarna, så natten skriver bara ändringar, plus datumet en gång i veckan.
+ */
+export function unchanged(patch: DrinkPatch, row: Drink, now = Date.now()): boolean {
+  const checked = row.price_checked_at ? Date.parse(row.price_checked_at) : NaN
+  if (!(now - checked < STAMP_MAX_AGE_MS)) return false
+  return (Object.keys(patch) as Array<keyof DrinkPatch>).every((k) => k === 'price_checked_at' || patch[k] === row[k as keyof Drink])
 }

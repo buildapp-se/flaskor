@@ -189,7 +189,11 @@ describe('natten ur spegeln (beslut 23)', () => {
     expect(rows.find((r) => r.id === paged.id)?.price_current).not.toBe(1)
     expect(rows.find((r) => r.id === gone.id)?.availability).toBe('discontinued')
 
-    expect(await refreshAll(env.DB, { kind: 'service' })).toMatchObject({ refreshed: 3, mirrored: 1, failed: 0 })
+    // Andra natten: allt kollat men inget ändrat och datumet färskt, så ingen rad skrivs (D1-kvoten, 2026-09-24).
+    expect(await refreshAll(env.DB, { kind: 'service' })).toMatchObject({ refreshed: 3, mirrored: 1, failed: 0, written: 0 })
+    // Ett datum äldre än en vecka skrivs om även utan ändring.
+    await env.DB.prepare("UPDATE drink SET price_checked_at = '2020-01-01T00:00:00.000Z' WHERE id = ?").bind(mirrored.id).run()
+    expect(await refreshAll(env.DB, { kind: 'service' })).toMatchObject({ written: 1 })
   })
   it('gammal spegel går inte före produktsidan, men duger som reserv när sidan ligger nere', async () => {
     await mirror('2020-01-01T00:00:00.000Z')
