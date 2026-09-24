@@ -150,7 +150,8 @@ describe('systembolaget', () => {
 
     const result = await refreshAll(env.DB, { kind: 'service' })
     // Raderna fick sitt Vivino-datum redan vid POST, så natten har inget vin att hämta betyg för.
-    expect(result).toEqual({ refreshed: 2, mirrored: 0, failed: 0, vivino: 0 })
+    // Den ägda raden kollades nyss med knappen och är oförändrad: bara önskeradens årgång och den borttagna skrivs.
+    expect(result).toEqual({ refreshed: 2, mirrored: 0, failed: 0, vivino: 0, written: 2 })
     const rows = (await (await api('GET', '/api/drinks')).json<{ drinks: Array<{ id: number; vintage: number | null; availability: string }> }>()).drinks
     expect(rows.find((r) => r.id === wished.id)?.vintage).toBe(2023)
     expect(rows.find((r) => r.id === owned.id)?.vintage).toBe(2019)
