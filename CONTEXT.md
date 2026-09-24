@@ -134,5 +134,7 @@ Read by the cockpit Audits tab. One `- Label: YYYY-MM-DD, result` per check; con
 - Lighthouse: 2026-09-16, warn, a11y 98 (main landmark added to the gate 2026-09-16, not remeasured), best practices 100, SEO 60 by design (noindex) (mobile, no perf)
 - Markup: 2026-09-16, pass, W3C 0 errors, 15 warnings, 0 broken links
 - UX: 2026-09-16, warn, 4 of 6 script checks pass; login links now 44 px and one primary action on the gate (fixed 2026-09-16, remeasure pending), no --interact
-- npm audit: 2026-09-16, pass, 0 in production, 4 high in the dev chain
+- npm audit: 2026-09-24, pass, 0 in production, 4 high in the dev chain
 - Mutation: 2026-09-24, Stryker 74,00 % on src/importParse.ts (was 61,33 %), 111 of 150 killed, 39 left; other logic files not yet run
+- Secrets: 2026-09-24, pass, gitleaks 0 findings in 123 commits, 3 reviewed as public in .gitleaksignore
+- Actions: 2026-09-24, pass, zizmor 0 high, 0 medium, 0 low
