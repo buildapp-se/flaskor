@@ -29,4 +29,43 @@ describe('sortering (beslut 28)', () => {
   it('värde är antal gånger pris, saknat pris räknas som noll', () => {
     expect(rows.map(valueOf)).toEqual([200, 300, 0])
   })
+  it('sorterar på count (numeriskt)', () => {
+    const counts = [drink({ name: 'c', count: 10 }), drink({ name: 'a', count: 2 }), drink({ name: 'b', count: 20 })]
+    expect([...counts].sort(compare('count', 'asc')).map((d) => d.name)).toEqual(['a', 'c', 'b'])
+    expect([...counts].sort(compare('count', 'desc')).map((d) => d.name)).toEqual(['b', 'c', 'a'])
+  })
+  it('sorterar på total', () => {
+    const arr = [
+      drink({ name: 'b', price_paid: 100, count: 2 }),
+      drink({ name: 'nullPrice', price_paid: null, price_current: null, count: 5 }),
+      drink({ name: 'a', price_paid: 300, count: 1 }),
+    ]
+    expect([...arr].sort(compare('total', 'desc')).map((d) => d.name)).toEqual(['a', 'b', 'nullPrice'])
+    expect([...arr].sort(compare('total', 'asc')).map((d) => d.name)).toEqual(['b', 'a', 'nullPrice'])
+  })
+  it('sorterar på strängfält', () => {
+    const arr = [drink({ name: 'c', country: 'Sverige', category: 'Rött', region: 'Skåne', grapes: 'Syrah' }), drink({ name: 'a', country: 'Frankrike', category: 'Vitt', region: 'Bordeaux', grapes: 'Merlot' })]
+    expect([...arr].sort(compare('country', 'asc')).map((d) => d.name)).toEqual(['a', 'c'])
+    expect([...arr].sort(compare('category', 'asc')).map((d) => d.name)).toEqual(['c', 'a'])
+    expect([...arr].sort(compare('region', 'asc')).map((d) => d.name)).toEqual(['a', 'c'])
+    expect([...arr].sort(compare('grapes', 'asc')).map((d) => d.name)).toEqual(['a', 'c'])
+  })
+  it('sorterar på serve_temp genom att parsa nummer', () => {
+    const arr = [drink({ name: 'b', serve_temp: '8 °C' }), drink({ name: 'a', serve_temp: '16-18' })]
+    expect([...arr].sort(compare('serve_temp', 'asc')).map((d) => d.name)).toEqual(['b', 'a'])
+  })
+  it('serve_temp utan siffror hamnar sist som saknat värde', () => {
+    const arr = [drink({ name: 'rum', serve_temp: 'Rumstemperatur' }), drink({ name: 'b', serve_temp: '8 °C' }), drink({ name: 'a', serve_temp: '16-18' })]
+    expect([...arr].sort(compare('serve_temp', 'asc')).map((d) => d.name)).toEqual(['b', 'a', 'rum'])
+    expect([...arr].sort(compare('serve_temp', 'desc')).map((d) => d.name)).toEqual(['a', 'b', 'rum'])
+  })
+  it('sorterar på vivino, faller tillbaka på rating', () => {
+    const arr = [drink({ name: 'c', vivino_rating: null, rating: null }), drink({ name: 'a', vivino_rating: 4.5, rating: null }), drink({ name: 'b', vivino_rating: null, rating: 4.0 })]
+    expect([...arr].sort(compare('vivino', 'desc')).map((d) => d.name)).toEqual(['a', 'b', 'c'])
+  })
+  it('null-värden är stabila', () => {
+    const arr = [drink({ name: 'null1', vintage: null }), drink({ name: 'null2', vintage: null }), drink({ name: 'a', vintage: 2022 })]
+    expect([...arr].sort(compare('vintage', 'asc')).map((d) => d.name)).toEqual(['a', 'null1', 'null2'])
+    expect([...arr].sort(compare('vintage', 'desc')).map((d) => d.name)).toEqual(['a', 'null1', 'null2'])
+  })
 })

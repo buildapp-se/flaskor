@@ -7,7 +7,7 @@ blockers: []
 reviewedAt: 2026-09-24
 ---
 
-**2026-09-24, audits från aifabriken (`tools/audit-run.mjs`).** Actions: `persist-credentials: false` på checkout i deploy.yml och assortment.yml (zizmor artipacked). Nya auditrader Secrets (pass, tre granskade publika fynd i `.gitleaksignore`) och Actions (pass).
+**2026-09-24, audits från aifabriken (`tools/audit-run.mjs`).** Actions: `persist-credentials: false` på checkout i deploy.yml och assortment.yml (zizmor artipacked). Nya auditrader Secrets (pass, tre granskade publika fynd i `.gitleaksignore`) och Actions (pass). Mutation-batch över format, sort, export och local (tester av Antigravity, granskade av Claude): en export-kandidat som raderade fem testfiler i `test/` underkändes vid granskningen och bara dess `src/export.test.ts` togs, med `vi.stubGlobal` i stället för globala tilldelningar. Sorteringsbugg med serveringstemperatur utan siffror rättad (BACKLOG §Mutation). 97 tester, `tsc -b` rent. WCAG-rad: axe 0 fel på buildapp.se/flaskor.
 
 # Handoff: Flaskor
 
