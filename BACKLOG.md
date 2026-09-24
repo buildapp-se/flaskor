@@ -157,6 +157,10 @@ Fynd från cockpitens granskningskolumner (Lighthouse mobil, W3C, UX-skript, hea
 - [x] `[P3]` (rättade 2026-09-16, `7727340`, `c37dd79`, `32e7505`; SDK 12.19.0 sedan 2026-09-23, `14c15dd`, felaktig inloggning ger rätt fel lokalt, lyckad inloggning overifierad) OWASP, låga: 500-svar ekar `error.message` (`index.ts`); `sb_product_id` interpoleras rått i `stockUrl` (`stock.ts`), kräv `^\d+$`; CSV-export citerar inte inledande `= + - @` (`src/export.ts`); Caviste-hämtning utan `https:`-krav och med följda redirects (`caviste.ts`); localhost-origins i prod `FRONTEND_ORIGINS`; wrangler 4.129 (fix i 4.131) och Firebase SDK 11.6.1 mot 12.19.
 - [x] `[P3]` (rättad 2026-09-16, `a89b5c4`: `.fl-textbtn` 44 px, gästknappen textknapp, `<main>` på grinden) UX, Fitts: "Nytt här? Skapa konto" och "Glömt lösenordet?" är 24 px på inloggningen. Von Restorff: två knappar med primärstil på samma vy. Lighthouse: inget `<main>`-landmärke.
 
+## Mutation 2026-09-24
+
+- [ ] `[P2]` Bulkimporten sparar pris 0 för ett pris utan siffror: `num("abc")` i `src/importParse.ts` rensar bort allt utom siffror och `Number("")` blir 0, så en AI-rad med `"pris":"okänt"` blir 0 kr i stället för tomt. Fix: returnera null när strängen saknar siffror, med ett test. Hittad när Antigravity skrev ett test som låste 0 som rätt svar (raden togs bort före commit).
+
 ## Ägar-QA, flyttad från Active Priorities 2026-09-16
 
 Bara Patrik kan göra dessa: de kräver telefonen, riktiga flaskor eller ett öga på live-sidan. Flyttade hit från vaultens Active Priorities, som annars läses in i varje session i alla projekt.
