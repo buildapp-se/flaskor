@@ -99,6 +99,7 @@ export const S = {
     'Webbläsaren sparar senaste listan och dina vyval, så appen fungerar utan nät.',
     'Radera kontot under Konto, så försvinner allt ovan hos Flaskor.',
     'Utan konto sparas det du lägger in bara i webbläsaren och skickas ingenstans, utom uppslagen ovan.',
+    'Personuppgiftsansvarig är Patrik Löfgren, Umeå. Frågor, eller om du vill använda dina rättigheter: kontakt@orgutveckling.se.',
   ],
   gate: {
     title: 'Grindkod',
