@@ -16,8 +16,10 @@ export interface ImportedRow {
 function num(v: unknown): number | null {
   if (typeof v === 'number' && Number.isFinite(v)) return v
   if (typeof v === 'string') {
-    const n = Number(v.replace(/\s/g, '').replace(',', '.').replace(/[^\d.-]/g, ''))
-    return v.trim() !== '' && Number.isFinite(n) ? n : null
+    const cleaned = v.replace(/\s/g, '').replace(',', '.').replace(/[^\d.-]/g, '')
+    // Number('') är 0: text utan siffror ("okänt") ska bli tomt, inte 0 kr.
+    const n = Number(cleaned)
+    return /\d/.test(cleaned) && Number.isFinite(n) ? n : null
   }
   return null
 }

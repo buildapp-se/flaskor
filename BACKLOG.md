@@ -159,7 +159,7 @@ Fynd från cockpitens granskningskolumner (Lighthouse mobil, W3C, UX-skript, hea
 
 ## Mutation 2026-09-24
 
-- [ ] `[P2]` Bulkimporten sparar pris 0 för ett pris utan siffror: `num("abc")` i `src/importParse.ts` rensar bort allt utom siffror och `Number("")` blir 0, så en AI-rad med `"pris":"okänt"` blir 0 kr i stället för tomt. Fix: returnera null när strängen saknar siffror, med ett test. Hittad när Antigravity skrev ett test som låste 0 som rätt svar (raden togs bort före commit).
+- [x] `[P2]` (rättad 2026-09-24, `num` kräver en siffra, test) Bulkimporten sparade pris 0 för ett pris utan siffror: `num("abc")` i `src/importParse.ts` rensar bort allt utom siffror och `Number("")` blir 0, så en AI-rad med `"pris":"okänt"` blir 0 kr i stället för tomt. Fix: returnera null när strängen saknar siffror, med ett test. Hittad när Antigravity skrev ett test som låste 0 som rätt svar (raden togs bort före commit).
 
 ## Ägar-QA, flyttad från Active Priorities 2026-09-16
 
