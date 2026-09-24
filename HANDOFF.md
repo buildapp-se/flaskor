@@ -7,6 +7,8 @@ blockers: []
 reviewedAt: 2026-09-24
 ---
 
+**2026-09-24, audits från aifabriken (`tools/audit-run.mjs`).** Actions: `persist-credentials: false` på checkout i deploy.yml och assortment.yml (zizmor artipacked). Nya auditrader Secrets (pass, tre granskade publika fynd i `.gitleaksignore`) och Actions (pass).
+
 # Handoff: Flaskor
 
 **2026-09-24, mutation-lane från aifabriken.** Stryker på `src/importParse.ts`: 61,33 % till 74,00 %. Testerna i `src/importParse.test.ts` skrevs av Antigravity (Gemini 3.1 Pro High) i en worktree, granskade av Claude; en testrad som låste en bugg (pris "abc" blir 0) togs bort och buggen står i BACKLOG §Mutation 2026-09-24. Buggen rättad samma dag (`num` i `importParse.ts` kräver en siffra, test sett rött före). `npm test` 74/74, check och build gröna.
