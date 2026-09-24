@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { kr, pct, temp, volume, yearRange } from './format.ts'
+import { kr, pct, temp, volume, yearRange, dateShort, articleNo } from './format.ts'
 
 // Hårt mellanslag (U+00A0) i belopp och enheter, så de aldrig radbryts.
 const N = '\u00a0'
@@ -10,6 +10,8 @@ describe('format', () => {
     expect(kr(499)).toBe(`499${N}kr`)
     expect(kr(12500)).toBe(`12${N}500${N}kr`)
     expect(kr(1234567)).toBe(`1${N}234${N}567${N}kr`)
+    expect(kr(-1125)).toBe(`-1${N}125${N}kr`)
+    expect(kr(0)).toBe(`0${N}kr`)
   })
   it('procent med decimalkomma', () => {
     expect(pct(12.5)).toBe(`12,5${N}%`)
@@ -18,11 +20,20 @@ describe('format', () => {
   it('årsintervall', () => {
     expect(yearRange(2025, 2032)).toBe('2025–2032')
     expect(yearRange(null, 2032)).toBeNull()
+    expect(yearRange(2025, null)).toBeNull()
   })
   it('temperatur och volym', () => {
     expect(temp('16-18')).toBe(`16–18${N}°C`)
     expect(temp('10')).toBe(`10${N}°C`)
     expect(volume(750)).toBe(`75${N}cl`)
     expect(volume(375)).toBe(`37,5${N}cl`)
+  })
+  it('datum i kort svenskt format', () => {
+    expect(dateShort('2026-09-05T12:00:00Z')).toBe('5 sep 2026')
+  })
+  it('artikelnummer format', () => {
+    expect(articleNo('7562401')).toBe(`75624${N}01`)
+    expect(articleNo('12345')).toBe(`123${N}45`)
+    expect(articleNo('1234')).toBe('1234')
   })
 })

@@ -25,7 +25,11 @@ export const SORT_VALUE: Record<SortKey, (d: Drink) => number | string | null> =
   price: (d) => priceOf(d),
   total: (d) => (priceOf(d) === null ? null : valueOf(d)),
   windowEnd: (d) => d.drink_to,
-  serve_temp: (d) => (d.serve_temp === null ? null : Number.parseInt(d.serve_temp, 10)),
+  // Text utan siffror ("Rumstemperatur") ger NaN, och NaN i jämförelsen gör sorteringen oförutsägbar: behandla som saknad.
+  serve_temp: (d) => {
+    const n = d.serve_temp === null ? Number.NaN : Number.parseInt(d.serve_temp, 10)
+    return Number.isNaN(n) ? null : n
+  },
   decant: (d) => d.decant_hours,
   food: (d) => d.food,
   vivino: (d) => d.vivino_rating ?? d.rating,
