@@ -35,9 +35,10 @@ describe('bulkimport: läsa AI:ns svar', () => {
   })
 
   it('hanterar konstiga värden för siffror', () => {
-    expect(parseImport('[{"namn":"D","pris":"123 kr"},{"namn":"E","pris":"  "},{"namn":"G","pris":true},{"namn":"H","pris":"1..2"}]')).toEqual([
+    expect(parseImport('[{"namn":"D","pris":"123 kr"},{"namn":"E","pris":"  "},{"namn":"F","pris":"okänt"},{"namn":"G","pris":true},{"namn":"H","pris":"1..2"}]')).toEqual([
       { nr: null, name: 'D', vintage: null, price: 123, count: 1, kind: 'wine' },
       { nr: null, name: 'E', vintage: null, price: null, count: 1, kind: 'wine' },
+      { nr: null, name: 'F', vintage: null, price: null, count: 1, kind: 'wine' },
       { nr: null, name: 'G', vintage: null, price: null, count: 1, kind: 'wine' },
       { nr: null, name: 'H', vintage: null, price: null, count: 1, kind: 'wine' }
     ])
