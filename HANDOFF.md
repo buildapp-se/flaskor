@@ -9,6 +9,8 @@ reviewedAt: 2026-09-24
 
 # Handoff: Flaskor
 
+**2026-09-24, mutation-lane från aifabriken.** Stryker på `src/importParse.ts`: 61,33 % till 74,00 %. Testerna i `src/importParse.test.ts` skrevs av Antigravity (Gemini 3.1 Pro High) i en worktree, granskade av Claude; en testrad som låste en bugg (pris "abc" blir 0) togs bort och buggen står i BACKLOG §Mutation 2026-09-24. Bara testfilen ändrad, `npm test` 74/74. Lokal commit, ej pushad.
+
 **2026-09-24, före länkar på vinforum.** Genomgång av vad som krävs: inloggningen (§2026-09-23 steg 3 och 4, plus gäst till konto), nattens skrivningar och integritetstexten. Engelska, Sipdeck-synk, iPhone-streckkod och JSON-import väntar. Byggt i chunkläge:
 
 - `562f688` **Natten skriver bara ändringar.** `refreshAll` gjorde en `UPDATE` per rad och natt även utan ändring (`price_checked_at`); vid 200 användare med 50 flaskor 10 % av kontots D1-skrivkvot, som Sipdeck delar. Nu hoppas en rad över när bara datumet skiljer och det är yngre än 7 dagar (`unchanged`). Returen har `written`. Testet bevisat rött utan rättningen. Worker `bebf126f`.

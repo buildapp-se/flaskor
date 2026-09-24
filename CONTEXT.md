@@ -135,3 +135,4 @@ Read by the cockpit Audits tab. One `- Label: YYYY-MM-DD, result` per check; con
 - Markup: 2026-09-16, pass, W3C 0 errors, 15 warnings, 0 broken links
 - UX: 2026-09-16, warn, 4 of 6 script checks pass; login links now 44 px and one primary action on the gate (fixed 2026-09-16, remeasure pending), no --interact
 - npm audit: 2026-09-16, pass, 0 in production, 4 high in the dev chain
+- Mutation: 2026-09-24, Stryker 74,00 % on src/importParse.ts (was 61,33 %), 111 of 150 killed, 39 left; other logic files not yet run
