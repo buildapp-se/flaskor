@@ -125,6 +125,8 @@ Patrik vill dela appen på AI-forum och senare vinforum. Byggt i batch-läge, tr
 - [x] `[P1]` (roterad 2026-09-16 kl. 17:40, Worker `27a4d7cc`, verifierad 200/401; gamla `GATE_CODE` i Workern raderad kl. 17:50) **Patrik kör rotationen** (klassificeraren stoppar hemlighetsskrivning 2026-09-16, kommandot står i HANDOFF): sätt den nya `SERVICE_TOKEN` (Worker), `FLASKOR_SERVICE_TOKEN` (Actions) och `.dev.vars`, ta bort gamla `GATE_CODE` och `FLASKOR_GATE_CODE`, sedan Worker-deploy. Den har legat i två webbläsare och ger fortfarande hushåll 1.
 - [x] `[P2]` (klar 2026-09-23: authhost på Firebase Hosting, CNAME DNS only, certifikat, båda konsollistorna plus JavaScript origin, `authDomain` bytt; live-popupen går till `flaskor.buildapp.se/__/auth/handler` och Google visar buildapp.se utan redirect-fel) Egen authDomain (`flaskor.buildapp.se`).
 - [x] `[P2]` Dygnstak på skanningen per konto: `SCAN_DAILY` i `worker/src/index.ts`, 50 foton per konto och 1 200 totalt per dygn, räknat i `sb_meta` (`countScan`, granskningsbatchen 2026-09-16, test i `worker/test/scan.test.ts`). Punkten stod öppen av misstag till 2026-09-24.
+- [x] `[P1]` Natten skriver bara ändrade rader, datumet högst en gång i veckan (`562f688`, 2026-09-24): D1-skrivkvoten före forumlänkarna.
+- [x] `[P1]` Personuppgiftsansvarig och kontakt i integritetstexten (`6f1bc44`, 2026-09-24).
 - [ ] `[P3]` Nattens `listAllDrinks` läser alla hushålls rader. Linjärt med användarna; tak eller uppdelning när det blir tusentals rader.
 
 ## Gästläge och export 2026-09-15

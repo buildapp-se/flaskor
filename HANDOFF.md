@@ -4,10 +4,16 @@ status: active
 currentGoal: "2026-09-23: Flaskor publik på buildapp.se. Dörren överst på startsidan (27d4dc5), authDomain flaskor.buildapp.se live, SDK 12.19.0."
 nextAction: "Patrik: logga in med Google live och se att rutan säger buildapp.se; prova gäst till nytt konto (BACKLOG P3)."
 blockers: []
-reviewedAt: 2026-09-23
+reviewedAt: 2026-09-24
 ---
 
 # Handoff: Flaskor
+
+**2026-09-24, före länkar på vinforum.** Genomgång av vad som krävs: inloggningen (§2026-09-23 steg 3 och 4, plus gäst till konto), nattens skrivningar och integritetstexten. Engelska, Sipdeck-synk, iPhone-streckkod och JSON-import väntar. Byggt i chunkläge:
+
+- `562f688` **Natten skriver bara ändringar.** `refreshAll` gjorde en `UPDATE` per rad och natt även utan ändring (`price_checked_at`); vid 200 användare med 50 flaskor 10 % av kontots D1-skrivkvot, som Sipdeck delar. Nu hoppas en rad över när bara datumet skiljer och det är yngre än 7 dagar (`unchanged`). Returen har `written`. Testet bevisat rött utan rättningen. Worker `bebf126f`.
+- `6f1bc44` **Integritetstexten** har personuppgiftsansvarig och kontakt, samma som buildapp.se/integritet: Patrik Löfgren, Umeå, kontakt@orgutveckling.se. Live i bundeln.
+- **Overifierat:** hur en cron-körning klarar tusentals rader (en D1-fråga per ändrad rad i följd). Titta på förbrukningen (`npx wrangler d1 info flaskor`) och Worker-anropen samma kväll som länken går ut; 100 000 anrop per dygn delas av kontot.
 
 **2026-09-23, mot en publik dörr på buildapp.se.** Tre steg före dörren: egen authDomain, SDK-bytet, gäst till konto provat på riktigt.
 
