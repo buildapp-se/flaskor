@@ -12,7 +12,7 @@ Status per 2026-09-05 kl. 21:20, efter v1-bygget. **beslutad** betyder att beslu
 | 4 | Vad en rad är | Vin plus antal, som i Excel, plus fritextkommentar. Ingen per-flaska-modell. Inköpspris per rad; dagspris från källor är beslut 23 | byggd |
 | 5 | Drickfönster | Finns, som egna fält med årsintervall, förifyllda av tumregel, visade som piller | byggd |
 | 6 | Importvägar | Systembolagets artikelnummer och produktlänk. Excel-raderna läses in en gång som startdata. Caviste-import senare (backlog) | byggd (Systembolaget; Caviste-import senare) |
-| 7 | Sipdeck-synk | Senare. Barskåpet mappas till Sipdecks ingrediens-id och skriver skafferiet via en knapp. Backlog | uppskjuten |
+| 7 | Sipdeck-koppling | Reviderat av Patrik 2026-10-04: två självständiga appar med valfri enkelriktad tillgänglighet från Flaskor till Sipdeck. [ADR 0001](docs/adr/0001-sipdeck-hemma.md) ersätter den tidigare kopieringsknappen | beslutad, inte byggd |
 | 8 | Utseende | Ljust och luftigt, desktop och mobil lika viktiga. Designrunda i Claude Design före kod | byggd |
 | 9 | Källarplats | Ingen | byggd |
 | 10 | Stack | React + Vite + TypeScript strict, handskriven CSS med designtokens, ingen Tailwind. Next.js avvisat: serverrendering utan nytta och en Cloudflare-adapter. Vanilla som Sipdeck avvisat: CRUD-formulär växer otrevligt utan ramverk | byggd |

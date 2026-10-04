@@ -2,6 +2,15 @@
 
 Öppet arbete, prioriterat `[P0]` till `[P3]`. Besluten bakom står i [GRILL-STATUS.md](GRILL-STATUS.md), modellen i [CONTEXT.md](CONTEXT.md). En punkt bockas när koden är verifierad, inte när den tros klar.
 
+## Flaskor och Sipdeck, beslutat 2026-10-04
+
+Specifikation: [ADR 0001](docs/adr/0001-sipdeck-hemma.md). Ersätter uppskjutna beslut 7; inget är byggt. Sipdecks modell och Hemma-vy kommer först, se dess backlog.
+
+- [ ] `[P1]` Säker valfri kontokoppling till hushåll, produktklassificering med granskning, tillgänglighet från relevanta flaskor och återkallelse enligt ADR.
+- [ ] `[P1]` Kontextlänk till Sipdecks recept och samordnade integrationstester, inklusive flera flaskor, sista slut och hushållsbyte.
+- [ ] `[P2]` Svensk inköpsväg från Sipdecks saknade ingredienser; användaren väljer produkt före tillägg på önskelistan.
+- [ ] `[P1]` Lokal migrationsverifiering, kompatibilitet med gamla klienter och samordnad utrullningsplan före godkännande till produktion.
+
 ## Byggt
 
 v1 byggd 2026-09-05 i chunk-läge (commits `ca195ed` till `c1de427`): tsc, 23 enhetstester, 11 Worker-tester i workerd, `vite build`, Chromium 1 280 och 390 px mot `vite dev` och `wrangler dev`. Samma kväll i molnet: D1, Worker på `flaskor-api.buildapp.se` med secret, GitHub Pages på `buildapp.se/flaskor`, 21 seedade rader. Grinden svarar 401 på fel kod live.
@@ -85,7 +94,6 @@ Patriks önskelista 2026-09-06 (GRILL-STATUS 31 till 35) byggd i chunk-läge, co
 ## Senare, beslutat uppskjutet
 
 - [x] `[P2]` Firebase Auth som Beefcake, användare kopplade till `household_id` (beslut 2). Byggd 2026-09-15, se §Öppen för fler hushåll.
-- [ ] `[P2]` Sipdeck-synk: mappa barskåpsrad till Sipdecks ingrediens-id, knapp som skriver eget skafferi via Sipdecks Worker (beslut 7).
 - [x] `[P2]` Caviste-import via produktlänk (beslut 6): byggd 2026-09-09, se nedan.
 - [ ] `[P2]` Dagspris från fler källor än Systembolaget, inköpspris mot dagspris (beslut 4).
 - [ ] `[P3]` Streckkodsläsning i kameran på iPhone: `BarcodeDetector` finns inte i WebKit, ett WASM-bibliotek på cirka 1 MB krävs. Tills dess läser Gemini siffrorna ur fotot, eller så skrivs de i rutan.
