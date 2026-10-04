@@ -1,15 +1,19 @@
 ---
 schemaVersion: 1
 status: active
-currentGoal: "2026-09-23: Flaskor publik på buildapp.se. Dörren överst på startsidan (27d4dc5), authDomain flaskor.buildapp.se live, SDK 12.19.0."
-nextAction: "Patrik: logga in med Google live och se att rutan säger buildapp.se; prova gäst till nytt konto (BACKLOG P3)."
+currentGoal: "Beslutad valfri Flaskor/Sipdeck-koppling enligt ADR 0001, inte byggd."
+nextAction: "Ny Claude-session: bygg enligt docs/adr/0001-sipdeck-hemma.md och respektive backlog; börja med Sipdecks ingrediensmodell."
 blockers: []
-reviewedAt: 2026-09-24
+reviewedAt: 2026-10-04
 ---
 
 **2026-09-24, audits från aifabriken (`tools/audit-run.mjs`).** Actions: `persist-credentials: false` på checkout i deploy.yml och assortment.yml (zizmor artipacked). Nya auditrader Secrets (pass, tre granskade publika fynd i `.gitleaksignore`) och Actions (pass). Mutation-batch över format, sort, export och local (tester av Antigravity, granskade av Claude): en export-kandidat som raderade fem testfiler i `test/` underkändes vid granskningen och bara dess `src/export.test.ts` togs, med `vi.stubGlobal` i stället för globala tilldelningar. Sorteringsbugg med serveringstemperatur utan siffror rättad (BACKLOG §Mutation). 97 tester, `tsc -b` rent. WCAG-rad: axe 0 fel på buildapp.se/flaskor.
 
 # Handoff: Flaskor
+
+## 2026-10-04: Sipdeck-kopplingen beslutad, byggöverlämning
+
+Patrik godkände analysens riktning och bad om docs samt en byggprompt till Claude. [ADR 0001](docs/adr/0001-sipdeck-hemma.md) är gemensam specifikation; beslut 7 är reviderat och arbetsstegen finns i BACKLOG. Endast dokumentation ändrad. Befintlig ägar-QA nedan kvarstår. Nästa session behöver tillgång till båda repona och använder lokal testdata; läsning av Sipdecks produktions-D1 är ingen byggförutsättning. Ingen produktionspublicering är godkänd av denna docs-beställning.
 
 **2026-09-24, mutation-lane från aifabriken.** Stryker på `src/importParse.ts`: 61,33 % till 74,00 %. Testerna i `src/importParse.test.ts` skrevs av Antigravity (Gemini 3.1 Pro High) i en worktree, granskade av Claude; en testrad som låste en bugg (pris "abc" blir 0) togs bort och buggen står i BACKLOG §Mutation 2026-09-24. Buggen rättad samma dag (`num` i `importParse.ts` kräver en siffra, test sett rött före). `npm test` 74/74, check och build gröna.
 
@@ -276,11 +280,11 @@ Chunk-läge 2026-09-06 (önskelistan). Säg till om något ska ändras.
 
 ## Vad som är kvar
 
-Backloggen har **inget fritt kvar att bygga**. Det som står öppet är antingen ditt eller väntar på ditt ja:
+Historisk restlista; aktuell byggöverlämning finns överst och i BACKLOG §Flaskor och Sipdeck. Sipdeck-kopplingen är beslutad 2026-10-04:
 
 - **Ditt:** Actions-hemligheten `FLASKOR_GATE_CODE` (§Nästa steg 0), ägar-QA av 2026-09-09:s fem omgångar, de tre Caviste-bildlänkarna, PWA-installation på telefonerna, koden till Julia.
 - **Byggt 2026-09-15 på Patriks ja, väntar på molnet:** Firebase Auth (beslut 2), FTS5 i spegeln, tak per konto (§Nästa steg 00).
-- **Väntar på ett ja, med skäl som fortfarande håller:** Sipdeck-synk (beslut 7, dessutom blockerad: Claude Code får inte läsa Sipdecks D1), dagspris från fler källor (beslut 4), engelska (beslut 18), Distiller-importen. Sortimentsdumpen (beslut 23) är byggd 2026-09-12.
+- **Väntar på ett ja:** dagspris från fler källor (beslut 4), engelska (beslut 18), Distiller-importen. Sipdeck-kopplingen följer ADR 0001 och kräver inte produktions-D1 för utveckling. Sortimentsdumpen (beslut 23) är byggd 2026-09-12.
 - **Kvar som blockerad, prövad på nytt 2026-09-09:** streckkodsläsning i kameran på iPhone. Den kräver ett WASM-bibliotek på cirka 1 MB i bundeln eftersom WebKit saknar `BarcodeDetector`, och det går inte att pröva om härifrån: det kräver en riktig iPhone. Skälet står kvar tills du testat skanningen på din telefon, vilket ändå ligger i ägar-QA:n.
 
 ## Fällor

@@ -6,6 +6,8 @@ Vad produkten är, domänorden, datamodellen och arkitekturen. Besluten som ledd
 
 ## Produkten
 
+**Beslutad utveckling, inte byggd:** [ADR 0001: Sipdeck och Hemma](docs/adr/0001-sipdeck-hemma.md) är gemensam specifikation för koppling, ingrediensmodell och dataansvar. Beslut 7 reviderades 2026-10-04. Beskrivningen nedan avser befintlig funktion.
+
 Ett hushåll (Patrik och Julia) håller reda på vilka flaskor som finns hemma, vilka de vill köpa, och när vinet bör drickas. Ersätter ett Excel-ark med 21 rader och Systembolagets sparade listor. Skala: tiotals rader per hushåll. Sedan 2026-09-15 öppen för fler hushåll med egna konton (tänkt att delas på AI-forum och senare vinforum). Inte en samlarapp: ingen källarplats, ingen värdering, ingen community.
 
 ## Domänord
