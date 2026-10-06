@@ -8,6 +8,7 @@ import { Tastings } from '../components/Tastings.tsx'
 import { articleNo, dateShort, kr, pct, temp } from '../format.ts'
 import { navigate, PATHS } from '../hash.ts'
 import { IconExternal, IconMinus, IconPlus } from '../icons.tsx'
+import { drinksLink } from '../sipdeck.ts'
 import { useStore } from '../store.tsx'
 import { S } from '../strings.ts'
 import { Bottle } from './Add.tsx'
@@ -172,6 +173,13 @@ export function Detail({ id }: { id: number }) {
           {!wine && (
             <a className="fl-link fl-small" href={drink.rating_url ?? distiller} target="_blank" rel="noreferrer">
               {drink.rating !== null ? S.detail.ownRated(String(drink.rating).replace('.', ',')) : S.detail.distiller}
+              <IconExternal />
+            </a>
+          )}
+          {/* ADR 0001: bara för det som finns hemma, och inte öl. Sipdeck avgör vilken ingrediens flaskan är. */}
+          {drink.owned && (drink.count > 0 || drink.open_level !== null) && drink.kind !== 'beer' && (
+            <a className="fl-link fl-small" href={drinksLink(drink)} target="_blank" rel="noreferrer">
+              {S.sipdeck.drinks}
               <IconExternal />
             </a>
           )}

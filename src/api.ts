@@ -1,6 +1,6 @@
 import { FatalError, NotFoundError, TransientError, UnauthorizedError } from '../shared/errors.ts'
 import { getIdToken, isAuthConfigured } from './auth.ts'
-import type { Account, Candidate, Drink, DrinkInput, DrinkPatch, ExportData, ImportItem, Preview, ScanResult, Stock, Tasting, TastingInput } from '../shared/types.ts'
+import type { Account, Candidate, Drink, DrinkInput, DrinkPatch, ExportData, ImportItem, Preview, ScanResult, SipdeckCode, SipdeckLink, Stock, Tasting, TastingInput } from '../shared/types.ts'
 
 const API_URL: string = import.meta.env.VITE_API_URL ?? 'http://localhost:8787'
 const GATE_KEY = 'flaskor.gate'
@@ -77,6 +77,10 @@ export const api = {
   listTastings: (id: number) => call<{ tastings: Tasting[] }>('GET', `/api/drinks/${id}/tastings`).then((r) => r.tastings),
   addTasting: (id: number, input: TastingInput) => call<Tasting>('POST', `/api/drinks/${id}/tastings`, input),
   deleteTasting: (id: number, tastingId: number) => call<void>('DELETE', `/api/drinks/${id}/tastings/${tastingId}`),
+  /** Sipdeck-kopplingen (ADR 0001): engångskod för ett Sipdeck-konto, hushållets kopplade konton, återkalla ett. */
+  sipdeckCode: () => call<SipdeckCode>('POST', '/api/sipdeck/code'),
+  sipdeckLinks: () => call<{ links: SipdeckLink[] }>('GET', '/api/sipdeck/links').then((r) => r.links),
+  revokeSipdeckLink: (id: number) => call<void>('DELETE', `/api/sipdeck/links/${id}`),
   /** Lagersaldot för en rad i en butik. Kastar NotFoundError när varan inte förs alls. */
   stock: (id: number, store: string) => call<Stock>('GET', `/api/stock?drink=${id}&store=${store}`),
 }

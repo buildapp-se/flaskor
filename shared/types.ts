@@ -134,6 +134,47 @@ export interface Account {
   household: { id: number; name: string; invite_code: string; members: string[] }
 }
 
+/**
+ * Kontraktet mot Sipdeck (ADR 0001), version 1. Flaskor äger den här formen, Sipdeck äger vad en flaska räknas
+ * som för ingrediens. Ändras ett fälts betydelse eller tas ett bort höjs numret; Sipdeck visar då senast
+ * hämtade flaskor som inaktuella i stället för att tolka fel. Nya valfria fält kräver ingen höjning.
+ */
+export const SIPDECK_CONTRACT = 1
+
+/** En flaska som finns hemma, så som Sipdeck får den: nog för att klassificera, inget om pris eller smak. */
+export interface SipdeckBottle {
+  id: number
+  kind: Kind
+  name: string
+  producer: string | null
+  category: string | null
+  style: string | null
+  country: string | null
+  region: string | null
+  /** Extern produktreferens (`sb:<artikelnummer>`), inte en ingrediensidentitet. null för egna rader och Caviste. */
+  ref: string | null
+}
+
+/** Svaret på GET /api/sipdeck/bottles. */
+export interface SipdeckBottles {
+  contract: typeof SIPDECK_CONTRACT
+  household: string
+  bottles: SipdeckBottle[]
+}
+
+/** Svaret på POST /api/sipdeck/code: koden visas en gång och gäller till `expires_at`. */
+export interface SipdeckCode {
+  code: string
+  expires_at: string
+}
+
+/** Ett Sipdeck-konto kopplat till hushållet, för Konto-vyn. */
+export interface SipdeckLink {
+  id: number
+  email: string | null
+  created_at: string
+}
+
 /** Svaret på GET /api/stock: saldot för en rad i en butik. `shelf` är Systembolagets hyllplats, "14-04-03". */
 export interface Stock {
   store: string

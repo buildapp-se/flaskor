@@ -8,6 +8,7 @@ import { fetchCaviste, parseCavistePage, parseCavisteUrl } from './caviste.ts'
 import { deleteDrink, deleteTasting, exportHousehold, getDrink, importDrinks, insertDrink, insertTasting, listAllDrinks, listDrinks, listTastings, sanitize, sanitizeTasting, updateDrink } from './db.ts'
 import { deleteAccount, getAccount, householdOf, joinHousehold, renameHousehold } from './household.ts'
 import { findByEan, normalizeEan, queries, rank, readLabel, searchOnce, searchProducts, validEan } from './scan.ts'
+import { authenticateSipdeck, createCode, linkedBottles, LinkError, listLinks, redeemCode, revokeLink, unlinkSelf } from './sipdeck.ts'
 import { fetchStock } from './stock.ts'
 import { fetchProduct, parseProductNumber, toPreview, type Product } from './systembolaget.ts'
 import { fetchWine, findVivino, parseVivinoUrl, parseWinePage, queryFor, refreshVivino, vivinoDue, vivinoPatch, vivinoToPreview } from './vivino.ts'
@@ -48,7 +49,8 @@ export default {
       if (status === 500) console.error(error)
       // Ett oväntat fel loggas men ekas inte: meddelandet kan bära SQL eller en leverantörs svar (OWASP 2026-09-16, låg).
       const message = status === 500 ? 'internal error' : error instanceof Error ? error.message : 'unknown error'
-      return Response.json({ error: message }, { status, headers })
+      // Sipdeck-klienten skiljer en bekräftat borttagen koppling från ett tillfälligt fel på koden, inte på texten.
+      return Response.json(error instanceof LinkError ? { error: message, code: error.code } : { error: message }, { status, headers })
     }
   },
 
@@ -73,6 +75,29 @@ async function route(request: Request, env: GateEnv): Promise<unknown> {
     return lookup(path, url, env)
   }
 
+  // Sipdeck-kontots egna vägar (ADR 0001): här gäller Sipdecks ID-token och inget annat. De ligger före den vanliga
+  // inloggningen, som bara känner Flaskors projekt, och skapar aldrig något hushåll åt anroparen.
+  if (path === '/api/sipdeck/link' || path === '/api/sipdeck/bottles') {
+    const sipdeck = await authenticateSipdeck(request, env)
+    const limit = async (limiter: RateLimit) => {
+      if (!(await limiter.limit({ key: `sipdeck:${sipdeck.uid}` })).success) throw new FatalError('too many requests, wait a minute', 429)
+    }
+    if (method === 'GET' && path === '/api/sipdeck/bottles') {
+      await limit(env.LOOKUP_LIMIT)
+      return linkedBottles(env.DB, sipdeck)
+    }
+    if (method === 'POST' && path === '/api/sipdeck/link') {
+      // Samma snäva tak som inbjudningskoden: en kod ska inte gå att gissa i en loop.
+      await limit(env.SCAN_LIMIT)
+      return redeemCode(env.DB, sipdeck, await readJson(request))
+    }
+    if (method === 'DELETE' && path === '/api/sipdeck/link') {
+      await unlinkSelf(env.DB, sipdeck)
+      return null
+    }
+    throw new NotFoundError('no such route')
+  }
+
   const who = await authenticate(request, env)
   const hh = await householdOf(env.DB, who)
   const user = (): Identity & { kind: 'user' } => {
@@ -94,6 +119,18 @@ async function route(request: Request, env: GateEnv): Promise<unknown> {
     // Samma snäva tak som skanningen: en inbjudningskod (och grindkoden) ska inte gå att gissa i en loop.
     await throttle(env.SCAN_LIMIT, who)
     await joinHousehold(env.DB, user(), hh, await readJson(request))
+    return null
+  }
+  // Hushållets sida av Sipdeck-kopplingen: en medlem skapar engångskoden, ser kopplade konton och återkallar dem.
+  if (method === 'POST' && path === '/api/sipdeck/code') {
+    await throttle(env.SCAN_LIMIT, who)
+    return createCode(env.DB, user(), hh)
+  }
+  if (method === 'GET' && path === '/api/sipdeck/links') return { links: await listLinks(env.DB, hh) }
+  const sipdeckLink = path.match(/^\/api\/sipdeck\/links\/(\d+)$/)
+  if (sipdeckLink?.[1] && method === 'DELETE') {
+    user()
+    await revokeLink(env.DB, hh, Number(sipdeckLink[1]))
     return null
   }
   if (method === 'GET' && path === '/api/drinks') return { drinks: await listDrinks(env.DB, hh) }

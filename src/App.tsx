@@ -192,7 +192,7 @@ function Shell() {
         {route.view === 'cellar' && <Cellar />}
         {route.view === 'wishlist' && <Wishlist />}
         {route.view === 'bar' && <Bar />}
-        {route.view === 'add' && <Add />}
+        {route.view === 'add' && <Add key={route.q} q={route.q} />}
         {route.view === 'import' && <Import />}
         {route.view === 'account' && <Account onAccountChanged={loadHousehold} />}
         {route.view === 'detail' && <Detail id={route.id} />}
