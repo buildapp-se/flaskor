@@ -1,12 +1,12 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { FatalError, NotFoundError } from '../../shared/errors.ts'
-import type { Account as AccountData, ExportData, SipdeckCode, SipdeckLink } from '../../shared/types.ts'
+import type { Account as AccountData, ExportData, ImportItem, SipdeckCode, SipdeckLink } from '../../shared/types.ts'
 import { api } from '../api.ts'
 import { dateShort } from '../format.ts'
 import { linkUrl } from '../sipdeck.ts'
 import { authErrorMessage, deleteFirebaseUser, isAuthConfigured, signOutUser } from '../auth.ts'
-import { download, exportName, toCsv, toJson } from '../export.ts'
-import { clearLocal, localCount, localExport, uploadLocal } from '../local.ts'
+import { download, exportName, parseExport, toCsv, toJson } from '../export.ts'
+import { clearLocal, ImportAbortedError, importItems, ImportTooLargeError, localCount, localExport, uploadLocal } from '../local.ts'
 import { useStore } from '../store.tsx'
 import { S } from '../strings.ts'
 import { Privacy } from './Login.tsx'
@@ -345,9 +345,18 @@ function GuestAccount() {
   )
 }
 
-/** Exportera data som JSON (allt) eller CSV (en rad per flaska). Samma kort för gäst och konto, bara källan skiljer. */
+/** Största exportfil som läses in. En rad är cirka 1,5 kB, så 5 MB är tusentals flaskor. */
+const IMPORT_FILE_MAX = 5_000_000
+
+/** Exportera data som JSON (allt) eller CSV (en rad per flaska), och läs in en JSON-export igen. Samma kort för gäst och konto, bara källan skiljer. */
 function ExportCard({ load }: { load: () => Promise<ExportData> }) {
+  const { guest, reload } = useStore()
   const [error, setError] = useState(false)
+  const [message, setMessage] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
+  /** Raderna som inte kom fram när en kontoimport bröts. Fortsätt skickar dem, inte hela filen igen. */
+  const [rest, setRest] = useState<ImportItem[] | null>(null)
+  const file = useRef<HTMLInputElement>(null)
   async function run(format: 'json' | 'csv') {
     setError(false)
     try {
@@ -357,6 +366,33 @@ function ExportCard({ load }: { load: () => Promise<ExportData> }) {
     } catch {
       setError(true)
     }
+  }
+  async function send(items: ImportItem[]) {
+    setBusy(true)
+    setRest(null)
+    setMessage(S.exportData.importing)
+    try {
+      setMessage(S.exportData.imported(items.length === 0 ? 0 : await importItems(items, guest)))
+    } catch (err) {
+      if (err instanceof ImportAbortedError) {
+        setRest(items.slice(err.sent))
+        setMessage(S.exportData.importAborted(err.sent, items.length))
+      } else setMessage(err instanceof ImportTooLargeError ? S.exportData.importTooLarge : S.exportData.importNothing)
+    }
+    await reload()
+    setBusy(false)
+  }
+  async function importFile(picked: File) {
+    let items
+    try {
+      if (picked.size > IMPORT_FILE_MAX) throw new FatalError('file too large')
+      items = parseExport(await picked.text())
+    } catch {
+      setRest(null)
+      setMessage(S.exportData.importBad)
+      return
+    }
+    await send(items)
   }
   return (
     <section className="fl-card fl-account__card">
@@ -371,6 +407,30 @@ function ExportCard({ load }: { load: () => Promise<ExportData> }) {
         </button>
       </div>
       {error && <div className="fl-error">{S.exportData.failed}</div>}
+      <p className="fl-muted">{S.exportData.importLead}</p>
+      <div className="fl-account__row">
+        <button className="fl-btn fl-btn--secondary" type="button" disabled={busy} onClick={() => file.current?.click()}>
+          {S.exportData.importJson}
+        </button>
+        {rest && (
+          <button className="fl-btn fl-btn--primary" type="button" disabled={busy} onClick={() => void send(rest)}>
+            {S.exportData.importResume}
+          </button>
+        )}
+        <input
+          ref={file}
+          type="file"
+          accept="application/json,.json"
+          hidden
+          onChange={(e) => {
+            const picked = e.target.files?.[0]
+            // Nollställ, så samma fil går att välja igen.
+            e.target.value = ''
+            if (picked) void importFile(picked)
+          }}
+        />
+      </div>
+      {message && <p className="fl-muted" role="status">{message}</p>}
     </section>
   )
 }

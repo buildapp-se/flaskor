@@ -1,4 +1,6 @@
-import type { Drink, ExportData } from '../shared/types.ts'
+import { FatalError } from '../shared/errors.ts'
+import { sanitize, sanitizeTasting } from '../shared/sanitize.ts'
+import type { Drink, ExportData, ImportItem } from '../shared/types.ts'
 
 // Exportera data (2026-09-15): hela listan som JSON (allt, även loggen) eller CSV (en rad per flaska, för Excel).
 // CSV:n skrivs för svensk Excel: semikolon mellan fälten, decimalkomma och en BOM så å, ä och ö läses rätt.
@@ -51,6 +53,45 @@ export function toCsv(drinks: Drink[]): string {
 
 export function toJson(data: ExportData): string {
   return JSON.stringify(data, null, 2)
+}
+
+const KINDS = ['wine', 'spirit', 'beer']
+const SOURCES = ['systembolaget', 'caviste', 'manual']
+const AVAILABILITY = ['in_stock', 'temporarily_out', 'supplier_out', 'sold_out', 'discontinued', 'unknown']
+
+/**
+ * En exporterad JSON-fil (toJson) tillbaka till rader att lägga till, var och en med sina avsmakningar. Kastar
+ * FatalError när filen inte är en Flaskor-export eller någon rad inte håller: hellre ingenting än en halv fil.
+ * Fälten går genom samma kontroll som servern kör (sanitize), så id, hushåll, tidsstämplar och okända fält faller
+ * bort och en länk som inte är http(s) nekas. Värdelistorna kontrolleras här, eftersom gästläget saknar databasens CHECK.
+ */
+export function parseExport(text: string): ImportItem[] {
+  let data: unknown
+  try {
+    data = JSON.parse(text)
+  } catch {
+    throw new FatalError('not json')
+  }
+  const { app, drinks, tastings = [] } = (typeof data === 'object' && data !== null ? data : {}) as Partial<ExportData>
+  if (app !== 'flaskor' || !Array.isArray(drinks) || !Array.isArray(tastings)) throw new FatalError('not a flaskor export')
+  const seen = new Set<number>()
+  return drinks.map((raw: unknown) => {
+    const { owned: _owned, ...clean } = sanitize(raw)
+    const row = raw as { id?: unknown; owned?: unknown }
+    if (typeof clean.name !== 'string' || clean.name.trim() === '') throw new FatalError('name is required')
+    if (!KINDS.includes(clean.kind as string)) throw new FatalError('kind is required')
+    if (clean.source_kind !== undefined && !SOURCES.includes(clean.source_kind)) throw new FatalError('unknown source_kind')
+    if (clean.availability !== undefined && !AVAILABILITY.includes(clean.availability)) throw new FatalError('unknown availability')
+    if (clean.open_level != null && ![1, 2, 3, 4].includes(clean.open_level)) throw new FatalError('open_level must be 1 to 4')
+    if (clean.count !== undefined && (clean.count === null || !Number.isInteger(clean.count) || clean.count < 0)) throw new FatalError('count must be a whole number')
+    // Avsmakningar hängs bara på ett id som är ett tal och unikt i filen: annars hamnar samma logg på flera flaskor.
+    const id = typeof row.id === 'number' ? row.id : null
+    if (id !== null && seen.has(id)) throw new FatalError('duplicate id')
+    if (id !== null) seen.add(id)
+    const own = id === null ? [] : tastings.filter((t: unknown) => typeof t === 'object' && t !== null && (t as { drink_id?: unknown }).drink_id === id).map(sanitizeTasting)
+    // sanitize ger owned som 0 eller 1 för databasen; klienten och importvägen vill ha sant eller falskt.
+    return { ...clean, owned: row.owned === true, tastings: own } as ImportItem
+  })
 }
 
 /** Sparar texten som en fil via en tillfällig länk. Fungerar i alla moderna webbläsare, även Safari på iPhone. */

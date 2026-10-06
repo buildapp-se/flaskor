@@ -1,4 +1,4 @@
-import { NotFoundError } from '../shared/errors.ts'
+import { FatalError, NotFoundError } from '../shared/errors.ts'
 import { IMPORT_WEIGHT_MAX, type Drink, type DrinkInput, type DrinkPatch, type ExportData, type ImportItem, type Kind, type Tasting, type TastingInput } from '../shared/types.ts'
 import { api } from './api.ts'
 
@@ -144,22 +144,94 @@ export async function uploadLocal(): Promise<number> {
   return sent
 }
 
-/** Delar raderna i bitar där rader plus avsmakningar ryms i IMPORT_WEIGHT_MAX. Ordningen behålls. */
+/** Workern läser högst 65 536 byte per anrop (BODY_MAX i worker/src/index.ts). Resten är marginal för höljet. */
+export const IMPORT_BYTES_MAX = 60_000
+/** Så länge väntar importen när servern svarar 429 (LOOKUP_LIMIT räknar per minut), och så många gånger per bit. */
+const THROTTLE_WAIT_MS = 65_000
+const THROTTLE_RETRIES = 3
+
+const encoder = new TextEncoder()
+/** Radens storlek i anropets kropp, med kommat efter. Byte, inte tecken: å, ä och ö väger två. */
+function bytes(item: ImportItem): number {
+  return encoder.encode(JSON.stringify(item)).length + 1
+}
+
+/** En rad i filen ryms inte i ett anrop till kontot. Kastas innan något skickats. */
+export class ImportTooLargeError extends FatalError {
+  override name = 'ImportTooLargeError'
+}
+
+/** Kontoimporten bröts efter `sent` rader. De finns i kontot; resten (items.slice(sent)) gör det inte, utom möjligen biten som föll på ett nätfel. */
+export class ImportAbortedError extends FatalError {
+  override name = 'ImportAbortedError'
+  readonly sent: number
+  constructor(sent: number, cause: unknown) {
+    super(`import aborted after ${sent} rows: ${String(cause)}`)
+    this.sent = sent
+  }
+}
+
+/**
+ * Raderna ur en exportfil (parseExport) in i listan. Lägger alltid till, skriver aldrig över och tar aldrig bort:
+ * samma fil två gånger ger dubbletter. Gästen får dem i localStorage i en enda skrivning, så en full lagring lämnar
+ * listan orörd. Kontot får dem via samma route som gästuppladdningen, i bitar: en rad som inte ryms i ett anrop
+ * fäller importen innan något skickats (ImportTooLargeError), 429 väntas ut, och ett annat fel kastar
+ * ImportAbortedError med antalet rader som kom fram, så anroparen kan fortsätta därifrån. Ger antalet tillagda rader.
+ */
+export async function importItems(items: ImportItem[], guest: boolean, wait: (ms: number) => Promise<void> = (ms) => new Promise((r) => setTimeout(r, ms))): Promise<number> {
+  if (!guest) {
+    // ponytail: routen svarar inte med id:n, så avsmakningar över en bit kan inte skickas efteråt. Hellre nej än en tyst kapning.
+    if (items.some((i) => (i.tastings?.length ?? 0) >= IMPORT_WEIGHT_MAX || bytes(i) > IMPORT_BYTES_MAX)) throw new ImportTooLargeError('a row does not fit in one import call')
+    let sent = 0
+    for (const chunk of chunkImport(items)) {
+      for (let attempt = 0; ; attempt++) {
+        try {
+          await api.importDrinks(chunk)
+          break
+        } catch (error) {
+          // 429 kastas före skrivningen i Workern, så samma bit är säker att skicka igen. Inget annat fel är det.
+          if (!(error instanceof FatalError && error.status === 429) || attempt >= THROTTLE_RETRIES) throw new ImportAbortedError(sent, error)
+          await wait(THROTTLE_WAIT_MS)
+        }
+      }
+      sent += chunk.length
+    }
+    return sent
+  }
+  const data = read()
+  const stamp = now()
+  let next = data.next
+  const drinks = [...data.drinks]
+  const tastings = [...data.tastings]
+  for (const { tastings: own = [], ...input } of items) {
+    const id = next++
+    drinks.push({ ...blankDrink(input.kind), ...input, id, household_id: 0, created_at: stamp, updated_at: stamp })
+    for (const t of own) tastings.push({ ...t, id: next++, drink_id: id, created_at: stamp })
+  }
+  write({ ...data, next, drinks, tastings })
+  return items.length
+}
+
+/** Delar raderna i bitar där rader plus avsmakningar ryms i IMPORT_WEIGHT_MAX och kroppen i IMPORT_BYTES_MAX. Ordningen behålls. */
 export function chunkImport<T extends ImportItem>(items: T[]): T[][] {
   const chunks: T[][] = []
   let chunk: T[] = []
   let weight = 0
+  let size = 0
   for (const item of items) {
-    // ponytail: en enda rad med fler än 39 avsmakningar skickas med de första 39.
+    // ponytail: en enda rad med fler än 39 avsmakningar skickas med de första 39 (gästuppladdningen; importItems nekar den i stället).
     const trimmed = { ...item, tastings: (item.tastings ?? []).slice(0, IMPORT_WEIGHT_MAX - 1) }
     const w = 1 + trimmed.tastings.length
-    if (weight + w > IMPORT_WEIGHT_MAX && chunk.length > 0) {
+    const b = bytes(trimmed)
+    if ((weight + w > IMPORT_WEIGHT_MAX || size + b > IMPORT_BYTES_MAX) && chunk.length > 0) {
       chunks.push(chunk)
       chunk = []
       weight = 0
+      size = 0
     }
     chunk.push(trimmed)
     weight += w
+    size += b
   }
   if (chunk.length > 0) chunks.push(chunk)
   return chunks

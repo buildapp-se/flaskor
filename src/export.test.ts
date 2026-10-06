@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { blankDrink } from './local.ts'
-import { exportName, toCsv, download, toJson } from './export.ts'
+import { exportName, toCsv, download, toJson, parseExport } from './export.ts'
 
 describe('CSV för svensk Excel', () => {
   it('semikolon, decimalkomma, citat där det behövs, BOM först', () => {
@@ -123,5 +123,51 @@ describe('Nedladdning', () => {
 
     vi.runAllTimers()
     expect(revokeMock).toHaveBeenCalledWith('blob:test')
+  })
+})
+
+describe('parseExport: exportfilen tillbaka till rader', () => {
+  const file = (drinks: unknown[], tastings: unknown[] = []) => JSON.stringify({ app: 'flaskor', exported_at: '2026-10-06T20:00:00Z', household: null, drinks, tastings })
+  const wine = { ...blankDrink('wine'), id: 7, household_id: 3, name: 'Barolo', owned: true, count: 2, created_at: '2026-01-01 10:00:00', updated_at: '2026-01-01 10:00:00', last_drunk_on: '2026-09-01', last_rating: 4, tasting_count: 1 }
+
+  it('en export går runt: fälten kvar, serverfälten borta, avsmakningen på rätt rad', () => {
+    const other = { ...blankDrink('spirit'), id: 8, name: 'Gin', open_level: 2 as const }
+    const items = parseExport(toJson({ app: 'flaskor', exported_at: 'x', household: 'Hemma', drinks: [wine, other], tastings: [{ id: 1, drink_id: 7, drunk_on: '2026-09-01', rating: 4, note: 'gott', created_at: 'x' }] }))
+    expect(items).toHaveLength(2)
+    expect(items[0]).toMatchObject({ name: 'Barolo', kind: 'wine', owned: true, count: 2, tastings: [{ drunk_on: '2026-09-01', rating: 4, note: 'gott' }] })
+    expect(items[1]).toMatchObject({ name: 'Gin', owned: false, open_level: 2, tastings: [] })
+    for (const key of ['id', 'household_id', 'created_at', 'updated_at', 'last_drunk_on', 'last_rating', 'tasting_count']) expect(items[0]).not.toHaveProperty(key)
+    expect(items[0]!.tastings![0]).not.toHaveProperty('id')
+  })
+  it('nekar det som inte är en Flaskor-export', () => {
+    expect(() => parseExport('inte json')).toThrow('not json')
+    expect(() => parseExport('null')).toThrow('not a flaskor export')
+    expect(() => parseExport(JSON.stringify({ app: 'annat', drinks: [] }))).toThrow('not a flaskor export')
+    expect(() => parseExport(JSON.stringify({ app: 'flaskor', drinks: 'x' }))).toThrow('not a flaskor export')
+  })
+  it('en enda dålig rad fäller hela filen', () => {
+    expect(() => parseExport(file([wine, { ...wine, name: '' }]))).toThrow('name is required')
+    expect(() => parseExport(file([{ ...wine, kind: 'cider' }]))).toThrow('kind is required')
+    expect(() => parseExport(file([{ ...wine, count: '2' }]))).toThrow('count must be a number')
+    expect(() => parseExport(file([{ ...wine, count: -1 }]))).toThrow('count must be a whole number')
+    expect(() => parseExport(file([{ ...wine, availability: 'kanske' }]))).toThrow('unknown availability')
+    expect(() => parseExport(file([{ ...wine, source_kind: 'vivino' }]))).toThrow('unknown source_kind')
+    expect(() => parseExport(file([{ ...wine, open_level: 9 }]))).toThrow('open_level')
+    expect(() => parseExport(file([wine], [{ drink_id: 7, drunk_on: 'i går' }]))).toThrow('drunk_on')
+  })
+  // Länkfälten renderas som href: en fil får inte smuggla in javascript: i gästläget, där ingen server kontrollerar.
+  it('nekar en länk som inte är http(s)', () => {
+    expect(() => parseExport(file([{ ...wine, source_url: 'javascript:alert(1)' }]))).toThrow('source_url must be an http(s) url')
+  })
+  // Utan kontrollen matchar undefined === undefined, och varje avsmakning utan drink_id hamnar på varje flaska utan id.
+  it('avsmakningar hängs bara på ett id som är ett tal, och samma id två gånger nekas', () => {
+    const { id: _id, ...noId } = wine
+    const items = parseExport(file([noId, { ...noId, name: 'Annan' }, wine], [{ drunk_on: '2026-09-01' }, { drink_id: 7, drunk_on: '2026-09-02' }]))
+    expect(items.map((i) => i.tastings!.length)).toEqual([0, 0, 1])
+    expect(parseExport(file([{ ...noId, id: '7' }], [{ drink_id: '7', drunk_on: '2026-09-01' }]))[0]!.tastings).toEqual([])
+    expect(() => parseExport(file([wine, { ...wine, name: 'Kopia' }], [{ drink_id: 7, drunk_on: '2026-09-01' }]))).toThrow('duplicate id')
+  })
+  it('okända fält följer inte med', () => {
+    expect(parseExport(file([{ ...wine, __proto__x: 1, extra: 'x' }]))[0]).not.toHaveProperty('extra')
   })
 })
