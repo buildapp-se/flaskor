@@ -7,6 +7,8 @@
 // spegeln som färsk. Workern skriver bara rader som ändrats (D1:s dagskvot, 2026-09-13).
 // Workern får inte göra det här själv: parsningen kostade 2 s CPU för 9 000 rader och dog på fel 1102 (2026-09-12).
 import { CHUNK_ROWS, slim, type AssortmentChunk, type AssortmentResult } from '../shared/assortment.ts'
+import { FatalError, TransientError } from '../shared/errors.ts'
+import { retry } from '../shared/retry.ts'
 
 const DUMP_URL = 'https://susbolaget.emrik.org/v1/products'
 const api = (process.env['FLASKOR_API'] ?? 'https://flaskor-api.buildapp.se').replace(/\/$/, '')
@@ -16,21 +18,31 @@ if (!code) {
   process.exit(2)
 }
 
-/** Bara fälten Workern läser: rå rad är 3,7 kB med bildbilagor, skalad cirka 500 byte. */
-async function post(body: AssortmentChunk): Promise<AssortmentResult> {
-  const response = await fetch(`${api}/api/assortment`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json', authorization: `Bearer ${code}` },
-    body: JSON.stringify(body),
+/**
+ * Ett anrop till spegeln, med omförsök vid nätavbrott, 429 och 5xx (2026-10-06: en natt föll på "fetch failed").
+ * Tål att göras om: Workern skriver bara ändrade rader, så en bit som redan gått fram kostar inget andra gången.
+ */
+function post(body: AssortmentChunk): Promise<AssortmentResult> {
+  return retry(async () => {
+    const response = await fetch(`${api}/api/assortment`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: `Bearer ${code}` },
+      body: JSON.stringify(body),
+    })
+    if (!response.ok) {
+      const message = `POST /api/assortment ${response.status}: ${await response.text()}`
+      throw response.status === 429 || response.status >= 500 ? new TransientError(message) : new FatalError(message, response.status)
+    }
+    return (await response.json()) as AssortmentResult
   })
-  if (!response.ok) throw new Error(`POST /api/assortment ${response.status}: ${await response.text()}`)
-  return (await response.json()) as AssortmentResult
 }
 
 const started = Date.now()
-const response = await fetch(DUMP_URL, { headers: { accept: 'application/json' } })
-if (!response.ok) throw new Error(`dumpen svarade ${response.status}`)
-const dump = (await response.json()) as Record<string, unknown>[]
+const dump = await retry(async () => {
+  const response = await fetch(DUMP_URL, { headers: { accept: 'application/json' } })
+  if (!response.ok) throw new TransientError(`dumpen svarade ${response.status}`)
+  return (await response.json()) as Record<string, unknown>[]
+})
 if (!Array.isArray(dump) || dump.length < 10_000) throw new Error(`dumpen bar ${Array.isArray(dump) ? dump.length : 'inga'} rader, förväntade tiotusentals`)
 
 const run = new Date().toISOString()
