@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { kr, pct, temp, volume, yearRange, dateShort, articleNo } from './format.ts'
+import { kr, pct, temp, volume, yearRange, dateShort, articleNo, availabilityText } from './format.ts'
 
 // Hårt mellanslag (U+00A0) i belopp och enheter, så de aldrig radbryts.
 const N = '\u00a0'
@@ -35,5 +35,14 @@ describe('format', () => {
     expect(articleNo('7562401')).toBe(`75624${N}01`)
     expect(articleNo('12345')).toBe(`123${N}45`)
     expect(articleNo('1234')).toBe('1234')
+  })
+
+  it('tillgänglighet som "sortiment · status"', () => {
+    expect(availabilityText({ availability: 'in_stock', sb_assortment: 'FS' })).toBe('Fast sortiment · Finns hos Systembolaget')
+    expect(availabilityText({ availability: 'in_stock', sb_assortment: 'BS' })).toBe('Ordervara · Går att beställa')
+    expect(availabilityText({ availability: 'supplier_out', sb_assortment: 'BS' })).toBe('Ordervara · Slut hos leverantören')
+    expect(availabilityText({ availability: 'sold_out', sb_assortment: null })).toBe('Slutsåld')
+    // Utgått står ensamt: sortimentet är inte längre sant.
+    expect(availabilityText({ availability: 'discontinued', sb_assortment: 'FS' })).toBe('Utgått ur sortimentet')
   })
 })

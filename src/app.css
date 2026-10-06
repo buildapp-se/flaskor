@@ -1375,6 +1375,10 @@ p {
   gap: var(--fl-s3);
   font-size: 14px;
 }
+/* Ett långt värde (tillgängligheten) bryts på flera rader: håll det mot högerkanten som de korta. */
+.fl-line > :last-child {
+  text-align: right;
+}
 .fl-line__strong {
   font-weight: 500;
 }

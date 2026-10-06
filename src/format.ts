@@ -1,3 +1,4 @@
+import type { Drink } from '../shared/types.ts'
 import { S } from './strings.ts'
 
 const NBSP = '\u00a0'
@@ -39,4 +40,13 @@ export function volume(ml: number): string {
 /** Artikelnummer som Systembolaget skriver det: "75624 01". Korta nummer lämnas. */
 export function articleNo(number: string): string {
   return number.length > 4 ? `${number.slice(0, -2)}${NBSP}${number.slice(-2)}` : number
+}
+
+/** "Ordervara · Går att beställa", "Fast sortiment · Finns hos Systembolaget", "Utgått ur sortimentet". Utgått står ensamt: sortimentet är då inte längre sant. Önskelistan och detaljvyn delar texten. */
+export function availabilityText(drink: Pick<Drink, 'availability' | 'sb_assortment'>): string {
+  const A = S.wishlist.availability
+  if (drink.availability === 'discontinued') return A.discontinued
+  const label = drink.sb_assortment ? S.wishlist.assortment[drink.sb_assortment] : undefined
+  const status = drink.availability === 'in_stock' && drink.sb_assortment === 'BS' ? A.orderable : A[drink.availability]
+  return label ? `${label} · ${status}` : status
 }

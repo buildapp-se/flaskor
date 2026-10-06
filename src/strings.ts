@@ -264,6 +264,7 @@ export const S = {
     priceCurrent: 'Dagens pris',
     bought: 'Köpt',
     number: 'Artikelnummer',
+    availability: 'Tillgänglighet',
     checked: 'Kollat',
     refresh: 'Uppdatera från Systembolaget',
     refreshing: 'Uppdaterar …',
