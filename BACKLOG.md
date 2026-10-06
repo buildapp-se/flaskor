@@ -4,12 +4,14 @@
 
 ## Flaskor och Sipdeck, beslutat 2026-10-04
 
-Specifikation: [ADR 0001](docs/adr/0001-sipdeck-hemma.md). Ersätter uppskjutna beslut 7; inget är byggt. Sipdecks modell och Hemma-vy kommer först, se dess backlog.
+Specifikation: [ADR 0001](docs/adr/0001-sipdeck-hemma.md). Byggt 2026-10-06 på grenen `feat/sipdeck-koppling` (commit `0be5e25` och docs), lokalt verifierat, **inte i produktion**: utrullningen väntar på Patriks ja, planen står i `HANDOFF.md`.
 
-- [ ] `[P1]` Säker valfri kontokoppling till hushåll, produktklassificering med granskning, tillgänglighet från relevanta flaskor och återkallelse enligt ADR.
-- [ ] `[P1]` Kontextlänk till Sipdecks recept och samordnade integrationstester, inklusive flera flaskor, sista slut och hushållsbyte.
-- [ ] `[P2]` Svensk inköpsväg från Sipdecks saknade ingredienser; användaren väljer produkt före tillägg på önskelistan.
-- [ ] `[P1]` Lokal migrationsverifiering, kompatibilitet med gamla klienter och samordnad utrullningsplan före godkännande till produktion.
+- [x] `[P1]` (byggt 2026-10-06, 15 Worker-tester i `worker/test/sipdeck.test.ts`) Säker valfri kontokoppling till hushåll, tillgänglighet från relevanta flaskor och återkallelse enligt ADR. Klassificeringen ägs av Sipdeck.
+- [x] `[P1]` (byggt 2026-10-06, `src/sipdeck.test.ts`, gästflödet kört i Chrome på 390 och 1 280 px) Kontextlänk till Sipdecks recept; integrationstester för flera flaskor, sista slut, hushållsbyte, raderat konto, två hushåll och fel projekt-token.
+- [x] `[P2]` (byggt 2026-10-06) Svensk inköpsväg: `#/lagg-till?q=` kör söket, produkten väljs före önskelistan.
+- [x] `[P1]` (2026-10-06) Migrering 0010 körd mot lokal D1 med riktiga rader, utrullnings- och återställningsplan i `HANDOFF.md`.
+- [ ] `[P1]` **Patrik:** godkänn utrullningen och kör den i ordningen i `HANDOFF.md`. Sedan ägar-QA med riktiga inloggningar (listan där).
+- [ ] `[P3]` Inköpshjälpens sökord är ingrediensens svenska namn. "Kaffelikör" ger noll träffar hos Systembolaget; användaren får skriva om frågan. Ett eget sökord per ingrediens (fältet `buy` i Sipdecks `drinks.json` läses redan) om det stör.
 
 ## Byggt
 
