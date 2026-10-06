@@ -1,4 +1,4 @@
-import { useRef, useState, type ChangeEvent, type FormEvent, type SyntheticEvent } from 'react'
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent, type SyntheticEvent } from 'react'
 import { FatalError, NotFoundError } from '../../shared/errors.ts'
 import type { Candidate, Drink, DrinkPatch, Kind, LabelGuess, Preview, ScanResult } from '../../shared/types.ts'
 import { windowState } from '../../shared/window.ts'
@@ -42,12 +42,17 @@ function isCaviste(q: string): boolean {
   return /caviste\.se\//i.test(q)
 }
 
-export function Add() {
+export function Add({ q: asked = '' }: { q?: string }) {
   const { add, guest } = useStore()
+  // Från Sipdecks inköpshjälp (ADR 0001): söket körs direkt, och produkten väljs här innan något sparas.
+  useEffect(() => {
+    if (asked.trim() !== '') void searchByName(asked.trim())
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   /** Gästen tryckte på något som kräver konto (2026-09-15). */
   const [locked, setLocked] = useState(false)
   const fileInput = useRef<HTMLInputElement>(null)
-  const [query, setQuery] = useState('')
+  const [query, setQuery] = useState(asked)
   const [preview, setPreview] = useState<Preview | null>(null)
   const [fetchedAt, setFetchedAt] = useState<string | null>(null)
   const [editingWindow, setEditingWindow] = useState(false)
@@ -218,7 +223,7 @@ export function Add() {
       <form className="fl-add__form" onSubmit={fetchPreview}>
         <input className="fl-input" inputMode="url" placeholder={S.add.placeholder} value={query} onChange={(e) => setQuery(e.target.value)} autoFocus />
         <div className="fl-small fl-muted">
-          {S.add.hint} {fetchedAt && S.add.fetched(dateShort(fetchedAt))}
+          {asked !== '' && found !== null ? S.sipdeck.fromShopping : S.add.hint} {fetchedAt && S.add.fetched(dateShort(fetchedAt))}
         </div>
         {error && <div className="fl-error">{error}</div>}
         {!preview && query.trim() !== '' && (

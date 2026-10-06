@@ -1,6 +1,7 @@
 import { FatalError, NotFoundError } from '../../shared/errors.ts'
 import type { Account } from '../../shared/types.ts'
 import type { Identity } from './auth.ts'
+import { dropGrants } from './sipdeck.ts'
 
 /** Hushållet grindkoden ger som tjänsteidentitet (migrering 0001): nattjobbet och spegelimporten skriver hit. */
 export const LEGACY_HOUSEHOLD = 1
@@ -52,13 +53,14 @@ export async function joinHousehold(db: D1Database, who: Identity & { kind: 'use
   if (target === current) return
   const rows = await db.prepare('SELECT COUNT(*) AS n FROM drink WHERE household_id = ?').bind(current).first<number>('n')
   if (rows !== null && rows > 0) throw new FatalError('current household has drinks', 409)
-  await db.prepare('UPDATE member SET household_id = ? WHERE uid = ?').bind(target, who.uid).run()
+  // Sipdeck-kopplingar medlemmen gett gällde det gamla hushållet (ADR 0001): de följer inte med till det nya.
+  await db.batch([db.prepare('UPDATE member SET household_id = ? WHERE uid = ?').bind(target, who.uid), ...dropGrants(db, who.uid)])
   await dropIfEmpty(db, current)
 }
 
 /** Raderar kontots medlemskap, och hushållet med alla rader och avsmakningar när ingen annan är kvar i det. */
 export async function deleteAccount(db: D1Database, who: Identity & { kind: 'user' }, householdId: number): Promise<void> {
-  await db.prepare('DELETE FROM member WHERE uid = ?').bind(who.uid).run()
+  await db.batch([db.prepare('DELETE FROM member WHERE uid = ?').bind(who.uid), ...dropGrants(db, who.uid)])
   await dropIfEmpty(db, householdId)
 }
 
@@ -70,6 +72,8 @@ async function dropIfEmpty(db: D1Database, householdId: number): Promise<void> {
   await db.batch([
     db.prepare('DELETE FROM tasting WHERE drink_id IN (SELECT id FROM drink WHERE household_id = ?)').bind(householdId),
     db.prepare('DELETE FROM drink WHERE household_id = ?').bind(householdId),
+    db.prepare('DELETE FROM sipdeck_link WHERE household_id = ?').bind(householdId),
+    db.prepare('DELETE FROM sipdeck_code WHERE household_id = ?').bind(householdId),
     db.prepare('DELETE FROM household WHERE id = ?').bind(householdId),
   ])
 }

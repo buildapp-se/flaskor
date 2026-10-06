@@ -7,7 +7,7 @@ export type Route =
   | { view: 'cellar' }
   | { view: 'wishlist' }
   | { view: 'bar' }
-  | { view: 'add' }
+  | { view: 'add'; q: string }
   | { view: 'import' }
   | { view: 'account' }
   | { view: 'detail'; id: number }
@@ -23,7 +23,8 @@ function parse(hash: string): Route {
   if (detail?.[1]) return { view: 'detail', id: Number(detail[1]) }
   if (hash === PATHS.wishlist) return { view: 'wishlist' }
   if (hash === PATHS.bar) return { view: 'bar' }
-  if (hash === PATHS.add) return { view: 'add' }
+  // #/lagg-till?q=cointreau: Sipdecks inköpshjälp öppnar söket förifyllt (ADR 0001). Produkten väljs här.
+  if (hash === PATHS.add || hash.startsWith(`${PATHS.add}?`)) return { view: 'add', q: new URLSearchParams(hash.slice(PATHS.add.length + 1)).get('q') ?? '' }
   if (hash === PATHS.import) return { view: 'import' }
   if (hash === PATHS.account) return { view: 'account' }
   return { view: 'cellar' }

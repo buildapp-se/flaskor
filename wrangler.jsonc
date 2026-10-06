@@ -21,7 +21,9 @@
     // Bara produktionens ursprung här; localhost-listan för wrangler dev ligger i .dev.vars (OWASP 2026-09-16, låg).
     "FRONTEND_ORIGINS": "https://buildapp.se,https://www.buildapp.se",
     // Firebase-projektet för inloggningen (beslut 2, 2026-09-15). Inte hemligt: det står i varje ID-token.
-    "FIREBASE_PROJECT_ID": "flaskor-d3762"
+    "FIREBASE_PROJECT_ID": "flaskor-d3762",
+    // Sipdecks Firebase-projekt (ADR 0001): bara dess ID-token godtas på /api/sipdeck/link och /api/sipdeck/bottles.
+    "SIPDECK_FIREBASE_PROJECT_ID": "sipdeck"
   },
   // Tak per konto (2026-09-15). Perioden får bara vara 10 eller 60 s. Skanningen går till Geminis gratisnivå, som delas av alla.
   "ratelimits": [
