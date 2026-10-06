@@ -149,7 +149,8 @@ Patrik: "Jag vill att man ska kunna leka runt i appen och att det ska sparas i l
 - [x] `[P1]` Påminnelser: rad överst, rad efter sparning (1, 5, 10 ...), jämförelse under Konto.
 - [x] `[P1]` Lokala rader följer med till kontot vid inloggning, eller valet "lägg till eller släng" när kontot redan har rader.
 - [x] `[P1]` Exportera JSON och CSV under Konto, för gäst och konto.
-- [ ] `[P2]` Importera en exporterad JSON-fil tillbaka (flytt mellan webbläsare utan konto, återställning).
+- [x] `[P2]` (byggt 2026-10-06 på gren: `parseExport` i `src/export.ts`, `importItems` i `src/local.ts`, knappen Importera JSON under Konto; enhetstester, och export, rensning och import körd i Chromium i gästläge. Kontovägen overifierad mot en riktig Worker) Importera en exporterad JSON-fil tillbaka (flytt mellan webbläsare utan konto, återställning). Lägger till, skriver aldrig över: samma fil två gånger ger dubbletter.
+- [ ] `[P3]` Kontoimporten nekar en fil där en flaska har 40 eller fler avsmakningar (eller över 60 kB text): `POST /api/drinks/import` svarar inte med id:n, så resten av loggen kan inte skickas efteråt. Lös med id:n i svaret om någon stöter på det.
 - [ ] `[P3]` Uppladdningen till kontot är overifierad med en riktig inloggning: bitningen och Worker-routen är testade var för sig. Prova: lägg in en flaska som gäst, skapa konto, se att den finns kvar.
 
 ## Captured
