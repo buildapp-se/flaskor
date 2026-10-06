@@ -1,6 +1,8 @@
 # ADR 0001: Flaskor och Sipdeck, valfri koppling för Hemma
 
-Datum: 2026-10-04. Status: accepterat av Patrik, inte implementerat.
+Datum: 2026-10-04. Status: accepterat av Patrik. Byggt och lokalt verifierat 2026-10-06 på grenarna
+`feat/sipdeck-koppling` (Flaskor) och `feat/hemma-flaskor` (Sipdeck); inte i produktion. Hur det byggdes står i
+§Genomförande sist, läget och utrullningsplanen i Flaskors HANDOFF.md.
 Ersätter beslut 7 i GRILL-STATUS.md. Gemensam specifikation för båda projekten;
 Sipdeck länkar hit. Arbetsstatus finns i respektive BACKLOG.md och HANDOFF.md.
 
@@ -126,3 +128,53 @@ destruktiva operationer, kvotförbrukning och produktion gäller fortfarande.
 Sipdeck har riktiga användare: ingen merge till main eller produktionsdeploy utan
 separat godkännande. Leverera granskbar gren/PR, verifiering och konkret
 migrations-/utrullningsplan före godkännandet.
+
+## Genomförande (2026-10-06)
+
+Teknikvalen som inte är självklara. Varje val är det minsta som håller kraven ovan.
+
+**En ägare per begrepp.** Sipdeck äger ingredienserna, relationerna och vad en produkt räknas som
+(`drinks.json`: fälten `form`, `madeFrom`, `metBy`, `swap` och `shelf` på ingrediensen, listan `products` med
+produktreglerna). Flaskor äger flaskorna och ett versionsmärkt läskontrakt (`SIPDECK_CONTRACT` i
+`shared/types.ts`, version 1). Flaskor klassificerar ingenting: det hade gett två kopior av samma regler.
+
+**Relationerna sitter på kravet och pekar en väg.** `form`: kravet är bara en beredning (myntablad av mynta)
+och ägs aldrig för sig. `madeFrom`: kan ägas (köpt juice) och beredas ur råvaran, aldrig tvärtom. `metBy`: en
+mer specifik produkt uppfyller kravet (Cointreau för triple sec). `swap`: ersättning med förklaring på båda
+språken, visas men räknas aldrig som att ingrediensen finns. Just nu finns en enda `metBy`. En funktion
+(`coverage` i Sipdecks `app.js`) svarar för kortlek, detaljvy, saknas-märken, Nästan klart, räknare, egna
+drinkar och inköpshjälp.
+
+**Migreringen är en bro, inte en engångskörning.** Den gamla listan `pantry` lämnas orörd i state-bloben.
+Nya nyckeln `home` bär manuellt innehav (`have`) och den senast inlästa pantrylistan (`seen`). `bridgeHome`
+för in skillnaden mellan `pantry` och `seen`: två körningar ger samma resultat, och en gammal klient som
+fortfarande ändrar `pantry` följs. Den befintliga trevägsmergen används för `have`, `seen` och valen.
+
+**Gamla klienter.** En klient från före `home` tappar nyckeln och skriver tillbaka bloben utan den. Sipdecks
+Worker bär då vidare den lagrade `home` (`PUT /state`). Därför ska Sipdecks Worker ut före Sipdecks frontend.
+
+**Ingen ny backend och ingen gemensam inloggning.** Sipdeck-klienten anropar Flaskors Worker direkt med sitt
+eget Sipdeck-ID-token. Flaskor verifierar det mot Firebase-projektet `sipdeck` (issuer och audience) på
+`/api/sipdeck/link` och `/api/sipdeck/bottles` och ingen annanstans. Ett Flaskor-token duger inte där, ett
+Sipdeck-token duger inte någon annanstans, och tjänstenyckeln ger varken eller.
+
+**Kopplingen.** En inloggad medlem skapar en engångskod (128 bitar, bara SHA-256-hashen sparas, tio minuter,
+raderas i samma SQL-fråga som läser den). Koden reser i adressens fragment och bekräftas av den inloggade i
+Sipdeck. `sipdeck_link` har Sipdeck-uid som unik nyckel (högst ett hushåll per konto) och minns medlemmen som
+gav kopplingen. Vid varje läsning kontrolleras att den medlemmen fortfarande hör till hushållet, annars
+raderas kopplingen och svaret är `revoked`. Hushållsbyte, utträde och raderat konto tar medlemmens kopplingar
+och koder med sig. Sipdeck-token behöver inte bekräftad e-post: adressen ger ingen behörighet, koden gör det.
+
+**Importerade bidrag lagras aldrig som markeringar.** Flaskorna är en cachad ögonblicksbild per inloggat
+konto i webbläsaren (`sipdeck-flaskor`), aldrig i den synkade bloben. Innehavet räknas fram ur manuella
+markeringar plus ögonblicksbilden, så ingen union kan återuppliva en flaska. Användarens egna val per produkt
+(`home.picks`, nyckel `sb:<artikelnummer>` eller `fl:<rad-id>`) och flaggan `home.flaskor` synkas.
+
+**Nätfel, återkallelse och sena svar.** Bara svarskoderna `revoked` och `not_linked` tar bort cachen. Allt
+annat (nätfel, 5xx, 429, 401) behåller senaste bilden och märker den som inaktuell. En epokräknare höjs vid
+frånkoppling och kontobyte; ett svar från en äldre epok kastas. Hämtning sker när Hemma öppnas och på knapp,
+annars högst var femte minut, utan pollning.
+
+**Kontextlänk och inköpsväg.** `#/med/<fält>` i Sipdeck klassificerar flaskan med samma regler och fungerar
+utloggad. Inköpshjälpen länkar till Flaskors sök (`#/lagg-till?q=`), där produkten väljs före önskelistan.
+Inköpsland (`home.country`) är skilt från språket.

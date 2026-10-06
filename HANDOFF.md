@@ -1,15 +1,67 @@
 ---
 schemaVersion: 1
 status: active
-currentGoal: "Beslutad valfri Flaskor/Sipdeck-koppling enligt ADR 0001, inte byggd."
-nextAction: "Ny Claude-session: bygg enligt docs/adr/0001-sipdeck-hemma.md och respektive backlog; börja med Sipdecks ingrediensmodell."
+currentGoal: "Sipdeck-kopplingen (ADR 0001) byggd på grenen feat/sipdeck-koppling, inte live."
+nextAction: "Patrik: granska PR:erna och godkänn utrullningen i ordningen under rubriken 2026-10-06. Sedan ägar-QA med riktiga inloggningar."
 blockers: []
-reviewedAt: 2026-10-04
+reviewedAt: 2026-10-06
 ---
 
 **2026-09-24, audits från aifabriken (`tools/audit-run.mjs`).** Actions: `persist-credentials: false` på checkout i deploy.yml och assortment.yml (zizmor artipacked). Nya auditrader Secrets (pass, tre granskade publika fynd i `.gitleaksignore`) och Actions (pass). Mutation-batch över format, sort, export och local (tester av Antigravity, granskade av Claude): en export-kandidat som raderade fem testfiler i `test/` underkändes vid granskningen och bara dess `src/export.test.ts` togs, med `vi.stubGlobal` i stället för globala tilldelningar. Sorteringsbugg med serveringstemperatur utan siffror rättad (BACKLOG §Mutation). 97 tester, `tsc -b` rent. WCAG-rad: axe 0 fel på buildapp.se/flaskor.
 
 # Handoff: Flaskor
+
+## 2026-10-06: Sipdeck-kopplingen byggd på gren, väntar på utrullning
+
+ADR 0001 är byggd i båda repona i chunkläge, på grenarna `feat/sipdeck-koppling` (Flaskor) och `feat/hemma-flaskor` (Sipdeck). **Inget är mergat, deployat eller migrerat i molnet.** Teknikvalen står i [ADR 0001 §Genomförande](docs/adr/0001-sipdeck-hemma.md), Sipdecks sida i dess `HANDOFF.md`. Den här rubriken är den enda platsen för den gemensamma utrullningsplanen.
+
+**Flaskors del:** migrering `0010_sipdeck_link.sql` (två nya tabeller, bara tillägg), `worker/src/sipdeck.ts` (engångskod, inlösen, flaskkontrakt v1, frånkoppling, återkallelse), städning i `household.ts` vid hushållsbyte, utträde och raderat konto, kortet Sipdeck under Konto, länken "Se drinkar med det här i Sipdeck" i detaljvyn, `#/lagg-till?q=` för inköpshjälpen, en rad i integritetstexten.
+
+**Verifierat 2026-10-06:** `npm run check` (tsc, 100 enhetstester, 100 Worker-tester varav 15 nya med riktigt signerade token för båda Firebase-projekten, torrdeploy). Migrering 0010 körd mot lokal D1 med riktiga rader. I Chrome mot `vite` + `wrangler dev`, gästläge, 390 och 1 280 px (`sipdeck/img-src/flaskorshot.cjs`, sista raden `PASS`): inköpslänken kör söket, inget sparas före produktvalet, vald produkt hamnar på önskelistan, en önskad flaska saknar Sipdeck-länk, en ägd har den, och länken öppnar rätt drinkar i den lokala Sipdeck.
+
+**Overifierat, kräver riktiga konton:** kortet Sipdeck under Konto i en inloggad webbläsare (koden, kopieringen, listan, Koppla från), och hela kedjan med riktiga Firebase-token från båda projekten.
+
+### Utrullning, i den här ordningen
+
+Varje steg är ofarligt för det som redan är live, och ordningen gör att ingen klient någonsin möter en server som saknar det den behöver. Kvotkostnad: migreringen skriver inga rader; en kopplad användare kostar ett Worker-anrop och tre små D1-läsningar per gång Hemma öppnas, högst var femte minut.
+
+1. **Säkerhetspunkt.** Flaskor: notera Time Travel-läget, `npx wrangler d1 time-travel info flaskor` (export går inte, databasen har virtuella tabeller). Sipdeck: `cd C:/dev/sipdeck/worker && npx wrangler d1 export sipdeck --remote --output C:/dev/sipdeck-backup-fore-hemma.sql` (utanför repot: hela Sipdeck-repot publiceras).
+2. **Flaskor, migrering 0010.** Patrik kör `! npm run db:migrate:remote` i `C:/dev/flaskor` (klassificeraren stoppar Claude). Kontroll: `npx wrangler d1 execute flaskor --remote --command "SELECT name FROM sqlite_master WHERE name LIKE 'sipdeck_%'"` ger tre namn (två tabeller, ett index).
+3. **Flaskor, Worker.** `npm run worker:deploy`. Kontroll: `curl -s -o /dev/null -w "%{http_code}" https://flaskor-api.buildapp.se/api/sipdeck/bottles` ger 401, `/health` ger 200. Gamla frontenden märker inget.
+4. **Sipdeck, Worker.** `cd C:/dev/sipdeck/worker && npx wrangler deploy`. Kontroll: `GET /state` utan token ger 401. Inget schema ändras. **Måste ut före Sipdecks frontend**, annars kan en gammal flik radera `home`.
+5. **Sipdeck, frontend.** Granska PR:n, vänta in CI (fem webbläsarprojekt), merga till `main`. Kontroll live: `app.js?v=1.28`, `#/skafferi` öppnar Hemma, det gamla skafferiets markeringar finns kvar.
+6. **Flaskor, frontend.** Merga PR:n till `main` (Pages). Sist, eftersom dess länkar pekar på Sipdecks nya adresser.
+7. **Ägar-QA** nedan.
+
+### Återställning
+
+- **Sipdecks frontend:** revert av mergen på `main`. Gamla appen läser `pantry`, som aldrig rörts. Det som lagts till under Hemma i nya versionen syns inte i den gamla men ligger kvar i `home` och kommer tillbaka vid ny utrullning. Inget raderas.
+- **Sipdecks Worker:** låt den ligga. Den är bakåtkompatibel, och rullas den tillbaka medan nya klienter finns kan en gammal klient radera `home`. Måste den bort: frontenden först, sedan `npx wrangler rollback`.
+- **Flaskors frontend:** revert av mergen.
+- **Flaskors Worker:** `npx wrangler rollback`. Sipdeck-klienten får då 404 utan felkod, behandlar det som ett tillfälligt fel och visar senast hämtade flaskor som inaktuella.
+- **Flaskors tabeller:** får ligga kvar, de stör inget. Att ta bort dem (`DROP TABLE sipdeck_link`, `sipdeck_code`) är destruktivt och kräver ett eget ja.
+- **Nödbroms utan deploy:** `DELETE FROM sipdeck_link` kopplar från alla; klienterna städar sin cache vid nästa hämtning.
+
+### Ägar-QA efter utrullning
+
+1. Logga in i Flaskor, Konto, **Koppla Sipdeck**, öppna länken i en webbläsare där du är inloggad i Sipdeck, bekräfta. Hemma ska visa hushållets namn och flaskorna.
+2. Flaskorna som "Behöver ditt val": välj, och se att bara den flaskan flyttar.
+3. Sätt en ginflaska till 0 i Flaskor, tryck Uppdatera i Sipdeck. Finns en till är gin kvar; annars bara om du bockat i gin själv.
+4. Koppla från i Sipdeck: flaskorna försvinner, dina egna markeringar står kvar. Koppla igen, och återkalla sedan från Flaskors Konto.
+5. Julia kopplar sitt eget Sipdeck-konto till samma hushåll.
+6. Telefonen: Hemma i Safari och i hemskärmsappen.
+7. Läs relationerna och produktreglerna (nedan) och säg till om något ska ändras.
+
+### Val tagna åt Patrik, 2026-10-06
+
+- **Klassificeringen ligger i Sipdeck, inte i Flaskor.** En ägare av ingrediensbegreppen; Flaskor lämnar bara rader.
+- **Ingen bekräftad e-post krävs på Sipdeck-kontot.** Koden från en inloggad, bekräftad Flaskor-medlem är behörigheten.
+- **Kopplingen hänger på medlemmen som gav den.** Lämnar hen hushållet försvinner kopplingen, även om andra medlemmar är kvar. De skapar en egen kod.
+- **Koppla från är ett tryck utan dialog.** Det går att koppla igen med en ny kod.
+- **Öl skickas med i kontraktet men får ingen Sipdeck-länk i detaljvyn.** Ingen drink i katalogen använder öl.
+- **Sipdecks e-postadress visas för hushållet** under Konto, så man ser vem som kopplats. Står i integritetstexten.
+- **Inköpshjälpens sökord är ingrediensens svenska namn**, se BACKLOG P3.
+- **Granskade relationer, min bedömning som du bör läsa:** bara Cointreau uppfyller triple sec. Ersättningar (visas, räknas inte): triple sec för Cointreau; Grand Marnier eller Cointreau för apelsincuraçao; annat torrt bubbel eller prosecco för champagne och tvärtom; rye, Tennessee och bourbon sinsemellan; rökig för skotsk whisky; blanco och reposado; socker eller sockerlag för sockerbit. Vermouth, Chartreuse, romstilar, gin, vodka och crème de cacao hålls isär och det testas.
 
 ## 2026-10-04: Sipdeck-kopplingen beslutad, byggöverlämning
 
