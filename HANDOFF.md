@@ -11,6 +11,17 @@ reviewedAt: 2026-10-06
 
 # Handoff: Flaskor
 
+## 2026-10-06, natt: batchgrenen `batch/2026-10-06` (inte mergad, inget deployat)
+
+Nattbatch i en egen worktree från `origin/main` (`a1fe068`). Grenen är pushad som säkerhetskopia; **inget är live** förrän Patrik mergar till `main` (Pages bygger då frontenden, och nattens Actions-körning läser skriptet från `main`). Ingen Worker-ändring, ingen migrering.
+
+- `1fd15c8` **Tillgängligheten i detaljvyn** (BACKLOG §Tillgänglighet P3). `availabilityText` i `src/format.ts` delas av Önskelistan och detaljvyn; priskortet visar raden Tillgänglighet för Systembolagsrader med känd status. Verifierat: `tsc -b`, enhetstest, och i Chromium mot `vite` i gästläge på 1 280 och 390 px (rätt text, ingen rad på en egen rad, Önskelistans text oförändrad).
+- `edc1739` **Omförsök i spegelskriptet** (BACKLOG §Spegeln P3). `shared/retry.ts`: tre försök per anrop vid nätavbrott, 429 och 5xx, aldrig vid 4xx; gäller både dumphämtningen och varje `POST /api/assortment`. Verifierat: enhetstest, och skriptet kört mot en lokal låtsasserver som bröt ett anrop och svarade 503 på ett (94 anrop, 92 lyckade, `ok: 27295 rader`). **Overifierat:** en körning i Actions.
+
+**Val tagna åt Patrik:** raden visas för alla Systembolagsrader, också ägda (texten säger om flaskan går att köpa igen). `.fl-line` högerställer nu ett värde som bryts på flera rader. Omförsöket byggdes fast punkten sa "om det händer igen": det var litet och ofarligt.
+
+**Hoppat över, med skäl:** inköpshjälpens sökord (ändringen ligger i Sipdecks `drinks.json`, annat repo), dagspris från fler källor och engelska (väntar på ditt ja enligt §Vad som är kvar), streckkod i kameran på iPhone (nytt WASM-beroende, kräver en riktig iPhone), `listAllDrinks` (villkoret "tusentals rader" är inte uppfyllt, och det ändrar nattjobbet), och allt märkt Patrik eller ägar-QA.
+
 ## 2026-10-06: Sipdeck-kopplingen live, ägar-QA återstår
 
 ADR 0001 byggdes i båda repona i chunkläge och **rullades ut 2026-10-06 kl. 17:38 till 18:20 på Patriks ja**, i ordningen nedan. Teknikvalen står i [ADR 0001 §Genomförande](docs/adr/0001-sipdeck-hemma.md), Sipdecks sida i dess `HANDOFF.md`. Den här rubriken är den enda platsen för den gemensamma utrullningsplanen.
