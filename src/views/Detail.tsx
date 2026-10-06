@@ -5,7 +5,7 @@ import { Locked } from '../components/Locked.tsx'
 import { Pill } from '../components/Pill.tsx'
 import { Stock } from '../components/Stock.tsx'
 import { Tastings } from '../components/Tastings.tsx'
-import { articleNo, dateShort, kr, pct, temp } from '../format.ts'
+import { articleNo, availabilityText, dateShort, kr, pct, temp } from '../format.ts'
 import { navigate, PATHS } from '../hash.ts'
 import { IconExternal, IconMinus, IconPlus } from '../icons.tsx'
 import { drinksLink } from '../sipdeck.ts'
@@ -156,6 +156,7 @@ export function Detail({ id }: { id: number }) {
           {drink.price_current !== null && <Line label={S.detail.priceCurrent} value={kr(drink.price_current)} strong />}
           {drink.owned && <Line label={S.detail.bought} value={dateShort(drink.created_at)} />}
           {drink.source_kind === 'systembolaget' && drink.source_id && <Line label={S.detail.number} value={articleNo(drink.source_id)} />}
+          {drink.source_kind === 'systembolaget' && drink.availability !== 'unknown' && <Line label={S.detail.availability} value={availabilityText(drink)} />}
           {drink.price_checked_at && <Line label={S.detail.checked} value={dateShort(drink.price_checked_at)} />}
           <div className="fl-rule" />
           {drink.source_url && (

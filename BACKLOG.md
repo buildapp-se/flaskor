@@ -123,7 +123,7 @@ Patrik: "Tillfälligt slut i butiken" i Önskelistan går inte att tolka. Utredn
 
 - [x] `[P1]` Spegeln ignorerar dumpens `isTemporaryOutOfStock`; `sb_assortment` (sortimentskoden) på raden; `availability` vidgad med `supplier_out` och `sold_out`; Önskelistan skriver "sortiment · status" ("Ordervara · Slut hos leverantören", "Fast sortiment · Finns hos Systembolaget", "Slutsåld", "Utgått ur sortimentet"). Migrering 0007 bygger om `drink` och `tasting`. Commit `7fa58a7`.
 - [x] `[P1]` Migrering 0007 körd i molnet av Patrik 2026-09-13, Worker `be3892f7`, spegeln körd om, refresh-all 19 av 19. På vägen: `DUMP_FIELDS` saknade `assortment` och `isSupplierTemporaryNotAvailable` så första spegelkörningen gav null; fix `c2258fa` med test genom `slim`.
-- [ ] `[P3]` Samma text i detaljvyn. I dag visas tillgängligheten bara i Önskelistan.
+- [x] `[P3]` (byggt 2026-10-06, `availabilityText` i `src/format.ts` delas av Önskelistan och detaljvyn, test i `src/format.test.ts`, sett i Chromium på 1 280 och 390 px i gästläge) Samma text i detaljvyn: raden Tillgänglighet i priskortet för Systembolagsrader.
 
 ## Öppen för fler hushåll 2026-09-15
 
