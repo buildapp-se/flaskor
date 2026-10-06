@@ -1,7 +1,9 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { FatalError, NotFoundError } from '../../shared/errors.ts'
-import type { Account as AccountData, ExportData } from '../../shared/types.ts'
+import type { Account as AccountData, ExportData, SipdeckCode, SipdeckLink } from '../../shared/types.ts'
 import { api } from '../api.ts'
+import { dateShort } from '../format.ts'
+import { linkUrl } from '../sipdeck.ts'
 import { authErrorMessage, deleteFirebaseUser, isAuthConfigured, signOutUser } from '../auth.ts'
 import { download, exportName, toCsv, toJson } from '../export.ts'
 import { clearLocal, localCount, localExport, uploadLocal } from '../local.ts'
@@ -145,6 +147,7 @@ function SignedInAccount({ onAccountChanged }: { onAccountChanged: () => void })
             </form>
           </section>
         )}
+        {account?.email && auth && <SipdeckCard />}
         {pending > 0 && account?.email && (
           <section className="fl-card fl-account__card">
             <div className="fl-label">{S.guest.pendingTitle(pending)}</div>
@@ -196,6 +199,86 @@ function SignedInAccount({ onAccountChanged }: { onAccountChanged: () => void })
         )}
       </div>
     </>
+  )
+}
+
+/**
+ * Valfri koppling till Sipdeck (ADR 0001). En medlem skapar en engångskod, och den som är inloggad i Sipdeck
+ * löser in den där: inget kopplas av sig självt, inte heller när e-postadressen är densamma i båda apparna.
+ */
+function SipdeckCard() {
+  const [links, setLinks] = useState<SipdeckLink[]>([])
+  const [code, setCode] = useState<SipdeckCode | null>(null)
+  const [message, setMessage] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
+  const load = () => api.sipdeckLinks().then(setLinks, () => setMessage(S.error.offline))
+  useEffect(() => {
+    void load()
+  }, [])
+
+  async function create() {
+    setBusy(true)
+    setMessage(null)
+    try {
+      setCode(await api.sipdeckCode())
+    } catch (err) {
+      setMessage(err instanceof FatalError && err.status === 429 ? S.sipdeck.tooMany : S.error.generic)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function revoke(id: number) {
+    try {
+      await api.revokeSipdeckLink(id)
+      setMessage(S.sipdeck.revoked)
+    } catch {
+      setMessage(S.error.generic)
+    }
+    await load()
+  }
+
+  return (
+    <section className="fl-card fl-account__card">
+      <div className="fl-label">{S.sipdeck.title}</div>
+      <p className="fl-muted">{S.sipdeck.lead}</p>
+      {code === null ? (
+        <button className="fl-btn fl-btn--secondary" type="button" disabled={busy} onClick={() => void create()}>
+          {S.sipdeck.create}
+        </button>
+      ) : (
+        <>
+          <p className="fl-muted">{S.sipdeck.codeLead}</p>
+          <div className="fl-account__row">
+            <a className="fl-btn fl-btn--primary" href={linkUrl(code.code)} target="_blank" rel="noreferrer">
+              {S.sipdeck.open}
+            </a>
+          </div>
+          <div className="fl-account__row">
+            <code className="fl-account__code">{code.code}</code>
+            <button className="fl-btn fl-btn--secondary" type="button" onClick={() => void navigator.clipboard.writeText(code.code).then(() => setMessage(S.account.copied), () => undefined)}>
+              {S.account.copy}
+            </button>
+          </div>
+        </>
+      )}
+      {links.length > 0 && (
+        <>
+          <div className="fl-label">{S.sipdeck.linked}</div>
+          <ul className="fl-account__members">
+            {links.map((l) => (
+              <li key={l.id}>
+                {l.email ?? S.sipdeck.noEmail} <span className="fl-muted">{S.sipdeck.since(dateShort(l.created_at))}</span>{' '}
+                <button className="fl-textbtn" type="button" onClick={() => void revoke(l.id)}>
+                  {S.sipdeck.revoke}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+      {message && <p className="fl-muted" role="status">{message}</p>}
+    </section>
   )
 }
 
