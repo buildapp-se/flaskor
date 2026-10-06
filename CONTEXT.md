@@ -6,7 +6,7 @@ Vad produkten är, domänorden, datamodellen och arkitekturen. Besluten som ledd
 
 ## Produkten
 
-**Sipdeck-kopplingen, byggd på gren och inte live (2026-10-06):** [ADR 0001: Sipdeck och Hemma](docs/adr/0001-sipdeck-hemma.md) är gemensam specifikation för koppling, ingrediensmodell och dataansvar, och dess §Genomförande säger hur det byggdes. Flaskors del står under §Flöden (Sipdeck-koppling) och §Datamodell nedan.
+**Sipdeck-kopplingen, live sedan 2026-10-06:** [ADR 0001: Sipdeck och Hemma](docs/adr/0001-sipdeck-hemma.md) är gemensam specifikation för koppling, ingrediensmodell och dataansvar, och dess §Genomförande säger hur det byggdes. Flaskors del står under §Flöden (Sipdeck-koppling) och §Datamodell nedan.
 
 Ett hushåll (Patrik och Julia) håller reda på vilka flaskor som finns hemma, vilka de vill köpa, och när vinet bör drickas. Ersätter ett Excel-ark med 21 rader och Systembolagets sparade listor. Skala: tiotals rader per hushåll. Sedan 2026-09-15 öppen för fler hushåll med egna konton (tänkt att delas på AI-forum och senare vinforum). Inte en samlarapp: ingen källarplats, ingen värdering, ingen community.
 

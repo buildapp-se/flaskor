@@ -4,7 +4,7 @@
 
 ## Flaskor och Sipdeck, beslutat 2026-10-04
 
-Specifikation: [ADR 0001](docs/adr/0001-sipdeck-hemma.md). Byggt 2026-10-06 på grenen `feat/sipdeck-koppling` (commit `0be5e25` och docs), lokalt verifierat, **inte i produktion**: utrullningen väntar på Patriks ja, planen står i `HANDOFF.md`.
+Specifikation: [ADR 0001](docs/adr/0001-sipdeck-hemma.md). Byggt och live 2026-10-06 (PR #1, squash `509ac91`). Ägar-QA med riktiga inloggningar återstår, punkterna står i `HANDOFF.md`.
 
 - [x] `[P1]` (byggt 2026-10-06, 15 Worker-tester i `worker/test/sipdeck.test.ts`) Säker valfri kontokoppling till hushåll, tillgänglighet från relevanta flaskor och återkallelse enligt ADR. Klassificeringen ägs av Sipdeck.
 - [x] `[P1]` (byggt 2026-10-06, `src/sipdeck.test.ts`, gästflödet kört i Chrome på 390 och 1 280 px) Kontextlänk till Sipdecks recept; integrationstester för flera flaskor, sista slut, hushållsbyte, raderat konto, två hushåll och fel projekt-token.
