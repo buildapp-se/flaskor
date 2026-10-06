@@ -1,8 +1,8 @@
 # ADR 0001: Flaskor och Sipdeck, valfri koppling för Hemma
 
-Datum: 2026-10-04. Status: accepterat av Patrik. Byggt och lokalt verifierat 2026-10-06 på grenarna
-`feat/sipdeck-koppling` (Flaskor) och `feat/hemma-flaskor` (Sipdeck); inte i produktion. Hur det byggdes står i
-§Genomförande sist, läget och utrullningsplanen i Flaskors HANDOFF.md.
+Datum: 2026-10-04. Status: accepterat av Patrik. Byggt och i produktion i båda apparna sedan 2026-10-06
+(Flaskor PR #1, Sipdeck PR #25). Hur det byggdes står i §Genomförande sist, utrullningen och kvarvarande
+ägar-QA i Flaskors HANDOFF.md.
 Ersätter beslut 7 i GRILL-STATUS.md. Gemensam specifikation för båda projekten;
 Sipdeck länkar hit. Arbetsstatus finns i respektive BACKLOG.md och HANDOFF.md.
 

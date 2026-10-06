@@ -1,8 +1,8 @@
 ---
 schemaVersion: 1
 status: active
-currentGoal: "Sipdeck-kopplingen (ADR 0001) byggd på grenen feat/sipdeck-koppling, inte live."
-nextAction: "Patrik: granska PR:erna och godkänn utrullningen i ordningen under rubriken 2026-10-06. Sedan ägar-QA med riktiga inloggningar."
+currentGoal: "Sipdeck-kopplingen (ADR 0001) är live i båda apparna sedan 2026-10-06, ägar-QA återstår."
+nextAction: "Patrik: ägar-QA med riktiga inloggningar, sju punkter under rubriken 2026-10-06."
 blockers: []
 reviewedAt: 2026-10-06
 ---
@@ -11,17 +11,28 @@ reviewedAt: 2026-10-06
 
 # Handoff: Flaskor
 
-## 2026-10-06: Sipdeck-kopplingen byggd på gren, väntar på utrullning
+## 2026-10-06: Sipdeck-kopplingen live, ägar-QA återstår
 
-ADR 0001 är byggd i båda repona i chunkläge, på grenarna `feat/sipdeck-koppling` (Flaskor) och `feat/hemma-flaskor` (Sipdeck). **Inget är mergat, deployat eller migrerat i molnet.** Teknikvalen står i [ADR 0001 §Genomförande](docs/adr/0001-sipdeck-hemma.md), Sipdecks sida i dess `HANDOFF.md`. Den här rubriken är den enda platsen för den gemensamma utrullningsplanen.
+ADR 0001 byggdes i båda repona i chunkläge och **rullades ut 2026-10-06 kl. 17:38 till 18:20 på Patriks ja**, i ordningen nedan. Teknikvalen står i [ADR 0001 §Genomförande](docs/adr/0001-sipdeck-hemma.md), Sipdecks sida i dess `HANDOFF.md`. Den här rubriken är den enda platsen för den gemensamma utrullningsplanen.
+
+**Utrullningen, steg för steg, med kontrollen som kördes:**
+
+1. Säkerhetspunkt. Flaskors Time Travel-bokmärke före migreringen: `000000bd-00000000-000050fc-c8753c7d69268ce4471f571eef342c6a`. Sipdecks D1 exporterad till `C:/dev/sipdeck-backup-fore-hemma.sql` (tre tabeller, 14 rader). Förbrukning före, rullande dygn: Flaskor 221 skrivna och 47 455 lästa rader, Sipdeck 0 och 199.
+2. Migrering 0010 körd av Patrik: `sipdeck_code`, `sipdeck_link` och `sipdeck_link_household` finns i molnet.
+3. Flaskors Worker `1ff6ff2c` (efter `npm run check`, 100 + 100 tester): `/health` 200, `/api/sipdeck/bottles` 401.
+4. Sipdecks Worker `909cc820`: `/state` utan token 401, bindningarna `DB` och `MAIL` oförändrade.
+5. Sipdecks frontend, PR #25 squash `cfce434`: `app.js?v=1.28` live, och i Chrome på 390 px öppnar `#/skafferi` Hemma med ett gammalt state, `pantry` och favoriter orörda, inga konsolfel eller 4xx.
+6. Flaskors frontend, PR #1 squash `509ac91`, Pages-körning 37494584929 grön, bundeln `index-BlbbYlYs.js`. Gästflödet över de skarpa apparna (`sipdeck/img-src/flaskorshot.cjs` mot buildapp.se) gav `PASS` på 390 och 1 280 px.
+
+Mergarna körde Patrik själv med `!`: klassificeraren nekar Claude `gh pr merge` ("Merge Without Review").
 
 **Flaskors del:** migrering `0010_sipdeck_link.sql` (två nya tabeller, bara tillägg), `worker/src/sipdeck.ts` (engångskod, inlösen, flaskkontrakt v1, frånkoppling, återkallelse), städning i `household.ts` vid hushållsbyte, utträde och raderat konto, kortet Sipdeck under Konto, länken "Se drinkar med det här i Sipdeck" i detaljvyn, `#/lagg-till?q=` för inköpshjälpen, en rad i integritetstexten.
 
 **Verifierat 2026-10-06:** `npm run check` (tsc, 100 enhetstester, 100 Worker-tester varav 15 nya med riktigt signerade token för båda Firebase-projekten, torrdeploy). Migrering 0010 körd mot lokal D1 med riktiga rader. I Chrome mot `vite` + `wrangler dev`, gästläge, 390 och 1 280 px (`sipdeck/img-src/flaskorshot.cjs`, sista raden `PASS`): inköpslänken kör söket, inget sparas före produktvalet, vald produkt hamnar på önskelistan, en önskad flaska saknar Sipdeck-länk, en ägd har den, och länken öppnar rätt drinkar i den lokala Sipdeck.
 
-**Overifierat, kräver riktiga konton:** kortet Sipdeck under Konto i en inloggad webbläsare (koden, kopieringen, listan, Koppla från), och hela kedjan med riktiga Firebase-token från båda projekten.
+**Overifierat även efter utrullningen, kräver riktiga konton:** kortet Sipdeck under Konto i en inloggad webbläsare (koden, kopieringen, listan, Koppla från), och hela kedjan med riktiga Firebase-token från båda projekten. Det är ägar-QA nedan.
 
-### Utrullning, i den här ordningen
+### Utrullningsordningen (genomförd, kvar som mall för en ny utrullning efter en återställning)
 
 Varje steg är ofarligt för det som redan är live, och ordningen gör att ingen klient någonsin möter en server som saknar det den behöver. Kvotkostnad: migreringen skriver inga rader; en kopplad användare kostar ett Worker-anrop och tre små D1-läsningar per gång Hemma öppnas, högst var femte minut.
 
