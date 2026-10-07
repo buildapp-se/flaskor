@@ -4,16 +4,16 @@ status: active
 currentGoal: "Sipdeck-kopplingen (ADR 0001) är live i båda apparna sedan 2026-10-06, ägar-QA återstår."
 nextAction: "Patrik: ägar-QA med riktiga inloggningar, sju punkter under rubriken 2026-10-06."
 blockers: []
-reviewedAt: 2026-10-06
+reviewedAt: 2026-10-07
 ---
 
 **2026-09-24, audits från aifabriken (`tools/audit-run.mjs`).** Actions: `persist-credentials: false` på checkout i deploy.yml och assortment.yml (zizmor artipacked). Nya auditrader Secrets (pass, tre granskade publika fynd i `.gitleaksignore`) och Actions (pass). Mutation-batch över format, sort, export och local (tester av Antigravity, granskade av Claude): en export-kandidat som raderade fem testfiler i `test/` underkändes vid granskningen och bara dess `src/export.test.ts` togs, med `vi.stubGlobal` i stället för globala tilldelningar. Sorteringsbugg med serveringstemperatur utan siffror rättad (BACKLOG §Mutation). 97 tester, `tsc -b` rent. WCAG-rad: axe 0 fel på buildapp.se/flaskor.
 
 # Handoff: Flaskor
 
-## 2026-10-06, natt: batchgrenen `batch/2026-10-06` (inte mergad, inget deployat)
+## 2026-10-06, natt: batchgrenen `batch/2026-10-06` (mergad till `main` och deployad 2026-10-07)
 
-Nattbatch i en egen worktree från `origin/main` (`a1fe068`). Grenen är pushad som säkerhetskopia; **inget är live** förrän Patrik mergar till `main` (Pages bygger då frontenden, och nattens Actions-körning läser skriptet från `main`). Ingen migrering. Workerns beteende är oförändrat (`sanitize` flyttad till `shared/`, samma kod), så ingen Worker-deploy behövs för något på grenen.
+Nattbatch i en egen worktree från `origin/main` (`a1fe068`). **Mergad till `main` och deployad 2026-10-07 på Patriks order** (Pages byggde frontenden, och nattens Actions-körning läser nu skriptet från `main`). Ingen migrering. Workerns beteende är oförändrat (`sanitize` flyttad till `shared/`, samma kod), så ingen Worker-deploy behövs för något på grenen.
 
 - `1fd15c8` **Tillgängligheten i detaljvyn** (BACKLOG §Tillgänglighet P3). `availabilityText` i `src/format.ts` delas av Önskelistan och detaljvyn; priskortet visar raden Tillgänglighet för Systembolagsrader med känd status. Verifierat: `tsc -b`, enhetstest, och i Chromium mot `vite` i gästläge på 1 280 och 390 px (rätt text, ingen rad på en egen rad, Önskelistans text oförändrad).
 - `edc1739` **Omförsök i spegelskriptet** (BACKLOG §Spegeln P3). `shared/retry.ts`: tre försök per anrop vid nätavbrott, 429 och 5xx, aldrig vid 4xx; gäller både dumphämtningen och varje `POST /api/assortment`. Verifierat: enhetstest, och skriptet kört mot en lokal låtsasserver som bröt ett anrop och svarade 503 på ett (94 anrop, 92 lyckade, `ok: 27295 rader`). **Overifierat:** en körning i Actions.
