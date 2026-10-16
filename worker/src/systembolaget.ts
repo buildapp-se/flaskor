@@ -152,8 +152,8 @@ export function toPreview(p: Product, now = new Date()): Preview {
     source_kind: 'systembolaget',
     source_id: p.productNumber,
     source_url: productUrl(p.productNumber),
-    image_url: p.hasImage ? imageUrl(p.productId) : null,
-    sb_product_id: p.productId,
+    image_url: p.hasImage && p.productId ? imageUrl(p.productId) : null,
+    sb_product_id: p.productId || null,
     sb_assortment: p.assortment,
     price_paid: null,
     price_current: p.priceInclVat,
@@ -178,6 +178,8 @@ export function toPreview(p: Product, now = new Date()): Preview {
 }
 
 export async function fetchProduct(number: string): Promise<Product> {
+  // source_id kommer från användaren; bara siffror får bli en del av adressen (OWASP 2026-10-16).
+  if (!/^\d{1,12}$/.test(number)) throw new FatalError('product number must be digits')
   let response: Response
   try {
     response = await fetch(productUrl(number), { headers: { 'user-agent': USER_AGENT, accept: 'text/html' } })

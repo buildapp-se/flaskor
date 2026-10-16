@@ -54,21 +54,32 @@ export async function joinHousehold(db: D1Database, who: Identity & { kind: 'use
   const rows = await db.prepare('SELECT COUNT(*) AS n FROM drink WHERE household_id = ?').bind(current).first<number>('n')
   if (rows !== null && rows > 0) throw new FatalError('current household has drinks', 409)
   // Sipdeck-kopplingar medlemmen gett gällde det gamla hushållet (ADR 0001): de följer inte med till det nya.
-  await db.batch([db.prepare('UPDATE member SET household_id = ? WHERE uid = ?').bind(target, who.uid), ...dropGrants(db, who.uid)])
-  await dropIfEmpty(db, current)
+  // Koden byts när den använts (OWASP 2026-10-16, A01): en kod som läckt eller delats en gång gäller inte för evigt.
+  await db.batch([
+    db.prepare('UPDATE member SET household_id = ? WHERE uid = ?').bind(target, who.uid),
+    rotateInvite(db, target),
+    ...dropGrants(db, who.uid),
+  ])
+  await afterLeaving(db, current)
 }
 
 /** Raderar kontots medlemskap, och hushållet med alla rader och avsmakningar när ingen annan är kvar i det. */
 export async function deleteAccount(db: D1Database, who: Identity & { kind: 'user' }, householdId: number): Promise<void> {
   await db.batch([db.prepare('DELETE FROM member WHERE uid = ?').bind(who.uid), ...dropGrants(db, who.uid)])
-  await dropIfEmpty(db, householdId)
+  await afterLeaving(db, householdId)
 }
 
-async function dropIfEmpty(db: D1Database, householdId: number): Promise<void> {
-  // Hushåll 1 rörs aldrig: grindkoden (nattskriptet) pekar på det även utan medlemmar.
-  if (householdId === LEGACY_HOUSEHOLD) return
+const rotateInvite = (db: D1Database, householdId: number): D1PreparedStatement =>
+  db.prepare('UPDATE household SET invite_code = ? WHERE id = ?').bind(newInviteCode(), householdId)
+
+/** Ett hushåll någon lämnat: raderas när ingen är kvar, annars får det en ny kod så den som gick inte kan komma tillbaka med den gamla. */
+async function afterLeaving(db: D1Database, householdId: number): Promise<void> {
   const left = await db.prepare('SELECT COUNT(*) AS n FROM member WHERE household_id = ?').bind(householdId).first<number>('n')
-  if (left !== 0) return
+  // Hushåll 1 raderas aldrig: grindkoden (nattskriptet) pekar på det även utan medlemmar.
+  if (left !== 0 || householdId === LEGACY_HOUSEHOLD) {
+    await rotateInvite(db, householdId).run()
+    return
+  }
   await db.batch([
     db.prepare('DELETE FROM tasting WHERE drink_id IN (SELECT id FROM drink WHERE household_id = ?)').bind(householdId),
     db.prepare('DELETE FROM drink WHERE household_id = ?').bind(householdId),

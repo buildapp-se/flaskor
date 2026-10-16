@@ -38,6 +38,11 @@ describe('dumpraden', () => {
     expect(p.hasImage).toBe(false)
     expect(p.vintage).toBe('2020')
     expect(() => fromDump({ productId: '2' })).toThrow()
+    // OWASP 2026-10-16: id:n bara siffror, text kapad.
+    expect(() => fromDump({ productNumber: '1/../x', productNameBold: 'X' })).toThrow()
+    const odd = fromDump({ productNumber: '1', productId: '../2', productNameBold: 'X'.repeat(5000), images: ['a'] })
+    expect(odd.productId).toBe('')
+    expect(odd.productNameBold).toHaveLength(1000)
     expect(() => fromDump(null)).toThrow()
   })
   it('litar inte på dumpens isTemporaryOutOfStock (true på varje rad) men på de andra flaggorna och koden', () => {

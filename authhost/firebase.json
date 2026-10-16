@@ -2,6 +2,9 @@
   "hosting": {
     "site": "flaskor-d3762",
     "public": "public",
-    "ignore": ["firebase.json", "**/.*"]
+    "ignore": ["firebase.json", "**/.*"],
+    "headers": [
+      { "source": "**", "headers": [{ "key": "X-Content-Type-Options", "value": "nosniff" }] }
+    ]
   }
 }

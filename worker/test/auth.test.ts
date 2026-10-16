@@ -84,6 +84,14 @@ describe('Firebase-token', () => {
     const a = await asUser()
     expect((await a('POST', '/api/refresh-all')).status).toBe(403)
     expect((await a('POST', '/api/assortment', { run: 'x', rows: [] })).status).toBe(403)
+    // Identiteten prövas före kroppen: en trasig kropp ger ändå 403, inte 400.
+    const broken = await SELF.fetch('https://flaskor-api.test/api/assortment', { method: 'POST', headers: { authorization: `Bearer ${await token()}` }, body: '{' })
+    expect(broken.status).toBe(403)
+    // Varje skrivning räknas mot kontots dagstak.
+    const writes = () => env.DB.prepare("SELECT COUNT(*) AS n FROM sb_meta WHERE key LIKE 'write:%'").first<number>('n')
+    const n = await writes()
+    await (await asUser())('POST', '/api/drinks', { kind: 'beer', name: 'Räknad', owned: true, count: 1 })
+    expect(await writes()).toBe((n ?? 0) + 1)
     expect((await gate('POST', '/api/refresh-all')).status).toBe(200)
   })
 })
@@ -149,6 +157,8 @@ describe('hushåll', () => {
     const code = (await (await a('GET', '/api/me')).json<Me>()).household.invite_code
     const bOld = (await (await b('GET', '/api/me')).json<Me>()).household.id
     expect((await b('POST', '/api/household/join', { code: code.toUpperCase() })).status).toBe(204)
+    // OWASP 2026-10-16: en använd kod byts.
+    expect((await (await a('GET', '/api/me')).json<Me>()).household.invite_code).not.toBe(code)
     const drinks = await (await b('GET', '/api/drinks')).json<{ drinks: Array<{ name: string }> }>()
     expect(drinks.drinks.map((d) => d.name)).toEqual(['Delad'])
     expect((await (await a('GET', '/api/me')).json<Me>()).household.members).toHaveLength(2)
@@ -193,8 +203,11 @@ describe('hushåll', () => {
     const code = (await (await b('GET', '/api/me')).json<Me>()).household.invite_code
     await c('POST', '/api/household/join', { code })
     const kept = await (await b('POST', '/api/drinks', { kind: 'wine', name: 'Kvar', owned: true, count: 1 })).json<{ id: number }>()
+    const before = (await (await b('GET', '/api/me')).json<Me>()).household.invite_code
     expect((await c('DELETE', '/api/me')).status).toBe(204)
     expect(await env.DB.prepare('SELECT id FROM drink WHERE id = ?').bind(kept.id).first()).not.toBeNull()
+    // Den som gick kan inte komma tillbaka med koden den kände till.
+    expect((await (await b('GET', '/api/me')).json<Me>()).household.invite_code).not.toBe(before)
     expect((await gate('DELETE', '/api/me')).status).toBe(403)
   })
 

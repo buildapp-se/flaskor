@@ -160,6 +160,13 @@ describe('systembolaget', () => {
   it('avvisar länkfält som inte är http(s)', async () => {
     expect((await api('POST', '/api/drinks', { kind: 'wine', name: 'x', vivino_url: 'javascript:alert(1)' })).status).toBe(400)
     expect((await api('POST', '/api/drinks', { kind: 'wine', name: 'x', source_url: 'data:text/html,hej' })).status).toBe(400)
+    // OWASP 2026-10-16: id:t går in i lagersaldots adress.
+    expect((await api('POST', '/api/drinks', { kind: 'wine', name: 'x', sb_product_id: '../../x' })).status).toBe(400)
+  })
+  it('ett fullt hushåll tar inte fler rader (OWASP 2026-10-16)', async () => {
+    await env.DB.prepare("WITH RECURSIVE n(i) AS (SELECT 1 UNION ALL SELECT i + 1 FROM n WHERE i < 2000) INSERT INTO drink (household_id, kind, name) SELECT 1, 'beer', 'x' || i FROM n").run()
+    expect((await api('POST', '/api/drinks', { kind: 'beer', name: 'en till' })).status).toBe(409)
+    expect((await api('POST', '/api/drinks/import', { drinks: [{ kind: 'beer', name: 'en till' }] })).status).toBe(409)
   })
   it('scheduled kör utan att kasta', async () => {
     await expect(worker.scheduled({} as ScheduledController, env)).resolves.toBeUndefined()
@@ -177,6 +184,9 @@ describe('sök på namn (BACKLOG P3)', () => {
   })
   it('tom fråga: 400', async () => {
     expect((await api('GET', '/api/search?q=%20')).status).toBe(400)
+  })
+  it('för lång fråga: 400 (OWASP 2026-10-16)', async () => {
+    expect((await api('GET', `/api/search?q=${'a'.repeat(101)}`)).status).toBe(400)
   })
 })
 

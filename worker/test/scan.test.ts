@@ -1,6 +1,6 @@
 import { SELF, env } from 'cloudflare:test'
 import { describe, expect, it } from 'vitest'
-import { countScan } from '../src/index.ts'
+import { countScan, countWrite } from '../src/index.ts'
 import type { LabelGuess, ScanResult } from '../../shared/types.ts'
 import { normalizeEan, parseGuess, parseSearch, parseVolume, queries, rank, terms, validEan } from '../src/scan.ts'
 // Testerna kör inne i workerd utan filsystem, så fixturen importeras i stället för att läsas.
@@ -41,12 +41,32 @@ describe('dagstak på foton', () => {
     const day = new Date('2026-09-16T10:00:00Z')
     await env.DB.prepare("INSERT INTO sb_meta (key, value) VALUES ('scan:2026-09-15:total', '7')").run()
     for (let i = 0; i < 3; i++) await countScan(env.DB, 'a', day, { perUid: 3, total: 5 })
-    await expect(countScan(env.DB, 'a', day, { perUid: 3, total: 5 })).rejects.toMatchObject({ status: 429 })
+    // OWASP 2026-10-16: a:s nekade försök fyller inte den globala räknaren, hur många de än är.
+    for (let i = 0; i < 4; i++) await expect(countScan(env.DB, 'a', day, { perUid: 3, total: 5 })).rejects.toMatchObject({ status: 429 })
+    expect(await env.DB.prepare("SELECT value FROM sb_meta WHERE key = 'scan:2026-09-16:total'").first<string>('value')).toBe('3')
+    // Global: a 3, b 2, alltså 5; b:s tredje är det sjätte
     await countScan(env.DB, 'b', day, { perUid: 3, total: 5 })
-    // Global: a har 4 försök räknade, b 1, alltså 5; nästa är det sjätte
+    await countScan(env.DB, 'b', day, { perUid: 3, total: 5 })
     await expect(countScan(env.DB, 'b', day, { perUid: 3, total: 5 })).rejects.toMatchObject({ status: 429 })
     expect(await env.DB.prepare("SELECT value FROM sb_meta WHERE key = 'scan:2026-09-15:total'").first()).toBeNull()
     await env.DB.prepare("DELETE FROM sb_meta WHERE key LIKE 'scan:%'").run()
+  })
+})
+
+// OWASP 2026-10-16, A04: allt som skriver räknas per konto och dygn, en import med sin vikt.
+describe('dagstak på skrivningar', () => {
+  it('räknar vikten, städar gårdagen och kastar 429 över taket', async () => {
+    const day = new Date('2026-10-16T10:00:00Z')
+    await env.DB.prepare("INSERT INTO sb_meta (key, value) VALUES ('write:2026-10-15:a', '9')").run()
+    await countWrite(env.DB, 'a', 40, day, 45)
+    expect(await env.DB.prepare("SELECT value FROM sb_meta WHERE key = 'write:2026-10-15:a'").first()).toBeNull()
+    // Ett foto som nekas räknas inte mot skanningstaket (OWASP 2026-10-16).
+    expect((await scan({ image: 'data:text/html;base64,PGI+' })).status).toBe(400)
+    expect(await env.DB.prepare("SELECT key FROM sb_meta WHERE key LIKE 'scan:%'").first()).toBeNull()
+    for (let i = 0; i < 5; i++) await countWrite(env.DB, 'a', 1, day, 45)
+    await expect(countWrite(env.DB, 'a', 1, day, 45)).rejects.toMatchObject({ status: 429 })
+    await countWrite(env.DB, 'b', 1, day, 45)
+    await env.DB.prepare("DELETE FROM sb_meta WHERE key LIKE 'write:%'").run()
   })
 })
 

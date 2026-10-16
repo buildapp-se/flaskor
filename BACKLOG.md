@@ -197,13 +197,14 @@ från 2026-09-16 kändes igen som rättade. `a1fe068` låg sex commits efter mai
 nedan är kontrollerade på `2437c73` (index.ts, household.ts och auth.ts oförändrade),
 men JSON-importen under Konto (`d4d6f68`, `shared/sanitize.ts`) är ogranskad.
 
-- [ ] `[P2]` Granska JSON-importen (`d4d6f68`) mot OWASP: den låg inte i den granskade exporten.
+Rättat 2026-10-16 på grenen `fix/owasp-2026-10-16`, varje skydd prövat med en mutant som fäller testerna. **Workern ej deployad**: den bär Sipdecks riktiga användare, deploy väntar på Patriks klartecken.
 
-- [ ] `[P2]` OWASP A04: skrivvägarna `POST /api/drinks/:id/tastings`, `PATCH` och `DELETE` på drinks och tastings och `PATCH /api/household` ligger före `throttle(env.LOOKUP_LIMIT)` (`worker/src/index.ts:158-180`) och saknar tak per hushåll. Ett verifierat konto kan skriva tills D1:s dagliga skrivgräns (delad med Sipdeck och resten av kontot) är slut. Fix: strypning före alla skrivande vägar och ett radtak per hushåll.
-- [ ] `[P2]` OWASP A04: `countScan` (`worker/src/index.ts:260`) räknar upp den globala dagsräknaren före kontots egen kontroll och före bildvalideringen, så nekade anrop med `{"image":"x"}` fortsätter fylla `total`. Ett konto stänger skanningen för alla på cirka 2 h. Fix: validera bilden först, kolla kontots räknare innan den globala räknas upp.
-- [ ] `[P3]` OWASP A01: hushållets `invite_code` roteras aldrig och medlemmar kan inte tas bort (`worker/src/household.ts`). En före detta medlem eller en läckt kod ger åtkomst igen när som helst. Fix: ny kod vid varje inträde, eller en knapp för att byta kod.
-- [ ] `[P3]` OWASP A07: `signOutUser` (`src/auth.ts:116`) lämnar `flaskor.drinks` och `flaskor.uid` i localStorage; hela källaren med anteckningar och priser går att läsa på en delad dator efter utloggning. Fix: rensa båda vid utloggning.
-- [ ] `[P3]` OWASP A10/A04: `source_id` valideras inte som siffror i `sanitize` och interpoleras i Systembolagets produktadress i `fetchProduct`; 50 påhittade id:n tar nattjobbets alla 50 live-hämtningar, och Vivino-rader som felar roterar aldrig bak i kön. Fix: `^\d{1,12}$` på `source_id` och `sb_product_id`, stämpla `vivino_checked_at` även vid fel.
-- [ ] `[P3]` `POST /api/assortment` läser och parsar upp till 2 MB före `service(who)` (`worker/src/index.ts:151`). Fix: kontrollera identiteten först.
-- [ ] `[P3]` Anonyma `GET /api/search` saknar längdtak på `q`, och reserven `searchMirror` gör en FTS5-prefixklausul per ord. Fix: högst 100 tecken, högst 8 termer.
-- [ ] `[P3]` Lågt, att bedöma: inga headers på `flaskor.buildapp.se` (Firebase Hosting, DNS-only förbi Transform Rule), ingen `nosniff` från API:t; spegeldumpens `productId` valideras inte; Firebase Auth laddas från gstatic utan SRI.
+- [x] `[P2]` (granskad 2026-10-16) JSON-importen (`d4d6f68`): allt går genom `sanitize` och servern kontrollerar igen, React escapar texten, 429-omförsöket är säkert eftersom både strypningen och dagstaket kastar före skrivningen. Inget fynd utöver `sb_product_id` nedan.
+- [x] `[P2]` (2026-10-16) A04 skrivvägar: allt som inte är GET stryps per konto överst i `route` och räknas mot ett dagstak på 2 000 skrivningar per konto (`countWrite`, en import väger `IMPORT_WEIGHT_MAX`), och ett hushåll rymmer högst 2 000 rader (`HOUSEHOLD_DRINKS_MAX`). Avsmakningar har inget eget radtak; dagstaket begränsar dem.
+- [x] `[P2]` (2026-10-16) A04 `countScan`: bilden valideras (`labelImage`) före räkningen, och kontots räknare kollas före den globala.
+- [x] `[P3]` (2026-10-16) A01 `invite_code` byts när den använts och när någon lämnar ett hushåll som finns kvar. Att ta bort en medlem finns fortfarande inte.
+- [x] `[P3]` (2026-10-16) A07 `signOutUser` tar bort `flaskor.drinks` och `flaskor.uid`.
+- [x] `[P3]` (2026-10-16) A10/A04: `fetchProduct` kräver siffror, `sanitize` kräver siffror i `sb_product_id`, nattjobbet hoppar över icke-numeriska `source_id` och tar äldst kontrollerade först, Vivino-rader som felar stämplas så de prövas igen efter de andra. `source_id` valideras inte i `sanitize`: Caviste och manuella rader har andra format. Nattjobbets ordning och Vivino-omköandet saknar test (mockarna kan inte ge Vivino ett tillfälligt fel).
+- [x] `[P3]` (2026-10-16) `POST /api/assortment` kontrollerar identiteten före kroppen.
+- [x] `[P3]` (2026-10-16) `GET /api/search`: högst 100 tecken, `searchMirror` högst 8 termer.
+- [ ] `[P3]` Lågt, delvis gjort 2026-10-16: `nosniff` från API:t; spegeldumpens id:n måste vara siffror och texten kapas vid 1 000 tecken. `nosniff` lagt i `authhost/firebase.json` men inte deployat (Firebase Hosting skickar redan HSTS, uppmätt). Kvar: Firebase Auth från gstatic utan SRI (dynamisk import bär ingen SRI; att bunta Firebase via npm är en större ändring).

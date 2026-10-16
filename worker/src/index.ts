@@ -1,17 +1,17 @@
 import { FatalError, NotFoundError, TransientError } from '../../shared/errors.ts'
 import type { AssortmentChunk, AssortmentResult } from '../../shared/assortment.ts'
-import type { Candidate, Drink, DrinkPatch, LabelGuess, Preview, ScanResult, Stock, Tasting } from '../../shared/types.ts'
+import { IMPORT_WEIGHT_MAX, type Candidate, type Drink, type DrinkPatch, type LabelGuess, type Preview, type ScanResult, type Stock, type Tasting } from '../../shared/types.ts'
 import { authenticate, type Identity } from './auth.ts'
 import { finishAssortment, getMirrored, isFresh, searchMirror, upsertAssortment } from './assortment.ts'
 import { cached } from './cache.ts'
 import { fetchCaviste, parseCavistePage, parseCavisteUrl } from './caviste.ts'
 import { deleteDrink, deleteTasting, exportHousehold, getDrink, importDrinks, insertDrink, insertTasting, listAllDrinks, listDrinks, listTastings, sanitize, sanitizeTasting, updateDrink } from './db.ts'
 import { deleteAccount, getAccount, householdOf, joinHousehold, renameHousehold } from './household.ts'
-import { findByEan, normalizeEan, queries, rank, readLabel, searchOnce, searchProducts, validEan } from './scan.ts'
+import { findByEan, labelImage, normalizeEan, queries, rank, readLabel, searchOnce, searchProducts, validEan } from './scan.ts'
 import { authenticateSipdeck, createCode, linkedBottles, LinkError, listLinks, redeemCode, revokeLink, unlinkSelf } from './sipdeck.ts'
 import { fetchStock } from './stock.ts'
 import { fetchProduct, parseProductNumber, toPreview, type Product } from './systembolaget.ts'
-import { fetchWine, findVivino, parseVivinoUrl, parseWinePage, queryFor, refreshVivino, vivinoDue, vivinoPatch, vivinoToPreview } from './vivino.ts'
+import { fetchWine, findVivino, parseVivinoUrl, parseWinePage, queryFor, refreshVivino, VIVINO_MAX_AGE_DAYS, vivinoDue, vivinoPatch, vivinoToPreview } from './vivino.ts'
 
 // Inloggning (beslut 2, 2026-09-15): Firebase ID-token per användare, eller grindkoden (secreten SERVICE_TOKEN) som tjänsteåtkomst
 // till hushåll 1 för nattskriptet och skripten. Se worker/src/auth.ts och household.ts.
@@ -104,6 +104,12 @@ async function route(request: Request, env: GateEnv): Promise<unknown> {
     if (who.kind !== 'user') throw new FatalError('requires a signed-in account', 403)
     return who
   }
+  // Allt som skriver stryps per konto och räknas mot ett dagstak (OWASP 2026-10-16, A04): D1:s skrivkvot delas av hela
+  // Cloudflare-kontot, Sipdeck med, och 60 anrop i minuten räcker ensamt till att tömma den på ett dygn.
+  if (method !== 'GET') {
+    await throttle(env.LOOKUP_LIMIT, who)
+    if (who.kind === 'user') await countWrite(env.DB, who.uid, path === '/api/drinks/import' ? IMPORT_WEIGHT_MAX : 1)
+  }
 
   if (method === 'GET' && path === '/api/ping') return null
   if (method === 'GET' && path === '/api/me') return getAccount(env.DB, who, hh)
@@ -138,17 +144,19 @@ async function route(request: Request, env: GateEnv): Promise<unknown> {
   if (method === 'GET' && path === '/api/export') return exportHousehold(env.DB, hh)
   // En gästs lokala flaskor in i kontot (2026-09-15), i bitar om högst 40 rader och avsmakningar per anrop.
   if (method === 'POST' && path === '/api/drinks/import') {
-    await throttle(env.LOOKUP_LIMIT, who)
     return { imported: await importDrinks(env.DB, hh, await readJson(request)) }
   }
   if (method === 'POST' && path === '/api/drinks') {
-    await throttle(env.LOOKUP_LIMIT, who)
     return insertDrink(env.DB, hh, await withVivino(sanitize(await readJson(request))))
   }
   // Nattjobbet och spegelimporten rör alla hushåll och hela spegeln: bara grindkoden, aldrig ett konto.
   if (method === 'POST' && path === '/api/refresh-all') return refreshAll(env.DB, service(who))
   // Spegelimporten (migrering 0006): nattskriptet postar dumpen i bitar, sist done. Se worker/src/assortment.ts.
-  if (method === 'POST' && path === '/api/assortment') return assortment(await readJson(request, ASSORTMENT_BODY_MAX), env.DB, service(who))
+  if (method === 'POST' && path === '/api/assortment') {
+    // Identiteten före kroppen: annars läser och tolkar ett vanligt konto 2 MB innan det får 403 (OWASP 2026-10-16).
+    const proof = service(who)
+    return assortment(await readJson(request, ASSORTMENT_BODY_MAX), env.DB, proof)
+  }
   if (method === 'POST' && path === '/api/scan') {
     await throttle(env.SCAN_LIMIT, who)
     return scan(await readJson(request, SCAN_BODY_MAX), env, who)
@@ -177,7 +185,8 @@ async function route(request: Request, env: GateEnv): Promise<unknown> {
   }
 
   // Allt nedan hämtar från Systembolaget, Vivino eller Caviste åt användaren: ett tak per konto (Rate Limiting-bindningen).
-  await throttle(env.LOOKUP_LIMIT, who)
+  // Det som inte är GET räknades redan överst.
+  if (method === 'GET') await throttle(env.LOOKUP_LIMIT, who)
 
   const refresh = path.match(/^\/api\/drinks\/(\d+)\/refresh$/)
   if (refresh?.[1] && method === 'POST') return refreshDrink(env.DB, await getDrink(env.DB, hh, Number(refresh[1])))
@@ -211,6 +220,7 @@ async function lookup(path: string, url: URL, env: GateEnv): Promise<unknown> {
   if (path === '/api/search') {
     const q = (url.searchParams.get('q') ?? '').trim()
     if (q === '') throw new FatalError('q is required')
+    if (q.length > 100) throw new FatalError('q must be at most 100 characters')
     return { candidates: await cached(`search:${q.toLowerCase()}`, SEARCH_TTL, () => searchOrMirror(q, env)) satisfies Candidate[] }
   }
   // Caviste-import via produktlänk (beslut 6). En låda innehåller flera viner, så svaret är en lista att välja ur.
@@ -259,12 +269,30 @@ async function readJson(request: Request, max = BODY_MAX): Promise<unknown> {
  */
 export async function countScan(db: D1Database, uid: string, now = new Date(), limits = SCAN_DAILY): Promise<void> {
   const day = now.toISOString().slice(0, 10)
-  const bump = (key: string) =>
-    db.prepare("INSERT INTO sb_meta (key, value) VALUES (?, '1') ON CONFLICT (key) DO UPDATE SET value = CAST(value AS INTEGER) + 1 RETURNING CAST(value AS INTEGER) AS n").bind(key).first<number>('n')
-  const total = (await bump(`scan:${day}:total`)) ?? 0
+  // Kontots tak först (OWASP 2026-10-16, A04): ett konto över sitt tak får inte fortsätta fylla den globala räknaren.
+  if ((await bump(db, `scan:${day}:${uid}`)) > limits.perUid) throw new FatalError('daily scan limit reached, try again tomorrow', 429)
+  const total = await bump(db, `scan:${day}:total`)
   if (total === 1) await db.prepare("DELETE FROM sb_meta WHERE key LIKE 'scan:%' AND key < ?").bind(`scan:${day}`).run()
-  const mine = (await bump(`scan:${day}:${uid}`)) ?? 0
-  if (mine > limits.perUid || total > limits.total) throw new FatalError('daily scan limit reached, try again tomorrow', 429)
+  if (total > limits.total) throw new FatalError('daily scan limit reached, try again tomorrow', 429)
+}
+
+/** Skrivande anrop per konto och dygn. En import räknas som sin största bit, så taket gäller rader och inte bara anrop. */
+export const WRITE_DAILY = 2_000
+
+/** Kastar 429 över dagstaket. Kostar själv en skriven rad per anrop; kontona skriver lite, det är missbruket som kostar. */
+export async function countWrite(db: D1Database, uid: string, weight = 1, now = new Date(), limit = WRITE_DAILY): Promise<void> {
+  const day = now.toISOString().slice(0, 10)
+  const n = await bump(db, `write:${day}:${uid}`, weight)
+  if (n === weight) await db.prepare("DELETE FROM sb_meta WHERE key LIKE 'write:%' AND key < ?").bind(`write:${day}`).run()
+  if (n > limit) throw new FatalError('daily write limit reached, try again tomorrow', 429)
+}
+
+async function bump(db: D1Database, key: string, by = 1): Promise<number> {
+  const n = await db
+    .prepare('INSERT INTO sb_meta (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value = CAST(value AS INTEGER) + CAST(excluded.value AS INTEGER) RETURNING CAST(value AS INTEGER) AS n')
+    .bind(key, String(by))
+    .first<number>('n')
+  return n ?? 0
 }
 
 function allowedOrigins(list: string): string[] {
@@ -279,6 +307,7 @@ function corsHeaders(origin: string | null, list: string): Record<string, string
     'access-control-allow-headers': 'authorization, content-type',
     'access-control-max-age': '86400',
     vary: 'origin',
+    'x-content-type-options': 'nosniff',
   }
 }
 
@@ -310,6 +339,8 @@ async function scan(body: unknown, env: GateEnv, who: Identity): Promise<ScanRes
   }
   if (!guess && typeof image === 'string' && image !== '') {
     if (!env.GEMINI_API_KEY) throw new FatalError('GEMINI_API_KEY is not configured', 500)
+    // Ett foto som ändå skulle nekas räknas inte mot dagstaket.
+    labelImage(image)
     await countScan(env.DB, who.kind === 'user' ? who.uid : 'service')
     guess = await readLabel(image, env.GEMINI_API_KEY)
     via = 'label'
@@ -439,8 +470,11 @@ export async function refreshAll(db: D1Database, _proof: { kind: 'service' }): P
   const drinks = await listAllDrinks(db)
   // En hämtning per artikelnummer, oavsett hur många rader som delar det (beslut 23).
   const byNumber = new Map<string, Drink[]>()
-  for (const d of drinks) {
-    if (d.source_kind !== 'systembolaget' || !d.source_id) continue
+  // Bara riktiga artikelnummer, och äldst kontrollerade först: en rad som inte går att hämta ska inte ta nattens
+  // tak varje natt för andra hushåll (OWASP 2026-10-16). En stämplad rad, även en utgången, hamnar sist nästa natt.
+  const oldestFirst = [...drinks].sort((a, b) => (a.price_checked_at ?? '').localeCompare(b.price_checked_at ?? ''))
+  for (const d of oldestFirst) {
+    if (d.source_kind !== 'systembolaget' || !d.source_id || !/^\d{1,12}$/.test(d.source_id)) continue
     byNumber.set(d.source_id, [...(byNumber.get(d.source_id) ?? []), d])
   }
   // Spegeln svarar för alla rader den känner, utan en enda produktsida; bara resten räknas mot taket (beslut 23).
@@ -471,13 +505,22 @@ export async function refreshAll(db: D1Database, _proof: { kind: 'service' }): P
   }
   // Vivino: viner utan betyg eller med betyg äldre än 30 dagar, ett tak per natt så resten tas nästa natt.
   let vivino = 0
-  for (const row of drinks.filter((d) => vivinoDue(d)).slice(0, VIVINO_CAP)) {
+  const due = drinks.filter((d) => vivinoDue(d)).sort((a, b) => (a.vivino_checked_at ?? '').localeCompare(b.vivino_checked_at ?? ''))
+  // En rad som felar stämplas som kollad för nästan 30 dagar sedan: den prövas igen i morgon men efter de andra, så
+  // tjugo trasiga länkar inte tar Vivino-taket varje natt (OWASP 2026-10-16).
+  const retryStamp = new Date(Date.now() - (VIVINO_MAX_AGE_DAYS - 1) * 86_400_000).toISOString()
+  for (const row of due.slice(0, VIVINO_CAP)) {
     try {
       await updateDrink(db, row.household_id, row.id, await refreshVivino(row))
       vivino++
     } catch (error) {
       failed++
       console.error(`vivino ${row.id} failed`, error)
+      try {
+        await updateDrink(db, row.household_id, row.id, { vivino_checked_at: retryStamp })
+      } catch (stampError) {
+        console.error(`vivino ${row.id} could not be requeued`, stampError)
+      }
     }
   }
   return { refreshed, mirrored, failed, vivino, written }

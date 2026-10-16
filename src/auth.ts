@@ -113,9 +113,12 @@ export async function sendPasswordReset(email: string): Promise<void> {
   await mod.sendPasswordResetEmail(auth, email)
 }
 
+/** Loggar ut och tar bort kontots cachade källare från enheten (OWASP 2026-10-16, A07): på en delad dator ska nästa person inte kunna läsa den. */
 export async function signOutUser(): Promise<void> {
   const { auth, mod } = await firebase()
   await mod.signOut(auth)
+  localStorage.removeItem('flaskor.drinks')
+  localStorage.removeItem('flaskor.uid')
 }
 
 /** Tar bort Firebase-kontot. Kastar auth/requires-recent-login om inloggningen är gammal; då loggas man in igen och försöker på nytt. */

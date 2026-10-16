@@ -16,8 +16,10 @@ const MAX_ROWS_PER_CALL = 1000
 /** Bundna parametrar per sats: D1:s tak är 100. */
 const NUMBERS_PER_DELETE = 100
 
+/** Dumpen kommer från en tredje parts server: text kapas och id:n måste vara siffror (OWASP 2026-10-16, A08). */
+const DUMP_TEXT_MAX = 1_000
 function str(v: unknown): string | null {
-  return typeof v === 'string' && v.trim() !== '' ? v : null
+  return typeof v === 'string' && v.trim() !== '' ? v.slice(0, DUMP_TEXT_MAX) : null
 }
 function num(v: unknown): number | null {
   return typeof v === 'number' && Number.isFinite(v) ? v : null
@@ -28,11 +30,14 @@ export function fromDump(raw: unknown): Product {
   if (typeof raw !== 'object' || raw === null) throw new FatalError('dump row must be an object')
   const r = raw as Record<string, unknown>
   if (typeof r['productNumber'] !== 'string' || typeof r['productNameBold'] !== 'string') throw new FatalError('dump row without number or name')
+  if (!/^\d{1,12}$/.test(r['productNumber'])) throw new FatalError('dump row number must be digits')
+  // Ett trasigt produkt-id ger ingen bild och inget lagersaldo, men fäller inte hela nattens import.
+  const productId = typeof r['productId'] === 'string' && /^\d{1,12}$/.test(r['productId']) ? r['productId'] : ''
   const grapes = r['grapes']
   return {
-    productId: String(r['productId']),
+    productId,
     productNumber: r['productNumber'],
-    productNameBold: r['productNameBold'],
+    productNameBold: r['productNameBold'].slice(0, DUMP_TEXT_MAX),
     productNameThin: str(r['productNameThin']),
     producerName: str(r['producerName']),
     vintage: str(r['vintage']),
@@ -170,7 +175,8 @@ const MAX_MATCHES = 200
  * ponytail: ordstart, inte delsträng ("livet" hittar inte "glenlivet"); samma som Systembolagets eget sök i praktiken.
  */
 export async function searchMirror(db: D1Database, query: string, limit = 10): Promise<Candidate[]> {
-  const terms = searchTerms(query)
+  // Högst åtta termer: varje term är en FTS5-prefixklausul, och uppslaget är öppet utan konto (OWASP 2026-10-16).
+  const terms = searchTerms(query).slice(0, 8)
   if (terms.length === 0) return []
   const match = terms.map((t) => `"${t}"*`).join(' AND ')
   const { results } = await db
