@@ -188,3 +188,22 @@ Bara Patrik kan göra dessa: de kräver telefonen, riktiga flaskor eller ett ög
 - [ ] `[P2]` Rätta tre Caviste-bildlänkar i Ändra (Chianti Classico, Côtes du Rhône, La Butte 'O'): Caviste förkortar dem `CC`, `CDR` och `CNP`. Adresserna står i `HANDOFF.md`. Övriga 18 rättades automatiskt 2026-09-09.
 - [ ] `[P2]` Prova bulkimporten med en riktig Systembolagslista (Lägg till, "Importera en hel lista via din AI"), massåtgärderna i tabellen, Vivino-länk, ta bort, och barskåpet (18 sorter från Sipdeck, "Öppna en" på de öppnade). Installera på telefonen. Ja eller nej på §Val tagna åt Patrik i `HANDOFF.md`.
 - Gästläget: uppladdningen vid riktig inloggning står redan som `[P3]` under §Gästläge och export.
+
+## OWASP-granskning 2026-10-16
+
+Kodgranskning av Gemini 4 Argon (High) genom agy i planläge, läsande export av
+`a1fe068`, varje fynd kontrollerat mot koden av Claude. Ingen live-probe. Alla fynd
+från 2026-09-16 kändes igen som rättade. `a1fe068` låg sex commits efter main; fynden
+nedan är kontrollerade på `2437c73` (index.ts, household.ts och auth.ts oförändrade),
+men JSON-importen under Konto (`d4d6f68`, `shared/sanitize.ts`) är ogranskad.
+
+- [ ] `[P2]` Granska JSON-importen (`d4d6f68`) mot OWASP: den låg inte i den granskade exporten.
+
+- [ ] `[P2]` OWASP A04: skrivvägarna `POST /api/drinks/:id/tastings`, `PATCH` och `DELETE` på drinks och tastings och `PATCH /api/household` ligger före `throttle(env.LOOKUP_LIMIT)` (`worker/src/index.ts:158-180`) och saknar tak per hushåll. Ett verifierat konto kan skriva tills D1:s dagliga skrivgräns (delad med Sipdeck och resten av kontot) är slut. Fix: strypning före alla skrivande vägar och ett radtak per hushåll.
+- [ ] `[P2]` OWASP A04: `countScan` (`worker/src/index.ts:260`) räknar upp den globala dagsräknaren före kontots egen kontroll och före bildvalideringen, så nekade anrop med `{"image":"x"}` fortsätter fylla `total`. Ett konto stänger skanningen för alla på cirka 2 h. Fix: validera bilden först, kolla kontots räknare innan den globala räknas upp.
+- [ ] `[P3]` OWASP A01: hushållets `invite_code` roteras aldrig och medlemmar kan inte tas bort (`worker/src/household.ts`). En före detta medlem eller en läckt kod ger åtkomst igen när som helst. Fix: ny kod vid varje inträde, eller en knapp för att byta kod.
+- [ ] `[P3]` OWASP A07: `signOutUser` (`src/auth.ts:116`) lämnar `flaskor.drinks` och `flaskor.uid` i localStorage; hela källaren med anteckningar och priser går att läsa på en delad dator efter utloggning. Fix: rensa båda vid utloggning.
+- [ ] `[P3]` OWASP A10/A04: `source_id` valideras inte som siffror i `sanitize` och interpoleras i Systembolagets produktadress i `fetchProduct`; 50 påhittade id:n tar nattjobbets alla 50 live-hämtningar, och Vivino-rader som felar roterar aldrig bak i kön. Fix: `^\d{1,12}$` på `source_id` och `sb_product_id`, stämpla `vivino_checked_at` även vid fel.
+- [ ] `[P3]` `POST /api/assortment` läser och parsar upp till 2 MB före `service(who)` (`worker/src/index.ts:151`). Fix: kontrollera identiteten först.
+- [ ] `[P3]` Anonyma `GET /api/search` saknar längdtak på `q`, och reserven `searchMirror` gör en FTS5-prefixklausul per ord. Fix: högst 100 tecken, högst 8 termer.
+- [ ] `[P3]` Lågt, att bedöma: inga headers på `flaskor.buildapp.se` (Firebase Hosting, DNS-only förbi Transform Rule), ingen `nosniff` från API:t; spegeldumpens `productId` valideras inte; Firebase Auth laddas från gstatic utan SRI.
