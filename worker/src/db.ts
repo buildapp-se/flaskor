@@ -56,7 +56,16 @@ function insertStatement(db: D1Database, household: number, input: DrinkPatch): 
   return db.prepare(`INSERT INTO drink (${columns}) VALUES (${marks}) RETURNING *`).bind(...values)
 }
 
+/** Rader per hushåll (OWASP 2026-10-16, A04): en källare är hundratals flaskor, inte hundratusentals. */
+export const HOUSEHOLD_DRINKS_MAX = 2_000
+
+async function assertRoom(db: D1Database, household: number, adding: number): Promise<void> {
+  const n = (await db.prepare('SELECT COUNT(*) AS n FROM drink WHERE household_id = ?').bind(household).first<number>('n')) ?? 0
+  if (n + adding > HOUSEHOLD_DRINKS_MAX) throw new FatalError(`a household holds at most ${HOUSEHOLD_DRINKS_MAX} drinks`, 409)
+}
+
 export async function insertDrink(db: D1Database, household: number, input: DrinkPatch): Promise<Drink> {
+  await assertRoom(db, household, 1)
   const row = await insertStatement(db, household, input).first<Row>()
   if (!row) throw new FatalError('insert returned no row', 500)
   return rowToDrink(row)
@@ -76,6 +85,7 @@ export async function importDrinks(db: D1Database, household: number, body: unkn
   })
   const weight = parsed.reduce((n, p) => n + 1 + p.tastings.length, 0)
   if (weight > IMPORT_WEIGHT_MAX) throw new FatalError(`at most ${IMPORT_WEIGHT_MAX} drinks and tastings per call`)
+  await assertRoom(db, household, parsed.length)
   const inserted = await db.batch<Row>(parsed.map((p) => insertStatement(db, household, p.input)))
   const tastingStatements = parsed.flatMap((p, i) => {
     const id = inserted[i]?.results[0]?.id

@@ -48,6 +48,8 @@ export function sanitize(body: unknown): DrinkPatch {
       if (value.length > textMax(key)) throw new FatalError(`${key} must be at most ${textMax(key)} characters`)
       // Länkfält renderas som href i klienten: bara http(s), aldrig javascript: eller data:.
       if (URL_FIELDS.has(key) && !/^https?:\/\//.test(value)) throw new FatalError(`${key} must be an http(s) url`)
+      // Systembolagets interna id går rakt in i lagersaldots adress (OWASP 2026-10-16).
+      if (key === 'sb_product_id' && !/^\d{1,12}$/.test(value)) throw new FatalError('sb_product_id must be digits')
       out[key] = value
     }
   }

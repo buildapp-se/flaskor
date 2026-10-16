@@ -143,13 +143,19 @@ interface GeminiBody {
   candidates?: { content?: { parts?: { text?: string }[] } }[]
 }
 
-/** Vad etiketten säger, läst av Gemini. Bilden är en data-URL (jpeg, png eller webp) från klienten. */
-export async function readLabel(image: string, apiKey: string): Promise<LabelGuess> {
+/** Bildens typ och data ur en data-URL (jpeg, png eller webp). Kastar på allt annat, före både dagstaket och Gemini. */
+export function labelImage(image: string): { mime: string; data: string } {
   if (image.length > MAX_IMAGE_CHARS) throw new FatalError('image too large', 413)
   const m = image.match(/^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/)
-  if (!m) throw new FatalError('image must be a base64 data url (jpeg, png or webp)')
+  if (!m?.[1] || !m[2]) throw new FatalError('image must be a base64 data url (jpeg, png or webp)')
+  return { mime: m[1], data: m[2] }
+}
+
+/** Vad etiketten säger, läst av Gemini. Bilden är en data-URL (jpeg, png eller webp) från klienten. */
+export async function readLabel(image: string, apiKey: string): Promise<LabelGuess> {
+  const { mime, data } = labelImage(image)
   const body = JSON.stringify({
-    contents: [{ parts: [{ inline_data: { mime_type: m[1], data: m[2] } }, { text: PROMPT }] }],
+    contents: [{ parts: [{ inline_data: { mime_type: mime, data } }, { text: PROMPT }] }],
     generationConfig: { responseMimeType: 'application/json', responseSchema: SCHEMA, temperature: 0 },
   })
   let last: TransientError | null = null
