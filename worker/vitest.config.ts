@@ -46,6 +46,8 @@ export default defineConfig({
             // Vinsidor: bara 2379181 finns som fixtur, andra id:n ger 404. Söksidan svarar alltid Le Grappin.
             const wine = url.pathname.match(/\/w\/(\d+)/)?.[1]
             if (wine) {
+              // Vinet 503 ligger nere: ett tillfälligt fel, som nattjobbet ska köa om (OWASP 2026-10-16).
+              if (wine === '503') return new Response('down', { status: 503 })
               try {
                 return new Response(await readFile(`worker/test/fixtures/vivino-w-${wine}.html`, 'utf8'), { headers: { 'content-type': 'text/html' } })
               } catch {
