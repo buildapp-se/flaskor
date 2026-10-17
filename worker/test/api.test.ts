@@ -173,6 +173,39 @@ describe('systembolaget', () => {
   })
 })
 
+describe('nattjobbets köer (OWASP 2026-10-16)', () => {
+  const DAY = 86_400_000
+  const checkedAt = async (id: number) => (await env.DB.prepare('SELECT vivino_checked_at AS t FROM drink WHERE id = ?').bind(id).first<string | null>('t')) ?? null
+
+  it('produktsidorna tas äldst kontrollerade först, så taket på 50 inte äts av samma rader varje natt', async () => {
+    // 50 rader kontrollerade i januari, vars sidor svarar 404, och sist (högst id) en rad som aldrig fått sin tur sedan 2020.
+    await env.DB.prepare("WITH RECURSIVE n(i) AS (SELECT 1 UNION ALL SELECT i + 1 FROM n WHERE i < 50) INSERT INTO drink (household_id, kind, name, source_kind, source_id, price_checked_at) SELECT 1, 'spirit', 'x' || i, 'systembolaget', CAST(100000 + i AS TEXT), '2026-01-01T00:00:00.000Z' FROM n").run()
+    const oldest = await env.DB.prepare("INSERT INTO drink (household_id, kind, name, source_kind, source_id, price_checked_at) VALUES (1, 'spirit', 'äldst', 'systembolaget', '7562401', '2020-01-01T00:00:00.000Z') RETURNING id").first<number>('id')
+    expect(await refreshAll(env.DB, { kind: 'service' })).toMatchObject({ refreshed: 50, failed: 0 })
+    const row = await env.DB.prepare('SELECT price_current, price_checked_at FROM drink WHERE id = ?').bind(oldest).first<{ price_current: number | null; price_checked_at: string }>()
+    expect(row?.price_current).toBe(164)
+    expect((row?.price_checked_at ?? '') > '2026-01-01').toBe(true)
+  })
+
+  it('ett tillfälligt Vivino-fel köas om till i morgon, inte tappat', async () => {
+    const broken = await env.DB.prepare("INSERT INTO drink (household_id, kind, name, vivino_url) VALUES (1, 'wine', 'Nere', 'https://www.vivino.com/w/503') RETURNING id").first<number>('id')
+    const before = Date.now()
+    expect(await refreshAll(env.DB, { kind: 'service' })).toMatchObject({ failed: 1, vivino: 0 })
+    // Stämplad 29 dagar bakåt: inte förfallen i dag, förfallen efter ett dygn till.
+    const stamp = Date.parse((await checkedAt(broken!)) ?? 'saknas')
+    expect(Math.abs(stamp - (before - 29 * DAY))).toBeLessThan(60_000)
+  })
+
+  it('en omköad rad prövas efter de andra, så trasiga länkar inte tar Vivino-taket varje natt', async () => {
+    // Raden som felade i går (lägst id) och 20 viner som aldrig kollats: taket är 20, de nya går först.
+    const tomorrow = new Date(Date.now() - 30 * DAY - 3_600_000).toISOString()
+    const broken = await env.DB.prepare("INSERT INTO drink (household_id, kind, name, vivino_url, vivino_checked_at) VALUES (1, 'wine', 'Nere', 'https://www.vivino.com/w/503', ?) RETURNING id").bind(tomorrow).first<number>('id')
+    await env.DB.prepare("WITH RECURSIVE n(i) AS (SELECT 1 UNION ALL SELECT i + 1 FROM n WHERE i < 20) INSERT INTO drink (household_id, kind, name) SELECT 1, 'wine', 'Le Grappin Savigny-les-Beaune Rouge ' || i FROM n").run()
+    expect(await refreshAll(env.DB, { kind: 'service' })).toMatchObject({ failed: 0, vivino: 20 })
+    expect(await checkedAt(broken!)).toBe(tomorrow)
+  })
+})
+
 describe('sök på namn (BACKLOG P3)', () => {
   it('ger kandidatlistan ur Systembolagets sök', async () => {
     const res = await api('GET', '/api/search?q=absolut%20vodka')
