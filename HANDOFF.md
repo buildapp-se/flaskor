@@ -2,7 +2,7 @@
 schemaVersion: 1
 status: active
 currentGoal: "Sipdeck-kopplingen (ADR 0001) är live i båda apparna sedan 2026-10-06, ägar-QA återstår."
-nextAction: "Patrik: klartecken till Worker-deploy av OWASP-rättningarna 2026-10-16 (rör Sipdecks användare). Sedan ägar-QA med riktiga inloggningar, sju punkter under rubriken 2026-10-06."
+nextAction: "Patrik: ägar-QA med riktiga inloggningar, sju punkter under rubriken 2026-10-06 (OWASP-Workern deployad 2026-10-17)."
 blockers: []
 reviewedAt: 2026-10-17
 ---
@@ -11,18 +11,19 @@ reviewedAt: 2026-10-17
 
 # Handoff: Flaskor
 
-## 2026-10-17: nattjobbets tester och SRI
+## 2026-10-17: Workern och authhost deployade, nattjobbets tester och SRI
+
+- **Worker deployad** på Patriks klartecken: version `2b9301db-942f-49cd-b32a-1703a2f5f08c` (förra `1ff6ff2c`, återställning `npx wrangler rollback`). Kontroll efteråt: `/health` 200, `/api/sipdeck/bottles` 401 utan inloggning, sök 200, `nosniff` på svaren. **Authhost** deployad till Firebase Hosting, `nosniff` syns på `flaskor-d3762.web.app`. Live-sidan laddar Firebase-SDK:n 12.19.0 med SRI (200, inga konsolfel i Chrome). Ägar-QA med riktiga inloggningar är inte gjord.
 
 - `6a5def9` Tre Worker-tester för 2026-10-16:s overifierade delar: produktsidorna äldst kontrollerade först, ett tillfälligt Vivino-fel stämplat 29 dagar bakåt, och en omköad rad efter aldrig kollade viner. Var och en röd när sin rad i `refreshAll` tas bort. Vivino-mocken svarar 503 för vin 503. Ingen bugg i det som testades; ett närliggande fynd (5xx på Systembolagsrader stämplas inte) står i BACKLOG §OWASP-granskning 2026-10-16.
 - `c26ddb8` SRI på Firebase-SDK:n via import-mappens `integrity` i `index.html`. Verifierat i Chromium mot byggd `dist`: rätt hash laddar, ändrad hash nekas.
-- `npm run check`: 119 klienttester, 106 Worker-tester, torrdeploy. **Workerns källkod är oförändrad sedan `0e7f24c`** (bara tester och testkonfig); deployen som väntar är fortfarande 2026-10-16:s.
+- `npm run check`: 119 klienttester, 106 Worker-tester, torrdeploy. **Workerns källkod är oförändrad sedan `0e7f24c`** (bara tester och testkonfig).
 
-## 2026-10-16: OWASP-rättningarna, Workern inte deployad
+## 2026-10-16: OWASP-rättningarna (Workern deployad 2026-10-17)
 
-Alla fynd från OWASP-granskningen 2026-10-16 rättade (BACKLOG §OWASP-granskning 2026-10-16), gjort i en worktree från `origin/main` och pushat till `main`. Pages bygger frontenden (utloggningen rensar localStorage). **Workern är inte deployad:** den bär Sipdecks riktiga användare, så `npm run worker:deploy` väntar på Patriks klartecken. Ingen migrering. Återställning efter deploy: `npx wrangler rollback`.
+Alla fynd från OWASP-granskningen 2026-10-16 rättade (BACKLOG §OWASP-granskning 2026-10-16), gjort i en worktree från `origin/main` och pushat till `main`. Pages bygger frontenden (utloggningen rensar localStorage). Ingen migrering.
 
 - Verifierat: `npm run check` (118 klienttester, 103 Worker-tester, torrdeploy). Tolv skydd prövade ett i taget med en mutant, alla fällde testerna.
-- **Overifierat:** `nosniff` i `authhost/firebase.json` är inte deployad till Firebase Hosting. (Nattjobbets ordning och Vivino-omköandet testade 2026-10-17, ovan.)
 - **Val tagna åt Patrik:** dagstak 2 000 skrivningar per konto (en import väger 40, så högst 50 importanrop om dagen), högst 2 000 rader per hushåll, inbjudningskoden byts vid varje inträde och när någon lämnar. En JSON-import större än cirka 1 900 rader stannar nu på 429 och kan fortsättas nästa dygn med Fortsätt importen (inom samma sidladdning).
 - SRI på Firebase Auth: gjord 2026-10-17 utan buntning, se ovan.
 

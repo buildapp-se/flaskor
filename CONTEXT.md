@@ -137,7 +137,7 @@ Verifierat 2026-09-05, detaljer i [docs/RESEARCH.md](docs/RESEARCH.md):
 
 ## Audits
 Read by the cockpit Audits tab. One `- Label: YYYY-MM-DD, result` per check; conventions in elwyn-dash `docs/security.md`.
-- OWASP Top 10: 2026-10-16, warn, code review only (Gemini 4 Argon, verified by Claude), no live probe; 0 high, 0 medium open (all fixed and tested 2026-10-16, Worker not yet deployed), low fixed 2026-10-17 (SRI) except authhost `nosniff` not deployed, BACKLOG §OWASP-granskning 2026-10-16
+- OWASP Top 10: 2026-10-16, warn, code review only (Gemini 4 Argon, verified by Claude), no live probe; 0 high, 0 medium open (all fixed and tested 2026-10-16, Worker deployed 2026-10-17), low fixed 2026-10-17 (SRI, authhost `nosniff` deployed), BACKLOG §OWASP-granskning 2026-10-16
 - Headers: 2026-09-16, pass, 6 of 6 on buildapp.se via a host-scoped Transform Rule on the zone, measured after the change
 - TLS: 2026-09-16, pass, SSL Labs A+ on buildapp.se, TLS 1.2 minimum and HSTS since today
 - Lighthouse: 2026-09-16, warn, a11y 98 (main landmark added to the gate 2026-09-16, not remeasured), best practices 100, SEO 60 by design (noindex) (mobile, no perf)
