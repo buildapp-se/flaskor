@@ -7,6 +7,8 @@ blockers: []
 reviewedAt: 2026-10-17
 ---
 
+**2026-10-17, beroendeuppdatering (lokalt committad, inte pushad).** `npm audit` 9 till 0. Majors: typescript 5.9 till 7.0, vite-plugin-pwa 1.3 till 2.0 (samma manifest och sw.js), @types/node 24 till 26, `@cloudflare/vitest-pool-workers` 0.20 till 0.23 med en `overrides` som ger den rotens wrangler 4.151.1 och miniflare (annars sårbara sharp och undici). Minor: react 19.3, vite 8.3, wrangler 4.151, vitest 4.1.12. vitest 5 väntar på pool-workers (BACKLOG §Beroenden). `npm run check` (119 + 106 tester, worker dry-run), `npm run build` och `npm ci` gröna. En push till main bygger och deployar Pages via `deploy.yml`; Workern deployas bara med `worker:deploy`.
+
 **2026-09-24, audits från aifabriken (`tools/audit-run.mjs`).** Actions: `persist-credentials: false` på checkout i deploy.yml och assortment.yml (zizmor artipacked). Nya auditrader Secrets (pass, tre granskade publika fynd i `.gitleaksignore`) och Actions (pass). Mutation-batch över format, sort, export och local (tester av Antigravity, granskade av Claude): en export-kandidat som raderade fem testfiler i `test/` underkändes vid granskningen och bara dess `src/export.test.ts` togs, med `vi.stubGlobal` i stället för globala tilldelningar. Sorteringsbugg med serveringstemperatur utan siffror rättad (BACKLOG §Mutation). 97 tester, `tsc -b` rent. WCAG-rad: axe 0 fel på buildapp.se/flaskor.
 
 # Handoff: Flaskor

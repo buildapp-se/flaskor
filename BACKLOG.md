@@ -210,3 +210,8 @@ Rättat 2026-10-16 på grenen `fix/owasp-2026-10-16`, varje skydd prövat med en
 - [x] `[P3]` (2026-10-16, SRI 2026-10-17) Lågt: `nosniff` från API:t; spegeldumpens id:n måste vara siffror och texten kapas vid 1 000 tecken. SRI på Firebase-SDK:n (`c26ddb8`): den laddas med dynamisk import från en versionsmärkt gstatic-adress, och import-mappens `integrity` i `index.html` bär sha384 för `firebase-app.js` och `firebase-auth.js` (räknade ur filerna). `crossorigin` behövs inte: moduler hämtas alltid med CORS, och gstatic svarar `*`. Verifierat i Chromium mot byggd `dist`: rätt hash laddar SDK:n, en ändrad hash nekas ("Failed to find a valid digest"). `test/sri.test.ts` fäller om `src/auth.ts` byter version utan ny hash. Webbläsare utan stöd för import-mappens `integrity` laddar som förut.
 - [x] `[P3]` (deployad 2026-10-17, headern syns på `flaskor-d3762.web.app`) `nosniff` i `authhost/firebase.json` till Firebase Hosting.
 - [ ] `[P3]` Nattjobbet (2026-10-17): en Systembolagsrad vars sida felar tillfälligt (5xx, inte i spegeln) stämplas inte, så den står kvar äldst och tar en av de 50 sidhämtningarna först varje natt. 404 stämplas och hamnar sist. Effekt i dag: en sida per sådant nummer. Rättning kräver ett val: bakdaterad stämpel som Vivino (men `price_checked_at` visas som "Kollat") eller en egen kolumn.
+
+## Beroenden 2026-10-17
+
+- [ ] `[P3]` vitest 5: stannar på 4.1.12, eftersom `@cloudflare/vitest-pool-workers` 0.23.0 (senaste) kräver `vitest ^4.1.0`. Uppgradera när pool-workers stöder 5.
+- [ ] `[P3]` `overrides` i `package.json` pekar pool-workers wrangler och miniflare på samma versioner som roten (pool-workers 0.23 låser sårbara sharp och undici). Höj overriden när wrangler höjs, ta bort den när pool-workers själv låser en fixad miniflare.
