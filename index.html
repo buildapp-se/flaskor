@@ -17,6 +17,15 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
     <title>Flaskor</title>
+    <!-- SRI för Firebase-SDK:n (src/auth.ts, dynamisk import från gstatic). Byts SDK-versionen där måste adresserna och hasharna bytas här: src/auth.test.ts fäller annars. -->
+    <script type="importmap">
+      {
+        "integrity": {
+          "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js": "sha384-RJIsoe0CFvPanuqLw3NPVreeQfBNBS6DotHoCTfrxasRhbZXK3oIK/kWJLO/hCaU",
+          "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js": "sha384-AgtBGZZ/u/7uqnj2oxrSf5J+QuQXF4sEG1w/6PUzbyR3RIG7mkXR2z8Tpdeqay0t"
+        }
+      }
+    </script>
   </head>
   <body>
     <div id="app"></div>
