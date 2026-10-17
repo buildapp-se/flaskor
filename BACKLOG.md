@@ -197,7 +197,7 @@ från 2026-09-16 kändes igen som rättade. `a1fe068` låg sex commits efter mai
 nedan är kontrollerade på `2437c73` (index.ts, household.ts och auth.ts oförändrade),
 men JSON-importen under Konto (`d4d6f68`, `shared/sanitize.ts`) är ogranskad.
 
-Rättat 2026-10-16 på grenen `fix/owasp-2026-10-16`, varje skydd prövat med en mutant som fäller testerna. **Workern ej deployad**: den bär Sipdecks riktiga användare, deploy väntar på Patriks klartecken.
+Rättat 2026-10-16 på grenen `fix/owasp-2026-10-16`, varje skydd prövat med en mutant som fäller testerna. Workern deployad 2026-10-17 (`2b9301db`) på Patriks klartecken.
 
 - [x] `[P2]` (granskad 2026-10-16) JSON-importen (`d4d6f68`): allt går genom `sanitize` och servern kontrollerar igen, React escapar texten, 429-omförsöket är säkert eftersom både strypningen och dagstaket kastar före skrivningen. Inget fynd utöver `sb_product_id` nedan.
 - [x] `[P2]` (2026-10-16) A04 skrivvägar: allt som inte är GET stryps per konto överst i `route` och räknas mot ett dagstak på 2 000 skrivningar per konto (`countWrite`, en import väger `IMPORT_WEIGHT_MAX`), och ett hushåll rymmer högst 2 000 rader (`HOUSEHOLD_DRINKS_MAX`). Avsmakningar har inget eget radtak; dagstaket begränsar dem.
@@ -208,5 +208,5 @@ Rättat 2026-10-16 på grenen `fix/owasp-2026-10-16`, varje skydd prövat med en
 - [x] `[P3]` (2026-10-16) `POST /api/assortment` kontrollerar identiteten före kroppen.
 - [x] `[P3]` (2026-10-16) `GET /api/search`: högst 100 tecken, `searchMirror` högst 8 termer.
 - [x] `[P3]` (2026-10-16, SRI 2026-10-17) Lågt: `nosniff` från API:t; spegeldumpens id:n måste vara siffror och texten kapas vid 1 000 tecken. SRI på Firebase-SDK:n (`c26ddb8`): den laddas med dynamisk import från en versionsmärkt gstatic-adress, och import-mappens `integrity` i `index.html` bär sha384 för `firebase-app.js` och `firebase-auth.js` (räknade ur filerna). `crossorigin` behövs inte: moduler hämtas alltid med CORS, och gstatic svarar `*`. Verifierat i Chromium mot byggd `dist`: rätt hash laddar SDK:n, en ändrad hash nekas ("Failed to find a valid digest"). `test/sri.test.ts` fäller om `src/auth.ts` byter version utan ny hash. Webbläsare utan stöd för import-mappens `integrity` laddar som förut.
-- [ ] `[P3]` `nosniff` i `authhost/firebase.json` är inte deployat till Firebase Hosting (Firebase skickar redan HSTS, uppmätt 2026-10-16).
+- [x] `[P3]` (deployad 2026-10-17, headern syns på `flaskor-d3762.web.app`) `nosniff` i `authhost/firebase.json` till Firebase Hosting.
 - [ ] `[P3]` Nattjobbet (2026-10-17): en Systembolagsrad vars sida felar tillfälligt (5xx, inte i spegeln) stämplas inte, så den står kvar äldst och tar en av de 50 sidhämtningarna först varje natt. 404 stämplas och hamnar sist. Effekt i dag: en sida per sådant nummer. Rättning kräver ett val: bakdaterad stämpel som Vivino (men `price_checked_at` visas som "Kollat") eller en egen kolumn.
