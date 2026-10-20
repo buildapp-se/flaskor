@@ -95,6 +95,61 @@ describe('localBackend', () => {
   it('kastar fel vid uppdatering av obefintlig dryck', async () => {
     await expect(localBackend.patchDrink(999, {} as any)).rejects.toThrow('drink 999 not found')
   })
+
+  it('uppdaterar rätt dryck i lagringen och lämnar andra orörda', async () => {
+    const d1 = await localBackend.createDrink({ ...base, name: 'Barolo' })
+    const d2 = await localBackend.createDrink({ ...base, name: 'Rioja' })
+    await localBackend.addTasting(d1.id, { drunk_on: '2026-09-01', rating: 4, note: null })
+
+    const patched = await localBackend.patchDrink(d1.id, { name: 'Barolo Riserva', count: 3 })
+    expect(patched.name).toBe('Barolo Riserva')
+    expect(patched.count).toBe(3)
+    expect(patched.tasting_count).toBe(1)
+
+    const list = await localBackend.listDrinks()
+    expect(list.map((d) => [d.id, d.name, d.count, d.tasting_count])).toEqual([
+      [d1.id, 'Barolo Riserva', 3, 1],
+      [d2.id, 'Rioja', 0, 0],
+    ])
+  })
+
+  it('tar bort dryck och dess avsmakningar utan att röra andra, och kastar fel om den saknas', async () => {
+    const d1 = await localBackend.createDrink({ ...base, name: 'Barolo' })
+    const d2 = await localBackend.createDrink({ ...base, name: 'Rioja' })
+    await localBackend.addTasting(d1.id, { drunk_on: '2026-09-01', rating: 4, note: null })
+    const t2 = await localBackend.addTasting(d2.id, { drunk_on: '2026-09-02', rating: 5, note: null })
+
+    await expect(localBackend.deleteDrink(999)).rejects.toThrow('drink 999 not found')
+    await localBackend.deleteDrink(d1.id)
+
+    expect((await localBackend.listDrinks()).map((d) => d.id)).toEqual([d2.id])
+    expect(await localBackend.listTastings(d1.id)).toEqual([])
+    expect((await localBackend.listTastings(d2.id)).map((t) => t.id)).toEqual([t2.id])
+  })
+
+  it('sorterar avsmakningar med nyaste datum först och högsta id först vid lika datum', async () => {
+    const d1 = await localBackend.createDrink({ ...base, name: 'Barolo' })
+    const t1 = await localBackend.addTasting(d1.id, { drunk_on: '2026-09-10', rating: 4, note: 'nyast' })
+    const t2 = await localBackend.addTasting(d1.id, { drunk_on: '2026-09-05', rating: 3, note: 'mitten 1' })
+    const t3 = await localBackend.addTasting(d1.id, { drunk_on: '2026-09-05', rating: 5, note: 'mitten 2' })
+    const t4 = await localBackend.addTasting(d1.id, { drunk_on: '2026-09-01', rating: 2, note: 'äldst' })
+    const t5 = await localBackend.addTasting(d1.id, { drunk_on: '2026-09-08', rating: 4, note: 'mellan' })
+
+    expect((await localBackend.listTastings(d1.id)).map((t) => t.id)).toEqual([t1.id, t5.id, t3.id, t2.id, t4.id])
+  })
+
+  it('tar bort en avsmakning och kastar fel om den saknas eller tillhör en annan dryck', async () => {
+    const d1 = await localBackend.createDrink({ ...base, name: 'Barolo' })
+    const d2 = await localBackend.createDrink({ ...base, name: 'Rioja' })
+    const t1 = await localBackend.addTasting(d1.id, { drunk_on: '2026-09-01', rating: 3, note: null })
+    const t2 = await localBackend.addTasting(d1.id, { drunk_on: '2026-09-02', rating: 4, note: null })
+
+    await expect(localBackend.deleteTasting(d1.id, 999)).rejects.toThrow('tasting 999 not found')
+    await expect(localBackend.deleteTasting(d2.id, t1.id)).rejects.toThrow(`tasting ${t1.id} not found`)
+
+    await localBackend.deleteTasting(d1.id, t1.id)
+    expect((await localBackend.listTastings(d1.id)).map((t) => t.id)).toEqual([t2.id])
+  })
 })
 
 describe('importItems i gästläget', () => {

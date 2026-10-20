@@ -20,9 +20,43 @@ describe('bulkimport: läsa AI:ns svar', () => {
   it('ingen/felaktig lista kastar rätt fel', () => {
     expect(() => parseImport('hej')).toThrow('no json list in text')
     expect(() => parseImport('[{trasig')).toThrow('no json list in text')
+    expect(() => parseImport(']')).toThrow('no json list in text')
     expect(() => parseImport('][')).toThrow('no json list in text')
     expect(() => parseImport('[trasig]')).toThrow('json list does not parse')
     expect(() => parseImport('{"a":[1]}')).not.toThrow()
+    expect(parseImport('[]')).toEqual([])
+    expect(parseImport(' []')).toEqual([])
+  })
+
+  it('hoppar över null och icke-objekt i listan', () => {
+    expect(parseImport('[null, 42, "text", true, {"namn":"Kvar"}]')).toEqual([
+      { nr: null, name: 'Kvar', vintage: null, price: null, count: 1, kind: 'wine' },
+    ])
+  })
+
+  it('stödjer alternativa fältnamn (artikelnummer, årgång, vintage, price, count, kind, spirit)', () => {
+    expect(
+      parseImport(
+        JSON.stringify([
+          { artikelnummer: '1234', namn: 'V1', årgång: 1900, price: 99, count: 4, kind: 'spirit' },
+          { artikelnummer: '1234567', name: 'V2', vintage: 2100, pris: 250, antal: 0, typ: 'spirit' },
+        ]),
+      ),
+    ).toEqual([
+      { nr: '1234', name: 'V1', vintage: 1900, price: 99, count: 4, kind: 'spirit' },
+      { nr: '1234567', name: 'V2', vintage: 2100, price: 250, count: 1, kind: 'spirit' },
+    ])
+  })
+
+  it('validerar gränser för artikelnummer, årgång, antal och icke-ändliga tal', () => {
+    expect(
+      parseImport(
+        '[{"nr":"123","namn":"Kort nr","argang":1899,"pris":1e500,"antal":-2},{"nr":"12345678","namn":"Långt nr","argang":2101,"antal":0}]',
+      ),
+    ).toEqual([
+      { nr: null, name: 'Kort nr', vintage: null, price: null, count: 1, kind: 'wine' },
+      { nr: null, name: 'Långt nr', vintage: null, price: null, count: 1, kind: 'wine' },
+    ])
   })
 
   it('trimmar name/namn och hanterar engelsk name', () => {

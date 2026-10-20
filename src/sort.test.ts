@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Drink } from '../shared/types.ts'
-import { compare, valueOf } from './sort.ts'
+import { compare, DEFAULT_DIR, valueOf } from './sort.ts'
 
 function drink(over: Partial<Drink>): Drink {
   return { id: 0, household_id: 1, kind: 'wine', owned: true, name: '', producer: null, vintage: null, country: null, region: null, category: null, style: null, grapes: null, volume_ml: null, alcohol: null, source_kind: 'manual', source_id: null, source_url: null, image_url: null, sb_product_id: null, sb_assortment: null, price_paid: null, price_current: null, price_checked_at: null, availability: 'unknown', count: 0, open_level: null, drink_from: null, drink_to: null, serve_temp: null, decant_hours: null, food: null, note: null, taste: null, vivino_rating: null, vivino_count: null, vivino_url: null, vivino_checked_at: null, rating: null, rating_url: null, last_drunk_on: null, last_rating: null, tasting_count: 0, created_at: '', updated_at: '', ...over }
@@ -67,5 +67,35 @@ describe('sortering (beslut 28)', () => {
     const arr = [drink({ name: 'null1', vintage: null }), drink({ name: 'null2', vintage: null }), drink({ name: 'a', vintage: 2022 })]
     expect([...arr].sort(compare('vintage', 'asc')).map((d) => d.name)).toEqual(['a', 'null1', 'null2'])
     expect([...arr].sort(compare('vintage', 'desc')).map((d) => d.name)).toEqual(['a', 'null1', 'null2'])
+  })
+  it('jämför två saknade värden som lika och lägger saknat värde efter satt värde', () => {
+    const empty1 = drink({ name: 'null1', vintage: null })
+    const empty2 = drink({ name: 'null2', vintage: null })
+    const withYear = drink({ name: 'a', vintage: 2022 })
+    expect(compare('vintage', 'asc')(empty1, empty2)).toBe(0)
+    expect(compare('vintage', 'desc')(empty1, empty2)).toBe(0)
+    expect(compare('vintage', 'asc')(empty1, withYear)).toBeGreaterThan(0)
+    expect(compare('vintage', 'desc')(empty1, withYear)).toBeGreaterThan(0)
+    expect(compare('vintage', 'asc')(withYear, empty1)).toBeLessThan(0)
+  })
+  it('sorterar på category, food, windowEnd, decant och open_level', () => {
+    const arr = [
+      drink({ name: 'b', category: 'Vitt', food: 'Vilt', drink_to: 2030, decant_hours: 2, open_level: 3 }),
+      drink({ name: 'a', category: 'Rött', food: 'Fisk', drink_to: 2025, decant_hours: 1, open_level: 1 }),
+    ]
+    expect([...arr].sort(compare('category', 'asc')).map((d) => d.name)).toEqual(['a', 'b'])
+    expect([...arr].sort(compare('food', 'asc')).map((d) => d.name)).toEqual(['a', 'b'])
+    expect([...arr].sort(compare('windowEnd', 'asc')).map((d) => d.name)).toEqual(['a', 'b'])
+    expect([...arr].sort(compare('decant', 'asc')).map((d) => d.name)).toEqual(['a', 'b'])
+    expect([...arr].sort(compare('open_level', 'asc')).map((d) => d.name)).toEqual(['a', 'b'])
+  })
+  it('har fallande standardriktning för pris, total, antal, betyg och senast drucken', () => {
+    expect(DEFAULT_DIR).toEqual({
+      price: 'desc',
+      total: 'desc',
+      count: 'desc',
+      vivino: 'desc',
+      lastDrunk: 'desc',
+    })
   })
 })
