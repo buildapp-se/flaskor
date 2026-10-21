@@ -144,7 +144,7 @@ Read by the cockpit Audits tab. One `- Label: YYYY-MM-DD, result` per check; con
 - Markup: 2026-09-16, pass, W3C 0 errors, 15 warnings, 0 broken links
 - UX: 2026-09-16, warn, 4 of 6 script checks pass; login links now 44 px and one primary action on the gate (fixed 2026-09-16, remeasure pending), no --interact
 - npm audit: 2026-09-24, pass, 0 in production, 4 high in the dev chain
-- Mutation: 2026-10-20, Stryker on 5 src files: importParse 89,12 % (73,47 before today's lane), sort 92,65 % (72,06), local 78,63 % (58,97), format 100 % and export 89,84 % from 2026-09-24; tests by Gemini 4 Argon, reviewed by Claude; hash.ts lane crashed at baseline (no tests), worker/ not run
+- Mutation: 2026-10-21, Stryker on 8 src files: hash 100 % (0, no tests before), persist 100 % (0), scan 97,44 % (0), importParse 89,12 % (73,47), sort 92,65 % (72,06), local 78,63 % (58,97), format 100 % and export 89,84 % from 2026-09-24; tests by Gemini 4 Argon, reviewed by Claude; api.ts, auth.ts and worker/ not run
 - Secrets: 2026-09-24, pass, gitleaks 0 findings in 123 commits, 3 reviewed as public in .gitleaksignore
 - Actions: 2026-09-24, pass, zizmor 0 high, 0 medium, 0 low
 - WCAG 2.2 AA: 2026-09-24, warn, axe 4.13.0 0 violations on buildapp.se/flaskor (mobile, one page); manual keyboard pass not done
