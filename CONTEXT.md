@@ -143,8 +143,8 @@ Read by the cockpit Audits tab. One `- Label: YYYY-MM-DD, result` per check; con
 - Lighthouse: 2026-09-16, warn, a11y 98 (main landmark added to the gate 2026-09-16, not remeasured), best practices 100, SEO 60 by design (noindex) (mobile, no perf)
 - Markup: 2026-09-16, pass, W3C 0 errors, 15 warnings, 0 broken links
 - UX: 2026-09-16, warn, 4 of 6 script checks pass; login links now 44 px and one primary action on the gate (fixed 2026-09-16, remeasure pending), no --interact
-- npm audit: 2026-09-24, pass, 0 in production, 4 high in the dev chain
+- npm audit: 2026-10-22, pass, 0 in production, 0 in the dev chain
 - Mutation: 2026-10-21, Stryker on 9 src files: api 98,54 % (0,73), hash 100 % (0, no tests before), persist 100 % (0), scan 97,44 % (0), importParse 89,12 % (73,47), sort 92,65 % (72,06), local 78,63 % (58,97), format 100 % and export 89,84 % from 2026-09-24; tests by Gemini 4 Argon, reviewed by Claude; auth.ts cannot run (an SRI test reads its source text, which Stryker instruments), worker/ not run
-- Secrets: 2026-09-24, pass, gitleaks 0 findings in 123 commits, 3 reviewed as public in .gitleaksignore
-- Actions: 2026-09-24, pass, zizmor 0 high, 0 medium, 0 low
+- Secrets: 2026-10-22, pass, gitleaks 0 findings in 150 commits, 3 reviewed as public in .gitleaksignore
+- Actions: 2026-10-22, pass, zizmor 0 high, 0 medium, 0 low after pinning 7 actions to commit SHA (newer zizmor flags unpinned-uses as high)
 - WCAG 2.2 AA: 2026-09-24, warn, axe 4.13.0 0 violations on buildapp.se/flaskor (mobile, one page); manual keyboard pass not done
