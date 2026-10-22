@@ -146,5 +146,6 @@ Read by the cockpit Audits tab. One `- Label: YYYY-MM-DD, result` per check; con
 - npm audit: 2026-10-22, pass, 0 in production, 0 in the dev chain
 - Mutation: 2026-10-21, Stryker on 9 src files: api 98,54 % (0,73), hash 100 % (0, no tests before), persist 100 % (0), scan 97,44 % (0), importParse 89,12 % (73,47), sort 92,65 % (72,06), local 78,63 % (58,97), format 100 % and export 89,84 % from 2026-09-24; tests by Gemini 4 Argon, reviewed by Claude; auth.ts cannot run (an SRI test reads its source text, which Stryker instruments), worker/ not run
 - Secrets: 2026-10-22, pass, gitleaks 0 findings in 150 commits, 3 reviewed as public in .gitleaksignore
+- Git history: 2026-10-22, warn, 154 commits via aifabriken tools/history-lane.mjs (Gemini 4 Argon, verified by Claude): a household member's first name in 11 current files and 32 commits; no secrets, phone numbers or private addresses; BACKLOG §Git history 2026-10-22
 - Actions: 2026-10-22, pass, zizmor 0 high, 0 medium, 0 low after pinning 7 actions to commit SHA (newer zizmor flags unpinned-uses as high)
 - WCAG 2.2 AA: 2026-09-24, warn, axe 4.13.0 0 violations on buildapp.se/flaskor (mobile, one page); manual keyboard pass not done

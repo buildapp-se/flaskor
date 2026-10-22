@@ -215,3 +215,10 @@ Rättat 2026-10-16 på grenen `fix/owasp-2026-10-16`, varje skydd prövat med en
 
 - [ ] `[P3]` vitest 5: stannar på 4.1.12, eftersom `@cloudflare/vitest-pool-workers` 0.23.0 (senaste) kräver `vitest ^4.1.0`. Uppgradera när pool-workers stöder 5.
 - [ ] `[P3]` `overrides` i `package.json` pekar pool-workers wrangler och miniflare på samma versioner som roten (pool-workers 0.23 låser sårbara sharp och undici). Höj overriden när wrangler höjs, ta bort den när pool-workers själv låser en fixad miniflare.
+
+## Git history 2026-10-22
+
+Unika tillagda rader i 154 commits granskade av Gemini 4 Argon (`tools/history-lane.mjs` i aifabriken, 712 s, 507 000 tokens), stickprov kontrollerade av Claude med `git grep` och `git log -G`. Repot är publikt. Inga lösenord, nycklar, telefonnummer eller privata adresser.
+
+- [ ] `[P2]` **Ägaren:** ett hushållsmedlems förnamn står i 11 nuvarande filer (bland annat `worker/migrations/0001_init.sql` som hushållsnamn, `CONTEXT.md`, `HANDOFF.md`, `BACKLOG.md`, designfilerna) och i 32 commits. Välj: acceptera, eller rensa filerna och skriv om historiken (`git-filter-repo`, force-push av publikt repo; `main` kräver att force-push slås på tillfälligt i grenregeln). Hushållsnamnet i produktionsdatabasen påverkas inte av en ändring i migreringsfilen.
+- Accepterat: ägarens namn och ort (står redan i integritetstexten som personuppgiftsansvarig), Systembolagsbutiken i testdata (offentlig adress), `patrik@example.com` i test, vinlistans värde i två gamla docs, `buildapp-se`, Firebase webbnyckel.
