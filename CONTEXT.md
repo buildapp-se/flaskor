@@ -149,3 +149,5 @@ Read by the cockpit Audits tab. One `- Label: YYYY-MM-DD, result` per check; con
 - Git history: 2026-10-22, pass, 154 commits via aifabriken tools/history-lane.mjs (Gemini 4 Argon, verified by Claude); a household member's first name removed from 11 files and all history by rewrite 2026-10-22 (still reachable via GitHub PR refs); no secrets, phone numbers or private addresses; BACKLOG §Git history 2026-10-22
 - Actions: 2026-10-22, pass, zizmor 0 high, 0 medium, 0 low after pinning 7 actions to commit SHA (newer zizmor flags unpinned-uses as high)
 - WCAG 2.2 AA: 2026-09-24, warn, axe 4.13.0 0 violations on buildapp.se/flaskor (mobile, one page); manual keyboard pass not done
+- OG image: 2026-10-25, pass, 1200x630 PNG, https://buildapp.se/flaskor/og-image.png
+- Database: 2026-10-25, CF D1
