@@ -85,6 +85,22 @@ describe('CSV för svensk Excel', () => {
     expect(fields[18]).toBe('Lammracks')
     expect(fields[21]).toBe('2026-05-15')
   })
+  it('exporterar antal avsmakningar, källa, artikelnummer och länk', () => {
+    const d = {
+      ...blankDrink('wine'),
+      tasting_count: 3,
+      source_kind: 'systembolaget' as const,
+      source_id: '71234',
+      source_url: 'https://www.systembolaget.se/produkt/vin/71234/',
+    }
+    const csv = toCsv([d])
+    const row = csv.split('\r\n')[1]!
+    const fields = row.split(';')
+    expect(fields[22]).toBe('3')
+    expect(fields[23]).toBe('systembolaget')
+    expect(fields[24]).toBe('71234')
+    expect(fields[25]).toBe('https://www.systembolaget.se/produkt/vin/71234/')
+  })
   it('prioriterar vivino_rating framför rating', () => {
     expect(toCsv([{ ...blankDrink('wine'), vivino_rating: 4.5, rating: null }])).toContain(';4,5;')
     expect(toCsv([{ ...blankDrink('wine'), vivino_rating: null, rating: 3 }])).toContain(';3;')
@@ -228,5 +244,36 @@ describe('parseExport: exportfilen tillbaka till rader', () => {
       { drink_id: 999, drunk_on: '2026-09-02' },
     ]))
     expect(items[0]!.tastings).toEqual([{ drunk_on: '2026-09-01', rating: null, note: null }])
+  })
+  it('godkänner alla giltiga dryckestyper inklusive öl', () => {
+    for (const kind of ['wine', 'spirit', 'beer'] as const) {
+      const items = parseExport(file([{ kind, name: `Test ${kind}` }]))
+      expect(items[0]!.kind).toBe(kind)
+    }
+  })
+  it('godkänner alla källor: systembolaget, caviste och manual', () => {
+    for (const source_kind of ['systembolaget', 'caviste', 'manual'] as const) {
+      const items = parseExport(file([{ ...wine, source_kind }]))
+      expect(items[0]!.source_kind).toBe(source_kind)
+    }
+  })
+  it('godkänner alla tillgänglighetsstatusar', () => {
+    const statuses = ['in_stock', 'temporarily_out', 'supplier_out', 'sold_out', 'discontinued', 'unknown'] as const
+    for (const availability of statuses) {
+      const items = parseExport(file([{ ...wine, availability }]))
+      expect(items[0]!.availability).toBe(availability)
+    }
+  })
+  it('kopplar avsmakningar till rätt flaska baserat på numeriskt id', () => {
+    const d1 = { ...wine, id: 101, name: 'Vin 1' }
+    const d2 = { ...wine, id: 102, name: 'Vin 2' }
+    const items = parseExport(file([d1, d2], [
+      { drink_id: 101, drunk_on: '2026-10-01' },
+      { drink_id: 102, drunk_on: '2026-10-02' },
+    ]))
+    expect(items[0]!.tastings).toHaveLength(1)
+    expect(items[0]!.tastings![0]!.drunk_on).toBe('2026-10-01')
+    expect(items[1]!.tastings).toHaveLength(1)
+    expect(items[1]!.tastings![0]!.drunk_on).toBe('2026-10-02')
   })
 })
