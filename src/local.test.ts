@@ -3,7 +3,7 @@ import { IMPORT_WEIGHT_MAX, type ImportItem } from '../shared/types.ts'
 import { api } from './api.ts'
 import { parseExport, toJson } from './export.ts'
 import { FatalError, TransientError } from '../shared/errors.ts'
-import { blankDrink, chunkImport, localBackend, clearLocal, importItems, localExport, ImportAbortedError, ImportTooLargeError } from './local.ts'
+import { blankDrink, chunkImport, localBackend, clearLocal, importItems, localCount, localExport, localSaves, uploadLocal, ImportAbortedError, ImportTooLargeError } from './local.ts'
 
 const { id: _i, household_id: _h, created_at: _c, updated_at: _u, last_drunk_on: _l, last_rating: _r, tasting_count: _t, ...base } = blankDrink('wine')
 const item = (name: string, tastings = 0): ImportItem => ({ ...base, name, tastings: Array.from({ length: tastings }, () => ({ drunk_on: '2026-09-01', rating: null, note: null })) })
@@ -150,6 +150,85 @@ describe('localBackend', () => {
     await localBackend.deleteTasting(d1.id, t1.id)
     expect((await localBackend.listTastings(d1.id)).map((t) => t.id)).toEqual([t2.id])
   })
+
+  it('räknar nuvarande antal drycker i localCount och totalt sparade i localSaves även efter borttagning', async () => {
+    expect(localCount()).toBe(0)
+    expect(localSaves()).toBe(0)
+
+    const d1 = await localBackend.createDrink({ ...base, name: 'Barolo' })
+    await localBackend.createDrink({ ...base, name: 'Rioja' })
+    expect(localCount()).toBe(2)
+    expect(localSaves()).toBe(2)
+
+    await localBackend.deleteDrink(d1.id)
+    expect(localCount()).toBe(1)
+    expect(localSaves()).toBe(2)
+
+    clearLocal()
+    expect(localCount()).toBe(0)
+    expect(localSaves()).toBe(0)
+  })
+})
+
+describe('uploadLocal', () => {
+  beforeEach(() => {
+    const store = new Map<string, string>()
+    vi.stubGlobal('localStorage', { getItem: (k: string) => store.get(k) ?? null, setItem: (k: string, v: string) => store.set(k, v), removeItem: (k: string) => store.delete(k) })
+  })
+  afterEach(() => {
+    vi.restoreAllMocks()
+    vi.unstubAllGlobals()
+  })
+
+  it('skickar lokala drycker med rätt avsmakningar utan lokala fält och rensar lagringen', async () => {
+    const d1 = await localBackend.createDrink({ ...base, name: 'Barolo', owned: true, count: 2 })
+    const d2 = await localBackend.createDrink({ ...base, name: 'Rioja', owned: false, count: 0 })
+    await localBackend.addTasting(d1.id, { drunk_on: '2026-09-01', rating: 4, note: 'fylligt' })
+    await localBackend.addTasting(d2.id, { drunk_on: '2026-09-05', rating: 3, note: 'fruktigt' })
+
+    const sent: ImportItem[][] = []
+    vi.spyOn(api, 'importDrinks').mockImplementation(async (chunk) => (sent.push(chunk), chunk.length))
+
+    expect(await uploadLocal()).toBe(2)
+    expect(sent).toEqual([
+      [
+        { ...base, name: 'Barolo', owned: true, count: 2, tastings: [{ drunk_on: '2026-09-01', rating: 4, note: 'fylligt' }] },
+        { ...base, name: 'Rioja', owned: false, count: 0, tastings: [{ drunk_on: '2026-09-05', rating: 3, note: 'fruktigt' }] },
+      ],
+    ])
+    expect(localCount()).toBe(0)
+    expect(localSaves()).toBe(0)
+  })
+
+  it('tar bort varje skickad bit direkt så ett nätfel halvvägs bara lämnar kvar osparade drycker och avsmakningar', async () => {
+    const d1 = await localBackend.createDrink({ ...base, name: 'vin 0' })
+    await localBackend.addTasting(d1.id, { drunk_on: '2026-09-01', rating: 4, note: 'första' })
+    for (let i = 1; i < IMPORT_WEIGHT_MAX - 1; i++) {
+      await localBackend.createDrink({ ...base, name: `vin ${i}` })
+    }
+    const last = await localBackend.createDrink({ ...base, name: 'sista' })
+    await localBackend.addTasting(last.id, { drunk_on: '2026-09-02', rating: 5, note: 'kvar' })
+
+    const landed: string[] = []
+    let failSecond = true
+    vi.spyOn(api, 'importDrinks').mockImplementation(async (chunk) => {
+      if (failSecond && landed.length > 0) throw new TransientError('network')
+      landed.push(...chunk.map((i) => i.name))
+      return chunk.length
+    })
+
+    await expect(uploadLocal()).rejects.toThrow('network')
+    expect(localExport().drinks.map((d) => d.name)).toEqual(['sista'])
+    expect(localExport().tastings.map((t) => [t.drink_id, t.note])).toEqual([[last.id, 'kvar']])
+
+    failSecond = false
+    expect(await uploadLocal()).toBe(1)
+    expect(landed).toContain('vin 0')
+    expect(landed).toContain('sista')
+    expect(landed).toHaveLength(IMPORT_WEIGHT_MAX)
+    expect(localCount()).toBe(0)
+    expect(localSaves()).toBe(0)
+  })
 })
 
 describe('importItems i gästläget', () => {
@@ -255,5 +334,23 @@ describe('importItems till ett konto: avbrott, tak och för stora rader', () => 
     await expect(importItems([item('a'), fat], false)).rejects.toBeInstanceOf(ImportTooLargeError)
     expect(spy).not.toHaveBeenCalled()
     expect(await importItems([item('a'), item('loggad', IMPORT_WEIGHT_MAX - 1)], false)).toBe(2)
+  })
+  it('standardväntan vid 429 väntar ut pausen innan nästa försök', async () => {
+    vi.useFakeTimers()
+    try {
+      let calls = 0
+      vi.spyOn(api, 'importDrinks').mockImplementation(async (chunk) => {
+        if (++calls === 1) throw new FatalError('too many requests', 429)
+        return chunk.length
+      })
+      const promise = importItems([item('a')], false)
+      await vi.advanceTimersByTimeAsync(64_999)
+      expect(calls).toBe(1)
+      await vi.advanceTimersByTimeAsync(1)
+      expect(calls).toBe(2)
+      expect(await promise).toBe(1)
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })
