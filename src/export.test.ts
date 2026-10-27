@@ -61,6 +61,30 @@ describe('CSV för svensk Excel', () => {
     const row = csv.split('\r\n')[1]!
     expect(row).toContain(';Producenten;2020;Sverige;Skåne;Rött;Pinot Noir;')
   })
+  it('exporterar dagspris, volym, drickfönster, servering, karaffering, mat och senast drucken', () => {
+    const d = {
+      ...blankDrink('wine'),
+      price_current: 349.5,
+      volume_ml: 750,
+      drink_from: 2024,
+      drink_to: 2032,
+      serve_temp: '16-18°C',
+      decant_hours: 2.5,
+      food: 'Lammracks',
+      last_drunk_on: '2026-05-15',
+    }
+    const csv = toCsv([d])
+    const row = csv.split('\r\n')[1]!
+    const fields = row.split(';')
+    expect(fields[11]).toBe('349,5')
+    expect(fields[12]).toBe('750')
+    expect(fields[14]).toBe('2024')
+    expect(fields[15]).toBe('2032')
+    expect(fields[16]).toBe('16-18°C')
+    expect(fields[17]).toBe('2,5')
+    expect(fields[18]).toBe('Lammracks')
+    expect(fields[21]).toBe('2026-05-15')
+  })
   it('prioriterar vivino_rating framför rating', () => {
     expect(toCsv([{ ...blankDrink('wine'), vivino_rating: 4.5, rating: null }])).toContain(';4,5;')
     expect(toCsv([{ ...blankDrink('wine'), vivino_rating: null, rating: 3 }])).toContain(';3;')
@@ -169,5 +193,40 @@ describe('parseExport: exportfilen tillbaka till rader', () => {
   })
   it('okända fält följer inte med', () => {
     expect(parseExport(file([{ ...wine, __proto__x: 1, extra: 'x' }]))[0]).not.toHaveProperty('extra')
+  })
+  it('kräver att name finns och inte bara består av blanksteg', () => {
+    expect(() => parseExport(file([{ kind: 'wine' }]))).toThrow('name is required')
+    expect(() => parseExport(file([{ kind: 'wine', name: '   ' }]))).toThrow('name is required')
+    expect(() => parseExport(file([{ kind: 'wine', name: null }]))).toThrow('name is required')
+  })
+  it('tillåter att valfria fält som source_kind, availability och count utelämnas', () => {
+    const minimal = { kind: 'wine', name: 'Riesling' }
+    const items = parseExport(file([minimal]))
+    expect(items).toHaveLength(1)
+    expect(items[0]).toMatchObject({ name: 'Riesling', kind: 'wine', owned: false, tastings: [] })
+    expect(items[0]!.source_kind).toBeUndefined()
+    expect(items[0]!.availability).toBeUndefined()
+    expect(items[0]!.count).toBeUndefined()
+  })
+  it('validerar att count är ett heltal och inte null', () => {
+    expect(() => parseExport(file([{ ...wine, count: 1.5 }]))).toThrow('count must be a whole number')
+    expect(() => parseExport(file([{ ...wine, count: null }]))).toThrow('count must be a whole number')
+  })
+  it('kopplar inte avsmakningar till flaskor utan numeriskt id, även om avsmakningen saknar drink_id', () => {
+    const { id: _id, ...noId } = wine
+    const items = parseExport(file([noId], [{ drink_id: null, drunk_on: '2026-09-01' }]))
+    expect(items[0]!.tastings).toEqual([])
+  })
+  it('ignorerar avsmakningar som är null, odefinierade eller inte objekt', () => {
+    const items = parseExport(file([wine], [
+      null,
+      undefined,
+      42,
+      'inte ett objekt',
+      false,
+      { drink_id: 7, drunk_on: '2026-09-01' },
+      { drink_id: 999, drunk_on: '2026-09-02' },
+    ]))
+    expect(items[0]!.tastings).toEqual([{ drunk_on: '2026-09-01', rating: null, note: null }])
   })
 })
