@@ -151,3 +151,4 @@ Read by the cockpit Audits tab. One `- Label: YYYY-MM-DD, result` per check; con
 - WCAG 2.2 AA: 2026-09-24, warn, axe 4.13.0 0 violations on buildapp.se/flaskor (mobile, one page); manual keyboard pass not done
 - OG image: 2026-10-25, pass, 1200x630 PNG, https://buildapp.se/flaskor/og-image.png
 - Database: 2026-10-25, CF D1
+- Dependabot: 2026-10-29, pass, 0 open alerts
