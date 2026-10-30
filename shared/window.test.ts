@@ -35,6 +35,18 @@ describe('ruleOfThumb (beslut 13)', () => {
     expect(ruleOfThumb('wine', 'Rosévin', 2024, 500)).toEqual({ drink_from: 2024, drink_to: 2027 })
     expect(ruleOfThumb('wine', 'Mousserande vin', 2015, 800)).toEqual({ drink_from: 2016, drink_to: 2023 })
   })
+  it('vitt vin även i lågt och högt prisband', () => {
+    expect(ruleOfThumb('wine', 'Vitt vin', 2023, 100)).toEqual({ drink_from: 2023, drink_to: 2025 })
+    expect(ruleOfThumb('wine', 'Vitt vin', 2023, 400)).toEqual({ drink_from: 2024, drink_to: 2031 })
+  })
+  it('rosévin även i lågt och medelhögt prisband', () => {
+    expect(ruleOfThumb('wine', 'Rosévin', 2024, 100)).toEqual({ drink_from: 2024, drink_to: 2026 })
+    expect(ruleOfThumb('wine', 'Rosévin', 2024, 200)).toEqual({ drink_from: 2024, drink_to: 2026 })
+  })
+  it('mousserande vin även i lågt och medelhögt prisband', () => {
+    expect(ruleOfThumb('wine', 'Mousserande vin', 2015, 100)).toEqual({ drink_from: 2015, drink_to: 2017 })
+    expect(ruleOfThumb('wine', 'Mousserande vin', 2015, 200)).toEqual({ drink_from: 2015, drink_to: 2019 })
+  })
   it('starkvin och söta viner även under andra nivå 2-namn', () => {
     expect(ruleOfThumb('wine', 'Starkvin, söta viner', 2000, 100)).toEqual({ drink_from: 2000, drink_to: 2010 })
     expect(ruleOfThumb('wine', 'Starkvin', 2000, 200)).toEqual({ drink_from: 2000, drink_to: 2015 })
@@ -46,5 +58,9 @@ describe('ruleOfThumb (beslut 13)', () => {
     expect(ruleOfThumb('wine', 'Rött vin', 2020, null)).toBeNull()
     expect(ruleOfThumb('wine', 'Sake', 2020, 200)).toBeNull()
     expect(ruleOfThumb('wine', null, 2020, 200)).toBeNull()
+  })
+  it('sprit ger null även för en kategori som finns i tumregeln', () => {
+    expect(ruleOfThumb('spirit', 'Rött vin', 2020, 200)).toBeNull()
+    expect(ruleOfThumb('spirit', 'Starkvin', 2000, 100)).toBeNull()
   })
 })
