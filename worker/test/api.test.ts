@@ -187,6 +187,16 @@ describe('nattjobbets köer (OWASP 2026-10-16)', () => {
     expect((row?.price_checked_at ?? '') > '2026-01-01').toBe(true)
   })
 
+  it('en rad vars produktsida svarar 5xx och som spegeln inte känner stämplas ändå, så den inte står kvar äldst först varje natt', async () => {
+    // 555001 svarar 503 i testets utgående tjänst och finns inte i dumpfixturen; spegeln är tom i detta test.
+    const broken = await env.DB.prepare("INSERT INTO drink (household_id, kind, name, source_kind, source_id, price_checked_at) VALUES (1, 'spirit', 'Nere', 'systembolaget', '555001', '2020-01-01T00:00:00.000Z') RETURNING id").first<number>('id')
+    const before = Date.now()
+    expect(await refreshAll(env.DB, { kind: 'service' })).toMatchObject({ refreshed: 0, failed: 1, vivino: 0 })
+    // Stämplad nu i stället för att lämnas kvar på 2020: nästa natt står raden sist i kön, som en 404-rad.
+    const stamp = Date.parse((await env.DB.prepare('SELECT price_checked_at AS t FROM drink WHERE id = ?').bind(broken!).first<string>('t')) ?? '')
+    expect(Math.abs(stamp - before)).toBeLessThan(60_000)
+  })
+
   it('ett tillfälligt Vivino-fel köas om till i morgon, inte tappat', async () => {
     const broken = await env.DB.prepare("INSERT INTO drink (household_id, kind, name, vivino_url) VALUES (1, 'wine', 'Nere', 'https://www.vivino.com/w/503') RETURNING id").first<number>('id')
     const before = Date.now()

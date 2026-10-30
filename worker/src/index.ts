@@ -501,6 +501,15 @@ export async function refreshAll(db: D1Database, _proof: { kind: 'service' }): P
     } catch (error) {
       failed++
       console.error(`refresh ${number} failed`, error)
+      // Sidan felade tillfälligt (5xx, inte i spegeln): stämpla raderna ändå, så de nästa natt står sist i kön
+      // i stället för att stå kvar äldst och ta en av de 50 sidhämtningarna först varje natt (BACKLOG 2026-10-17).
+      // Som vid 404, fast utan att availability ändras.
+      try {
+        const stamp = new Date().toISOString()
+        for (const row of rows) await updateDrink(db, row.household_id, row.id, { price_checked_at: stamp })
+      } catch (stampError) {
+        console.error(`refresh ${number} could not be requeued`, stampError)
+      }
     }
   }
   // Vivino: viner utan betyg eller med betyg äldre än 30 dagar, ett tak per natt så resten tas nästa natt.

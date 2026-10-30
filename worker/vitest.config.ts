@@ -22,6 +22,9 @@ export default defineConfig({
             const number = url.pathname.match(/-(\d+)\/?$/)?.[1]
             // 141201 (Norrlands Guld) finns bara i dumpfixturen: produktsidan "ligger nere", så spegeln får svara.
             if (number === '141201') return new Response('bad gateway', { status: 503 })
+            // 555001 finns inte i dumpfixturen alls: sidan ligger nere och spegeln kan inte svara, så nattjobbet
+            // får ett riktigt tillfälligt fel att stämpla om (BACKLOG 2026-10-17).
+            if (number === '555001') return new Response('bad gateway', { status: 503 })
             try {
               const html = await readFile(`worker/test/fixtures/${number}.html`, 'utf8')
               return new Response(html, { headers: { 'content-type': 'text/html' } })

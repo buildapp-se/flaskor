@@ -150,7 +150,7 @@ Patrik: "Jag vill att man ska kunna leka runt i appen och att det ska sparas i l
 - [x] `[P1]` Lokala rader följer med till kontot vid inloggning, eller valet "lägg till eller släng" när kontot redan har rader.
 - [x] `[P1]` Exportera JSON och CSV under Konto, för gäst och konto.
 - [x] `[P2]` (byggt 2026-10-06 på gren: `parseExport` i `src/export.ts`, `importItems` i `src/local.ts`, knappen Importera JSON under Konto; enhetstester, och export, rensning och import körd i Chromium i gästläge. Kontovägen overifierad mot en riktig Worker) Importera en exporterad JSON-fil tillbaka (flytt mellan webbläsare utan konto, återställning). Lägger till, skriver aldrig över: samma fil två gånger ger dubbletter.
-- [ ] `[P3]` Kontoimporten nekar en fil där en flaska har 40 eller fler avsmakningar (eller över 60 kB text): `POST /api/drinks/import` svarar inte med id:n, så resten av loggen kan inte skickas efteråt. Lös med id:n i svaret om någon stöter på det.
+- [ ] `[P3]` Kontoimporten nekar en fil där en flaska har 40 eller fler avsmakningar (eller över 60 kB text): `POST /api/drinks/import` svarar inte med id:n, så resten av loggen kan inte skickas efteråt. Lös med id:n i svaret om någon stöter på det. Mistral-försök 2026-10-30 refuserat: skickar resten av loggen mot nya id:t, men ett fel mitt i den ger dubblett vid nytt försök, och 429 hanteras inte där.
 - [ ] `[P3]` Uppladdningen till kontot är overifierad med en riktig inloggning: bitningen och Worker-routen är testade var för sig. Prova: lägg in en flaska som gäst, skapa konto, se att den finns kvar.
 
 ## Captured
@@ -209,7 +209,7 @@ Rättat 2026-10-16 på grenen `fix/owasp-2026-10-16`, varje skydd prövat med en
 - [x] `[P3]` (2026-10-16) `GET /api/search`: högst 100 tecken, `searchMirror` högst 8 termer.
 - [x] `[P3]` (2026-10-16, SRI 2026-10-17) Lågt: `nosniff` från API:t; spegeldumpens id:n måste vara siffror och texten kapas vid 1 000 tecken. SRI på Firebase-SDK:n (`c26ddb8`): den laddas med dynamisk import från en versionsmärkt gstatic-adress, och import-mappens `integrity` i `index.html` bär sha384 för `firebase-app.js` och `firebase-auth.js` (räknade ur filerna). `crossorigin` behövs inte: moduler hämtas alltid med CORS, och gstatic svarar `*`. Verifierat i Chromium mot byggd `dist`: rätt hash laddar SDK:n, en ändrad hash nekas ("Failed to find a valid digest"). `test/sri.test.ts` fäller om `src/auth.ts` byter version utan ny hash. Webbläsare utan stöd för import-mappens `integrity` laddar som förut.
 - [x] `[P3]` (deployad 2026-10-17, headern syns på `flaskor-d3762.web.app`) `nosniff` i `authhost/firebase.json` till Firebase Hosting.
-- [ ] `[P3]` Nattjobbet (2026-10-17): en Systembolagsrad vars sida felar tillfälligt (5xx, inte i spegeln) stämplas inte, så den står kvar äldst och tar en av de 50 sidhämtningarna först varje natt. 404 stämplas och hamnar sist. Effekt i dag: en sida per sådant nummer. Rättning kräver ett val: bakdaterad stämpel som Vivino (men `price_checked_at` visas som "Kollat") eller en egen kolumn.
+- [x] (rättad 2026-10-30) `[P3]` Nattjobbet (2026-10-17): en Systembolagsrad vars sida felar tillfälligt (5xx, inte i spegeln) stämplas inte, så den står kvar äldst och tar en av de 50 sidhämtningarna först varje natt. 404 stämplas och hamnar sist. Effekt i dag: en sida per sådant nummer. Rättning kräver ett val: bakdaterad stämpel som Vivino (men `price_checked_at` visas som "Kollat") eller en egen kolumn.
 
 ## Beroenden 2026-10-17
 
