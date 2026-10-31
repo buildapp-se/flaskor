@@ -11,7 +11,7 @@ Specifikation: [ADR 0001](docs/adr/0001-sipdeck-hemma.md). Byggt och live 2026-1
 - [x] `[P2]` (byggt 2026-10-06) Svensk inköpsväg: `#/lagg-till?q=` kör söket, produkten väljs före önskelistan.
 - [x] `[P1]` (2026-10-06) Migrering 0010 körd mot lokal D1 med riktiga rader, utrullnings- och återställningsplan i `HANDOFF.md`.
 - [ ] `[P1]` **Patrik:** godkänn utrullningen och kör den i ordningen i `HANDOFF.md`. Sedan ägar-QA med riktiga inloggningar (listan där).
-- [ ] `[P3]` Inköpshjälpens sökord är ingrediensens svenska namn. "Kaffelikör" ger noll träffar hos Systembolaget; användaren får skriva om frågan. Ett eget sökord per ingrediens (fältet `buy` i Sipdecks `drinks.json` läses redan) om det stör.
+- [ ] `[P3]` Inköpshjälpens sökord är ingrediensens svenska namn. "Kaffelikör" ger noll träffar hos Systembolaget; användaren får skriva om frågan. Ett eget sökord per ingrediens (fältet `buy` i Sipdecks `drinks.json` läses redan) om det stör. Kandidat refuserad 2026-10-31: den tog bort diakriter ur användarens sökning, men bara Kahlúa är verifierat; å, ä och ö hos Systembolaget är inte provat och kan förstöra svenska sökningar.
 
 ## Byggt
 
@@ -138,7 +138,7 @@ Patrik vill dela appen på AI-forum och senare vinforum. Byggt i batch-läge, tr
 - [x] `[P2]` Dygnstak på skanningen per konto: `SCAN_DAILY` i `worker/src/index.ts`, 50 foton per konto och 1 200 totalt per dygn, räknat i `sb_meta` (`countScan`, granskningsbatchen 2026-09-16, test i `worker/test/scan.test.ts`). Punkten stod öppen av misstag till 2026-09-24.
 - [x] `[P1]` Natten skriver bara ändrade rader, datumet högst en gång i veckan (`562f688`, 2026-09-24): D1-skrivkvoten före forumlänkarna.
 - [x] `[P1]` Personuppgiftsansvarig och kontakt i integritetstexten (`6f1bc44`, 2026-09-24).
-- [ ] `[P3]` Nattens `listAllDrinks` läser alla hushålls rader. Linjärt med användarna; tak eller uppdelning när det blir tusentals rader.
+- [ ] `[P3]` Nattens `listAllDrinks` läser alla hushålls rader. Linjärt med användarna; tak eller uppdelning när det blir tusentals rader. Kandidat refuserad 2026-10-31: tak på 1 000 sorterat på `price_checked_at` låter rader som aldrig stämplas (egna flaskor, NULL först) tränga ut resten, och kräver migrering. Behövs inte förrän raderna är tusentals.
 
 ## Gästläge och export 2026-09-15
 
