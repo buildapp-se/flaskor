@@ -125,7 +125,7 @@ export const S = {
     'Kopplar du Sipdeck under Konto får det Sipdeck-konto du godkänner läsa vilka flaskor som finns hemma (namn, sort och ursprung), tills du eller någon i hushållet kopplar från. Kontots e-postadress visas för hushållet.',
     'Radera kontot under Konto, så försvinner allt ovan hos Flaskor.',
     'Utan konto sparas det du lägger in bara i webbläsaren och skickas ingenstans, utom uppslagen ovan.',
-    'Personuppgiftsansvarig är Patrik Löfgren, Umeå. Frågor, eller om du vill använda dina rättigheter: kontakt@orgutveckling.se.',
+    'Personuppgiftsansvarig är Patrik Löfgren, Umeå. Frågor, eller om du vill använda dina rättigheter: kontakt@buildapp.se.',
   ],
   gate: {
     title: 'Grindkod',
