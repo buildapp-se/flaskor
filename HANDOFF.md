@@ -4,7 +4,7 @@ status: active
 currentGoal: "Sipdeck-kopplingen (ADR 0001) är live i båda apparna sedan 2026-10-06, ägar-QA återstår."
 nextAction: "Patrik: ägar-QA med riktiga inloggningar, sju punkter under rubriken 2026-10-06 (OWASP-Workern deployad 2026-10-17)."
 blockers: []
-reviewedAt: 2026-11-02
+reviewedAt: 2026-11-03
 ---
 **2026-11-02:** kontaktadressen är nu `kontakt@buildapp.se` (förut `kontakt@orgutveckling.se`). Gäller integritetstexten i src/strings.ts.
 
