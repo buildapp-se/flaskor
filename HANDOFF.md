@@ -2,7 +2,7 @@
 schemaVersion: 1
 status: active
 currentGoal: "Sipdeck-kopplingen (ADR 0001) är live i båda apparna sedan 2026-10-06, ägar-QA återstår."
-nextAction: "Patrik: ägar-QA med riktiga inloggningar, sju punkter under rubriken 2026-10-06 (OWASP-Workern deployad 2026-10-17)."
+nextAction: "Patrik: ägar-QA med riktiga inloggningar, sju punkter under rubriken 2026-10-06. Workern deployad 2026-11-03 med nattjobbets stämpling vid serverfel (`bef05ba`, version a4d5f029, `/health` 200); att nattjobbet inte fastnar syns först efter nästa körning."
 blockers: []
 reviewedAt: 2026-11-03
 ---
