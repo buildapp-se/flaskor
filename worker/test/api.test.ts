@@ -325,6 +325,10 @@ describe('drucken-logg (beslut 16)', () => {
     const d = await drink()
     expect((await api('POST', `/api/drinks/${d.id}/tastings`, { drunk_on: 'i fredags' })).status).toBe(400)
     expect((await api('POST', `/api/drinks/${d.id}/tastings`, {})).status).toBe(400)
+    // Formen räckte förut: 2026-02-30 och 2026-13-01 sparades och sorterades som text (2026-11-04).
+    expect((await api('POST', `/api/drinks/${d.id}/tastings`, { drunk_on: '2026-02-30' })).status).toBe(400)
+    expect((await api('POST', `/api/drinks/${d.id}/tastings`, { drunk_on: '2026-13-01' })).status).toBe(400)
+    expect((await api('POST', `/api/drinks/${d.id}/tastings`, { drunk_on: '2024-02-29' })).status).toBe(200)
     expect((await api('POST', `/api/drinks/${d.id}/tastings`, { drunk_on: '2026-06-20', rating: 6 })).status).toBe(400)
     expect((await api('POST', `/api/drinks/${d.id}/tastings`, { drunk_on: '2026-06-20', rating: 3.5 })).status).toBe(400)
   })

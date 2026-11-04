@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { sanitize } from './sanitize.ts'
+import { sanitize, sanitizeTasting } from './sanitize.ts'
 
 // Samma gränser som tabellens CHECK och NOT NULL (migrering 0007): ett värde databasen nekar ska nekas här först,
 // annars svarar Workern 500 och gästläget sparar en rad som aldrig går att ta med till ett konto.
@@ -23,5 +23,12 @@ describe('sanitize mot databasens gränser', () => {
     expect(sanitize({ open_level: 4 })).toEqual({ open_level: 4 })
     expect(() => sanitize({ count: -1 })).toThrow('count must not be negative')
     expect(sanitize({ count: 0 })).toEqual({ count: 0 })
+  })
+})
+
+describe('sanitizeTasting', () => {
+  it('datumet måste finnas i kalendern, inte bara ha formen', () => {
+    for (const day of ['2026-02-30', '2026-13-01', '2026-00-10', '2025-02-29']) expect(() => sanitizeTasting({ drunk_on: day }), day).toThrow('drunk_on must be a date')
+    expect(sanitizeTasting({ drunk_on: '2024-02-29' })).toEqual({ drunk_on: '2024-02-29', rating: null, note: null })
   })
 })

@@ -70,10 +70,18 @@ export function sanitize(body: unknown): DrinkPatch {
   return out as DrinkPatch
 }
 
+function realDay(day: string): boolean {
+  const date = new Date(`${day}T00:00:00Z`)
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === day
+}
+
 export function sanitizeTasting(body: unknown): TastingInput {
   if (typeof body !== 'object' || body === null) throw new FatalError('body must be an object')
   const { drunk_on, rating, note } = body as Record<string, unknown>
-  if (typeof drunk_on !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(drunk_on)) throw new FatalError('drunk_on must be a date, YYYY-MM-DD')
+  // Formen och en riktig dag: 2026-02-30 har rätt form men blir 2026-03-02 i Date, och sorteras fel som text.
+  if (typeof drunk_on !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(drunk_on) || !realDay(drunk_on)) {
+    throw new FatalError('drunk_on must be a date, YYYY-MM-DD')
+  }
   if (rating !== undefined && rating !== null && (typeof rating !== 'number' || !Number.isInteger(rating) || rating < 1 || rating > 5)) {
     throw new FatalError('rating must be a whole number 1 to 5')
   }
