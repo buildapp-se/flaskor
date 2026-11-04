@@ -285,11 +285,11 @@ function BoughtSheet({ drink, onCancel, onConfirm }: { drink: Drink; onCancel: (
           <label className="fl-field">
             <span className="fl-label">{S.wishlist.sheet.count}</span>
             <div className="fl-counter">
-              <button type="button" onClick={() => setCount((c) => Math.max(1, c - 1))} aria-label="−">
+              <button type="button" onClick={() => setCount((c) => Math.max(1, c - 1))} aria-label={S.wishlist.sheet.fewer}>
                 <IconMinus />
               </button>
               <span>{count}</span>
-              <button type="button" onClick={() => setCount((c) => c + 1)} aria-label="+">
+              <button type="button" onClick={() => setCount((c) => c + 1)} aria-label={S.wishlist.sheet.more}>
                 <IconPlus />
               </button>
             </div>

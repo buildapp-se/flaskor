@@ -74,16 +74,20 @@ export function Detail({ id }: { id: number }) {
       </div>
 
       {editing ? (
-        <EditForm
-          drink={drink}
-          onCancel={() => setEditing(false)}
-          onSave={async (p) => {
-            setEditing(false)
-            await patch(drink.id, p)
-            // Rättad Vivino-länk: hämta betyget från den nya vinsidan direkt, annars står det gamla kvar till natten.
-            if (!guest && p.vivino_url !== undefined && p.vivino_url !== drink.vivino_url) await refresh(drink.id)
-          }}
-        />
+        // Rubriken står kvar i formulärläget: sidan saknade annars h1, och man ser vad man ändrar.
+        <div className="fl-detail__main">
+          <h1 className="fl-detail__title">{title}</h1>
+          <EditForm
+            drink={drink}
+            onCancel={() => setEditing(false)}
+            onSave={async (p) => {
+              setEditing(false)
+              await patch(drink.id, p)
+              // Rättad Vivino-länk: hämta betyget från den nya vinsidan direkt, annars står det gamla kvar till natten.
+              if (!guest && p.vivino_url !== undefined && p.vivino_url !== drink.vivino_url) await refresh(drink.id)
+            }}
+          />
+        </div>
       ) : (
         <div className="fl-detail__main">
           <div className="fl-stack-8">

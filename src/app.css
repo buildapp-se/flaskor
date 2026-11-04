@@ -1001,7 +1001,8 @@ p {
 }
 .fl-sheet__fields {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  /* minmax(0, ...): annars sätter prisrutans inbyggda bredd kolumnen, och på 390 px gick den utanför arket. */
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: var(--fl-s3);
 }
 .fl-field {

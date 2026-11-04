@@ -221,10 +221,10 @@ export function SpiritCard({ drink, onPatch, muted = false }: { drink: Drink; on
             </div>
           </div>
           <div className="fl-stepper fl-stepper--touch">
-            <button type="button" onClick={() => step(-1)} aria-label="−">
+            <button type="button" onClick={() => step(-1)} aria-label={S.bar.levelDown}>
               <IconMinus />
             </button>
-            <button type="button" onClick={() => step(1)} disabled={level === 4} aria-label="+">
+            <button type="button" onClick={() => step(1)} disabled={level === 4} aria-label={S.bar.levelUp}>
               <IconPlus />
             </button>
           </div>
