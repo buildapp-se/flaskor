@@ -196,6 +196,8 @@ export const S = {
       cancel: 'Avbryt',
       confirmCellar: 'Lägg i Källaren',
       confirmBar: 'Lägg i Barskåpet',
+      fewer: 'En flaska färre',
+      more: 'En flaska till',
     },
   },
   bar: {
@@ -207,6 +209,8 @@ export const S = {
     openOne: 'Öppna en',
     openBottle: 'Öppnad flaska',
     level: { 4: 'Full', 3: 'Trekvart', 2: 'Halv', 1: 'Kvart' },
+    levelDown: 'Mindre kvar i flaskan',
+    levelUp: 'Mer kvar i flaskan',
     empty: 'Inget i barskåpet.',
     depleted: 'Slut',
     search: 'Sök sprit, producent',
