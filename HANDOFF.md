@@ -14,6 +14,15 @@ reviewedAt: 2026-11-03
 
 # Handoff: Flaskor
 
+## 2026-11-04: backlogrunda (PR #4, grenen `claude/backlog-2026-11-04`)
+
+Från `main`, bredvid #2 och #3 (`git merge-tree` mot båda utan konflikt i koden; posten här och #2:s och #3:s poster ligger på samma ställe, behåll alla). Inget deployat, bara frontend. Backloggens öppna punkter är ägarkontroller, väntande beroenden eller kandidater som refuserats med skäl (sökord per ingrediens, kontoimporten med 40 avsmakningar, taket på `listAllDrinks`), så rundan tog i stället fynd från axe och 390 px i lägen som #2 inte körde.
+
+- Detaljvyn med Ändra öppen saknade h1 (axe `page-has-heading-one`): rubriken står kvar ovanför formuläret.
+- Köpt-arket i Önskelistan: prisrutan gick utanför arket på 390 px och "kr" syntes inte (`minmax(0, 1fr)` i rutnätet).
+- Plus och minus i Köpt-arket och på den öppnade flaskan i Barskåpet hette "−" och "+" för skärmläsare; nu säger de vad de gör.
+- Verifierat: `npm run check` (188 klienttester, 107 Worker-tester, torrdeploy), `npm run build`, axe 0 fel i lägena ovan på 390 och 1 280 px, skärmbilder granskade. Inte provat med skärmläsare.
+
 ## 2026-10-27: mutation-tester
 
 Mutation-lanes under dygnet (Gemini 3.8 Flash och Gemini 4 Argon skrev tester, Stryker 10 mätte, Claude granskade): bara testfiler ändrade om inget annat sägs, inga tester borttagna, repots kontrollkedja grön. Poängen per fil står på Mutation-raden i CONTEXT.

@@ -222,3 +222,9 @@ Unika tillagda rader i 154 commits granskade av Gemini 4 Argon (`tools/history-l
 
 - [x] `[P2]` (rensat 2026-10-22 efter ägarens beslut: `git-filter-repo` på alla grenar, force-push av `main` och `feat/sipdeck-koppling`; nås fortfarande via GitHubs PR-referenser tills GitHub Support rensar dem. Hushållsnamnet i produktionsdatabasen är orört) **Ägaren:** ett hushållsmedlems förnamn står i 11 nuvarande filer (bland annat `worker/migrations/0001_init.sql` som hushållsnamn, `CONTEXT.md`, `HANDOFF.md`, `BACKLOG.md`, designfilerna) och i 32 commits. Välj: acceptera, eller rensa filerna och skriv om historiken (`git-filter-repo`, force-push av publikt repo; `main` kräver att force-push slås på tillfälligt i grenregeln). Hushållsnamnet i produktionsdatabasen påverkas inte av en ändring i migreringsfilen.
 - Accepterat: ägarens namn och ort (står redan i integritetstexten som personuppgiftsansvarig), Systembolagsbutiken i testdata (offentlig adress), `patrik@example.com` i test, vinlistans värde i två gamla docs, `buildapp-se`, Firebase webbnyckel.
+
+## Backlogrunda 2026-11-04
+
+- [x] `[P3]` (rättad 2026-11-04, PR #4) Detaljvyn med Ändra öppen saknade h1: rubriken står kvar ovanför formuläret.
+- [x] `[P3]` (rättad 2026-11-04, PR #4) Köpt-arket i Önskelistan: prisrutan gick utanför arket på 390 px.
+- [x] `[P3]` (rättad 2026-11-04, PR #4) Plus och minus i Köpt-arket och Barskåpet hade namnen "−" och "+".
