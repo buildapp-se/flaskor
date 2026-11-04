@@ -66,6 +66,15 @@ describe('drinks', () => {
     expect((await api('POST', '/api/drinks', { kind: 'wine', name: 'x', note: 'n'.repeat(4000) })).status).toBe(200)
     expect((await api('POST', '/api/drinks', { kind: 'wine', name: 'x', taste: 't'.repeat(70_000) })).status).toBe(413)
   })
+  // Databasens CHECK och NOT NULL gav 500 och en felrad i loggen; nu nekar sanitize med 400 före skrivningen (2026-11-04).
+  it('avvisar värden som databasen inte tar, med 400 och inte 500', async () => {
+    const row = await (await api('POST', '/api/drinks', { kind: 'wine', name: 'Chablis', owned: true, count: 1 })).json<{ id: number }>()
+    for (const patch of [{ count: -1 }, { count: null }, { open_level: 5 }, { kind: 'mjöd' }, { kind: null }, { name: null }, { source_kind: 'okänd' }, { availability: 'kanske' }]) {
+      expect((await api('PATCH', `/api/drinks/${row.id}`, patch)).status, JSON.stringify(patch)).toBe(400)
+    }
+    expect((await api('POST', '/api/drinks', { kind: 'wine', name: 'x', count: -2 })).status).toBe(400)
+    expect((await api('PATCH', `/api/drinks/${row.id}`, { open_level: null, count: 0, availability: 'supplier_out' })).status).toBe(200)
+  })
   it('okänt id: 404', async () => {
     expect((await api('PATCH', '/api/drinks/999', { count: 1 })).status).toBe(404)
     expect((await api('DELETE', '/api/drinks/999')).status).toBe(404)

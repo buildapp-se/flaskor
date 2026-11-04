@@ -1,5 +1,5 @@
 import { FatalError } from './errors.ts'
-import type { DrinkInput, DrinkPatch, TastingInput } from './types.ts'
+import type { Availability, DrinkInput, DrinkPatch, Kind, OpenLevel, SourceKind, TastingInput } from './types.ts'
 
 // Kontrollen av en inkommande rad och avsmakning. Workern kör den på allt som skrivs (worker/src/db.ts), och
 // klienten på en importerad exportfil (src/export.ts), så gästläget inte sparar något servern hade nekat.
@@ -24,6 +24,16 @@ export const LONG_TEXT_MAX = 4_000
 export const URL_MAX = 500
 const LONG_TEXT_FIELDS = new Set<keyof DrinkInput>(['note', 'taste', 'food'])
 
+// Samma gränser som tabellens CHECK och NOT NULL (migrering 0007). Förut nådde ett sådant värde databasen och gav 500;
+// nu nekas det med 400, och gästläget sparar det inte heller (2026-11-04).
+const NOT_NULL = new Set<keyof DrinkInput>(['kind', 'owned', 'name', 'source_kind', 'availability', 'count'])
+const ONE_OF: Partial<Record<keyof DrinkInput, ReadonlyArray<string | number>>> = {
+  kind: ['wine', 'spirit', 'beer'] satisfies Kind[],
+  source_kind: ['systembolaget', 'caviste', 'manual'] satisfies SourceKind[],
+  availability: ['in_stock', 'temporarily_out', 'supplier_out', 'sold_out', 'discontinued', 'unknown'] satisfies Availability[],
+  open_level: [1, 2, 3, 4] satisfies OpenLevel[],
+}
+
 function textMax(key: keyof DrinkInput): number {
   return LONG_TEXT_FIELDS.has(key) ? LONG_TEXT_MAX : URL_FIELDS.has(key) ? URL_MAX : TEXT_MAX
 }
@@ -36,16 +46,20 @@ export function sanitize(body: unknown): DrinkPatch {
     if (!(key in body)) continue
     const value = (body as Record<string, unknown>)[key]
     if (value === null) {
+      if (NOT_NULL.has(key)) throw new FatalError(`${key} must not be null`)
       out[key] = null
     } else if (key === 'owned') {
       if (typeof value !== 'boolean') throw new FatalError('owned must be a boolean')
       out[key] = value ? 1 : 0
     } else if (NUMBER_FIELDS.has(key)) {
       if (typeof value !== 'number' || !Number.isFinite(value)) throw new FatalError(`${key} must be a number`)
+      if (key === 'count' && value < 0) throw new FatalError('count must not be negative')
+      if (ONE_OF[key] && !ONE_OF[key].includes(value)) throw new FatalError(`${key} must be one of ${ONE_OF[key].join(', ')}`)
       out[key] = value
     } else {
       if (typeof value !== 'string') throw new FatalError(`${key} must be a string`)
       if (value.length > textMax(key)) throw new FatalError(`${key} must be at most ${textMax(key)} characters`)
+      if (ONE_OF[key] && !ONE_OF[key].includes(value)) throw new FatalError(`${key} must be one of ${ONE_OF[key].join(', ')}`)
       // Länkfält renderas som href i klienten: bara http(s), aldrig javascript: eller data:.
       if (URL_FIELDS.has(key) && !/^https?:\/\//.test(value)) throw new FatalError(`${key} must be an http(s) url`)
       // Systembolagets interna id går rakt in i lagersaldots adress (OWASP 2026-10-16).
