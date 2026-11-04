@@ -233,7 +233,9 @@ function WishRow({ drink, stock, onBuy }: { drink: Drink; stock: Stock | null; o
       <Bottle url={drink.image_url} size="sm" />
       <div className="fl-wish__main" onClick={(e) => !(e.target as HTMLElement).closest('a') && navigate(detailPath(drink.id))}>
         <div className="fl-wish__name">
-          {name}
+          <a className="fl-namelink" href={detailPath(drink.id)}>
+            {name}
+          </a>
           {category && <span className="fl-wish__cat">{category}</span>}
         </div>
         <div className="fl-wish__line">

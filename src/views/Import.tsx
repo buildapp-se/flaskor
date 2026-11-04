@@ -152,7 +152,9 @@ export function Import() {
               {copied ? S.import.copied : S.import.copyPrompt}
             </button>
           </div>
-          <pre className="fl-import__prompt">{S.import.prompt}</pre>
+          <pre className="fl-import__prompt" tabIndex={0} aria-label={S.import.promptLabel}>
+            {S.import.prompt}
+          </pre>
           <label className="fl-field">
             <span className="fl-label">{S.import.pasteLabel}</span>
             <textarea className="fl-input fl-import__area" rows={8} value={text} onChange={(e) => setText(e.target.value)} placeholder={S.import.pastePlaceholder} />

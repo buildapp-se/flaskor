@@ -27,7 +27,14 @@ interface Column {
 const text = (value: string | null, q: string): ReactNode => (value === null ? '' : <Highlight text={value} query={q} />)
 
 const COLUMNS: ReadonlyArray<Column> = [
-  { key: 'name', render: (d, q) => text(d.name, q) },
+  {
+    key: 'name',
+    render: (d, q) => (
+      <a className="fl-namelink" href={detailPath(d.id)}>
+        {text(d.name, q)}
+      </a>
+    ),
+  },
   { key: 'vintage', numeric: true, render: (d) => d.vintage ?? '' },
   { key: 'category', render: (d) => S.categoryShort[d.category ?? ''] ?? d.category ?? '' },
   { key: 'country', render: (d, q) => text(d.country, q) },
@@ -194,7 +201,7 @@ export function CellarTable({
             {rows.map((d) => (
               <tr key={d.id} className={d.owned && d.count === 0 && d.open_level === null ? 'fl-table__row fl-table__row--muted' : 'fl-table__row'} onClick={(e) => !(e.target as HTMLElement).closest('a, input, button') && navigate(detailPath(d.id))}>
                 <td className="fl-table__check">
-                  <input type="checkbox" checked={selected.has(d.id)} onChange={() => toggle(d.id)} />
+                  <input type="checkbox" checked={selected.has(d.id)} aria-label={S.bulk.one(d.name)} onChange={() => toggle(d.id)} />
                 </td>
                 {shown.map((c) => (
                   <td key={c.key} className={c.numeric ? 'fl-table__num' : c.wide ? 'fl-table__wide' : undefined}>

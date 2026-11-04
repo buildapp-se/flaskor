@@ -186,8 +186,11 @@ export function SpiritCard({ drink, onPatch, muted = false }: { drink: Drink; on
     <div className={muted ? 'fl-card fl-spirit fl-spirit--muted' : 'fl-card fl-spirit'}>
       <div className="fl-spirit__top">
         <Bottle url={drink.image_url} size="sm" />
-        <div className="fl-spirit__main" onClick={() => navigate(detailPath(drink.id))}>
-          <div className="fl-spirit__name">{drink.name}</div>
+        <div className="fl-spirit__main" onClick={(e) => !(e.target as HTMLElement).closest('a') && navigate(detailPath(drink.id))}>
+          {/* Länken gör detaljvyn nåbar med tangentbordet; hela ytan är fortfarande klickbar. */}
+          <a className="fl-spirit__name fl-namelink" href={detailPath(drink.id)}>
+            {drink.name}
+          </a>
           <div className="fl-spirit__line">
             {line}
             <Rating drink={drink} count />

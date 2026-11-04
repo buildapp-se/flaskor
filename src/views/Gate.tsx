@@ -29,10 +29,10 @@ export function Gate({ onUnlocked }: { onUnlocked: () => void }) {
   return (
     <div className="fl-gate">
       <form className="fl-gate__card" onSubmit={submit}>
-        <div className="fl-wordmark">
+        <h1 className="fl-wordmark">
           <Logo size={40} />
           <span>{S.appName}</span>
-        </div>
+        </h1>
         <div>
           <div className="fl-label">{S.gate.title}</div>
           <p className="fl-muted">{S.gate.lead}</p>
