@@ -118,6 +118,66 @@ Startsidan är Källaren: grupperad på kategori (öl grupperas på sin egen sti
 - **Integritet:** texten ligger i `S.privacy` (`src/strings.ts`), visas på inloggningen och under Konto. Gemini-anrop från EES följer Googles villkor för betaltjänster även på gratisnivån, alltså ingen träning på bilderna (kollat 2026-09-15).
 - **Design:** syskon till Sipdeck i typografi (Instrument Serif + Work Sans) och varmvit bakgrund, egen accentfärg, inga illustrationer, Systembolagets flaskfoto är bilden. Ljust och luftigt. Detaljer avgörs i designrundan (beslut 8, 26).
 
+## Architecture
+
+Schemat i korthet; detaljerna står under §Arkitektur ovan och §Datakällor nedan.
+
+```mermaid
+graph LR
+  USER[Webbläsare]
+  SIPDECK[Sipdeck]
+
+  subgraph WEB["buildapp.se/flaskor"]
+    PWA[React-PWA]
+    LOCAL[localStorage gästläge]
+  end
+
+  FB[Firebase Auth]
+
+  subgraph CF["Cloudflare"]
+    W[Worker flaskor-api]
+    D1[(D1 flaskor)]
+    CACHE[Cache API]
+    CRON[Cron 02 UTC]
+  end
+
+  subgraph GHA["GitHub Actions"]
+    DEPLOY[deploy.yml till Pages]
+    ASSORT[assortment.yml nattlig dump]
+  end
+
+  SB[Systembolaget]
+  EXT[Vivino, Caviste, Open Food Facts]
+  GEM[Gemini skanning]
+  DUMP[Tredjepartsdump sortiment]
+
+  USER --> PWA
+  PWA --> LOCAL
+  PWA --> FB
+  PWA -->|ID-token| W
+  SIPDECK -->|ID-token| W
+  W --> D1
+  W --> CACHE
+  W --> SB
+  W --> EXT
+  W --> GEM
+  CRON --> W
+  DUMP --> ASSORT
+  ASSORT -->|/api/assortment| W
+  DEPLOY --> PWA
+```
+
+## Stack
+
+- Inloggning: Firebase Auth (Google eller e-post med lösenord), Workern verifierar ID-token med jose; gästläge utan konto
+- Backend: Cloudflare Worker `flaskor-api` (`worker/src/index.ts`) med nattlig cron och Rate Limiting
+- Databas: Cloudflare D1 `flaskor` med migreringar i `worker/migrations/`
+- Frontend: React 19, Vite, TypeScript, handskriven CSS, PWA via vite-plugin-pwa
+- Kod: TypeScript
+- Tester: Vitest, Workern med `@cloudflare/vitest-pool-workers`
+- CI: GitHub Actions bygger och publicerar Pages, och postar sortimentsdumpen varje natt
+- Hosting: GitHub Pages, buildapp.se/flaskor; API på flaskor-api.buildapp.se
+
 ## Datakällor
 
 Verifierat 2026-09-05, detaljer i [docs/RESEARCH.md](docs/RESEARCH.md):
