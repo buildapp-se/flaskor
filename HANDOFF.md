@@ -14,6 +14,16 @@ reviewedAt: 2026-11-03
 
 # Handoff: Flaskor
 
+## 2026-11-04: mutationstest (PR #3, grenen `claude/mutation-2026-11-04`)
+
+Audit-kolumnen Mutation på de rena logikfiler som inte körts förut. Bara testfiler och `.gitignore` (Stryker-rapporter) ändrade, inget deployat.
+
+- Stryker 9 med command runner mot vitest på `shared/sanitize.ts`, `shared/retry.ts`, `shared/assortment.ts`, `src/sipdeck.ts`: 53,97 % till 99,16 % (239 mutanter). Två kvar, båda likvärdiga (`typeof ... !== 'number'` bredvid `Number.isFinite`/`Number.isInteger`).
+- Nya: `shared/sanitize-fields.test.ts` (eget namn, PR #2 lägger till `sanitize.test.ts`), `shared/assortment.test.ts`, två fall i `shared/retry.test.ts`. Ingen bugg hittad.
+- TypeScript 7 saknar API:t Stryker skriver om tsconfig med: peka `tsconfigFile` på en fil som inte finns.
+- `npm run check`: 209 klienttester, 107 Worker-tester, torrdeploy.
+- PR #2 rör samma ställen i CONTEXT och HANDOFF; den som mergas sist behöver en enkel konfliktlösning där.
+
 ## 2026-10-27: mutation-tester
 
 Mutation-lanes under dygnet (Gemini 3.8 Flash och Gemini 4 Argon skrev tester, Stryker 10 mätte, Claude granskade): bara testfiler ändrade om inget annat sägs, inga tester borttagna, repots kontrollkedja grön. Poängen per fil står på Mutation-raden i CONTEXT.
