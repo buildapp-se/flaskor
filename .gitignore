@@ -11,3 +11,7 @@ worker/dist/
 
 # Firebase Hosting deploy-cache i authhost, regenereras vid deploy.
 authhost/.firebase/
+
+# Stryker (mutationstest), körs lokalt
+reports/
+.stryker-tmp/
