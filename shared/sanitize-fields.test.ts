@@ -9,6 +9,10 @@ const LONG = ['note', 'taste', 'food'] as const
 const URLS = ['source_url', 'image_url', 'vivino_url', 'rating_url'] as const
 const NUMBERS = ['vintage', 'volume_ml', 'alcohol', 'price_paid', 'price_current', 'count', 'open_level', 'drink_from', 'drink_to', 'decant_hours', 'vivino_rating', 'vivino_count', 'rating'] as const
 
+// Fälten med egna regler från PR #2 (samma som tabellens CHECK och NOT NULL): null respektive fri text nekas där.
+const NOT_NULL: readonly string[] = ['kind', 'owned', 'name', 'source_kind', 'availability', 'count']
+const ONE_OF: readonly string[] = ['kind', 'source_kind', 'availability']
+
 const full = {
   kind: 'wine', owned: true, name: 'Barolo', producer: 'Colla', vintage: 2019, country: 'Italien', region: 'Piemonte', category: 'Rött vin',
   style: 'Stramt', grapes: 'Nebbiolo', volume_ml: 750, alcohol: 14.5, source_kind: 'systembolaget', source_id: '7120', source_url: 'https://www.systembolaget.se/7120',
@@ -24,8 +28,11 @@ describe('sanitize: alla skrivbara fält', () => {
   it('owned falskt blir 0, och okända fält faller bort', () => {
     expect(sanitize({ owned: false, id: 7, household_id: 'x', created_at: 'nu' })).toEqual({ owned: 0 })
   })
-  it('null går igenom i varje fält', () => {
-    for (const key of [...TEXT, ...LONG, ...URLS, ...NUMBERS, 'owned', 'sb_product_id']) expect(sanitize({ [key]: null }), key).toEqual({ [key]: null })
+  it('null går igenom i varje fält utom NOT NULL-fälten', () => {
+    for (const key of [...TEXT, ...LONG, ...URLS, ...NUMBERS, 'owned', 'sb_product_id']) {
+      if (NOT_NULL.includes(key)) expect(() => sanitize({ [key]: null }), key).toThrow(`${key} must not be null`)
+      else expect(sanitize({ [key]: null }), key).toEqual({ [key]: null })
+    }
   })
   it('sifferfälten nekar text, NaN och oändligt', () => {
     for (const key of NUMBERS) {
@@ -47,7 +54,7 @@ describe('sanitize: alla skrivbara fält', () => {
 
 describe('sanitize: längdtak', () => {
   it('vanlig text: exakt taket går, ett tecken till nekas', () => {
-    for (const key of TEXT) {
+    for (const key of TEXT.filter((k) => !ONE_OF.includes(k))) {
       expect(sanitize({ [key]: 'a'.repeat(TEXT_MAX) }), key).toEqual({ [key]: 'a'.repeat(TEXT_MAX) })
       expect(() => sanitize({ [key]: 'a'.repeat(TEXT_MAX + 1) }), key).toThrow(`${key} must be at most ${TEXT_MAX} characters`)
     }
