@@ -2,7 +2,7 @@
 schemaVersion: 1
 status: active
 currentGoal: "Sipdeck-kopplingen (ADR 0001) är live i båda apparna sedan 2026-10-06, ägar-QA återstår."
-nextAction: "Patrik: granska PR #2 (förbättringar 2026-11-04; valideringen gäller Workern först efter `npm run worker:deploy`). Ägar-QA med riktiga inloggningar, sju punkter under rubriken 2026-10-06. Workern deployad 2026-11-03 med nattjobbets stämpling vid serverfel (`bef05ba`, version a4d5f029, `/health` 200); att nattjobbet inte fastnar syns först efter nästa körning."
+nextAction: "Ägar-QA med riktiga inloggningar, sju punkter under rubriken 2026-10-06. Workern deployad 2026-11-03 med nattjobbets stämpling vid serverfel (`bef05ba`, version a4d5f029, `/health` 200); att nattjobbet inte fastnar syns först efter nästa körning."
 blockers: []
 reviewedAt: 2026-11-04
 ---
@@ -13,6 +13,10 @@ reviewedAt: 2026-11-04
 **2026-09-24, audits från aifabriken (`tools/audit-run.mjs`).** Actions: `persist-credentials: false` på checkout i deploy.yml och assortment.yml (zizmor artipacked). Nya auditrader Secrets (pass, tre granskade publika fynd i `.gitleaksignore`) och Actions (pass). Mutation-batch över format, sort, export och local (tester av Antigravity, granskade av Claude): en export-kandidat som raderade fem testfiler i `test/` underkändes vid granskningen och bara dess `src/export.test.ts` togs, med `vi.stubGlobal` i stället för globala tilldelningar. Sorteringsbugg med serveringstemperatur utan siffror rättad (BACKLOG §Mutation). 97 tester, `tsc -b` rent. WCAG-rad: axe 0 fel på buildapp.se/flaskor.
 
 # Handoff: Flaskor
+
+## 2026-11-04: mergat och deployat
+
+PR #2, #3, #4 och #5 mergade till main (23f0a6c, 15f34a4, fda9a23, a929520). Workern deployad med `wrangler deploy`, version 4e64c783, så valideringen från #2 (400 i stället för 500) gäller nu. Pages byggs av pushen. Vid mergen föll två fall i #3:s `shared/sanitize-fields.test.ts` mot #2:s strängare `sanitize`; rättade i 7ed15e4. Valideringen är inte provad mot den deployade Workern med en riktig inloggning.
 
 ## 2026-11-04: förbättringsrunda (PR #2, grenen `claude/forbattringar-2026-11-04`)
 
