@@ -2,9 +2,9 @@
 schemaVersion: 1
 status: active
 currentGoal: "Sipdeck-kopplingen (ADR 0001) är live i båda apparna sedan 2026-10-06, ägar-QA återstår."
-nextAction: "Patrik: ägar-QA med riktiga inloggningar, sju punkter under rubriken 2026-10-06. Workern deployad 2026-11-03 med nattjobbets stämpling vid serverfel (`bef05ba`, version a4d5f029, `/health` 200); att nattjobbet inte fastnar syns först efter nästa körning."
+nextAction: "Patrik: granska PR #2 (förbättringar 2026-11-04; valideringen gäller Workern först efter `npm run worker:deploy`). Ägar-QA med riktiga inloggningar, sju punkter under rubriken 2026-10-06. Workern deployad 2026-11-03 med nattjobbets stämpling vid serverfel (`bef05ba`, version a4d5f029, `/health` 200); att nattjobbet inte fastnar syns först efter nästa körning."
 blockers: []
-reviewedAt: 2026-11-03
+reviewedAt: 2026-11-04
 ---
 **2026-11-02:** kontaktadressen är nu `kontakt@buildapp.se` (förut `kontakt@orgutveckling.se`). Gäller integritetstexten i src/strings.ts.
 
@@ -13,6 +13,16 @@ reviewedAt: 2026-11-03
 **2026-09-24, audits från aifabriken (`tools/audit-run.mjs`).** Actions: `persist-credentials: false` på checkout i deploy.yml och assortment.yml (zizmor artipacked). Nya auditrader Secrets (pass, tre granskade publika fynd i `.gitleaksignore`) och Actions (pass). Mutation-batch över format, sort, export och local (tester av Antigravity, granskade av Claude): en export-kandidat som raderade fem testfiler i `test/` underkändes vid granskningen och bara dess `src/export.test.ts` togs, med `vi.stubGlobal` i stället för globala tilldelningar. Sorteringsbugg med serveringstemperatur utan siffror rättad (BACKLOG §Mutation). 97 tester, `tsc -b` rent. WCAG-rad: axe 0 fel på buildapp.se/flaskor.
 
 # Handoff: Flaskor
+
+## 2026-11-04: förbättringsrunda (PR #2, grenen `claude/forbattringar-2026-11-04`)
+
+Bara förbättringar, inga nya funktioner. Inget deployat, ingen D1 rörd, ingen migrering. Grönt före: `npm run check` (188 klienttester, 107 Worker-tester, torrdeploy) och `npm run build`.
+
+- **Beroenden:** `npm audit` 17 till 10, de tre höga borta (wrangler 4.153.0, overriden i pool-workers med miniflare 5.20261023.0-beta och zod 4.6.7, `npm audit fix`). Kvar: workbox-build under vite-plugin-pwa (BACKLOG §Beroenden).
+- **Tillgänglighet och 390 px:** axe mot byggd `dist` i gästläge med påhittade rader, tio vyer på 390 och 1 280 px. Före: `label` (tabellens kryssrutor), `scrollable-region-focusable` (prompten i Importera), `page-has-heading-one` (inloggningen) och 6 px horisontell scroll i Barskåpet. Efter: 0 fel, ingen scroll. Namnen i Barskåpet, Önskelistan och tabellen är länkar, så detaljvyn nås med tangentbordet. Gästremsans stängknapp har 44 px tryckyta.
+- **Workern:** `sanitize` nekar med 400 det som databasens CHECK och NOT NULL förut nekade med 500 (t.ex. `count: -1`, `name: null`, okänd `kind`). `sanitizeTasting` kräver en riktig kalenderdag. Testerna röda före ändringen. **Kräver `npm run worker:deploy` för att gälla live.**
+- Efter: 193 klienttester, 108 Worker-tester, torrdeploy, `npm run build`, `npm ci`.
+- **Inte gjort:** CSP via `<meta>` (inloggningen med Google och e-post går inte att prova utan riktiga konton), inloggat läge inte axe-kört, ingen skärmläsare.
 
 ## 2026-10-27: mutation-tester
 

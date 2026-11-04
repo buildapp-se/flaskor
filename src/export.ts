@@ -56,8 +56,6 @@ export function toJson(data: ExportData): string {
 }
 
 const KINDS = ['wine', 'spirit', 'beer']
-const SOURCES = ['systembolaget', 'caviste', 'manual']
-const AVAILABILITY = ['in_stock', 'temporarily_out', 'supplier_out', 'sold_out', 'discontinued', 'unknown']
 
 /**
  * En exporterad JSON-fil (toJson) tillbaka till rader att lägga till, var och en med sina avsmakningar. Kastar
@@ -79,10 +77,8 @@ export function parseExport(text: string): ImportItem[] {
     const { owned: _owned, ...clean } = sanitize(raw)
     const row = raw as { id?: unknown; owned?: unknown }
     if (typeof clean.name !== 'string' || clean.name.trim() === '') throw new FatalError('name is required')
+    // Värdemängderna (kind, source_kind, availability, open_level, count >= 0) kontrolleras i sanitize; här bara det en ny rad kräver.
     if (!KINDS.includes(clean.kind as string)) throw new FatalError('kind is required')
-    if (clean.source_kind !== undefined && !SOURCES.includes(clean.source_kind)) throw new FatalError('unknown source_kind')
-    if (clean.availability !== undefined && !AVAILABILITY.includes(clean.availability)) throw new FatalError('unknown availability')
-    if (clean.open_level != null && ![1, 2, 3, 4].includes(clean.open_level)) throw new FatalError('open_level must be 1 to 4')
     if (clean.count !== undefined && (clean.count === null || !Number.isInteger(clean.count) || clean.count < 0)) throw new FatalError('count must be a whole number')
     // Avsmakningar hängs bara på ett id som är ett tal och unikt i filen: annars hamnar samma logg på flera flaskor.
     const id = typeof row.id === 'number' ? row.id : null

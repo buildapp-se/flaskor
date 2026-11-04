@@ -44,10 +44,10 @@ export function Login({ onGuest }: { onGuest: () => void }) {
   return (
     <main className="fl-gate">
       <div className="fl-gate__card">
-        <div className="fl-wordmark">
+        <h1 className="fl-wordmark">
           <Logo size={40} />
           <span>{S.appName}</span>
-        </div>
+        </h1>
         <p className="fl-muted">{S.login.lead}</p>
         {carried > 0 && <p className="fl-small">{S.guest.carryOver(carried)}</p>}
         <button className="fl-btn fl-btn--primary" type="button" disabled={busy} onClick={() => void run(signInWithGoogle)}>
@@ -117,10 +117,10 @@ export function Verify({ user, onVerified }: { user: AuthUser; onVerified: (user
   return (
     <main className="fl-gate">
       <div className="fl-gate__card">
-        <div className="fl-wordmark">
+        <h1 className="fl-wordmark">
           <Logo size={40} />
           <span>{S.appName}</span>
-        </div>
+        </h1>
         <div>
           <div className="fl-label">{S.login.verifyTitle}</div>
           <p className="fl-muted">{S.login.verifyLead(user.email ?? '')}</p>

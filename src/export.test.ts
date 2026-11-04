@@ -187,11 +187,11 @@ describe('parseExport: exportfilen tillbaka till rader', () => {
   })
   it('en enda dålig rad fäller hela filen', () => {
     expect(() => parseExport(file([wine, { ...wine, name: '' }]))).toThrow('name is required')
-    expect(() => parseExport(file([{ ...wine, kind: 'cider' }]))).toThrow('kind is required')
+    expect(() => parseExport(file([{ ...wine, kind: 'cider' }]))).toThrow('kind must be one of')
     expect(() => parseExport(file([{ ...wine, count: '2' }]))).toThrow('count must be a number')
-    expect(() => parseExport(file([{ ...wine, count: -1 }]))).toThrow('count must be a whole number')
-    expect(() => parseExport(file([{ ...wine, availability: 'kanske' }]))).toThrow('unknown availability')
-    expect(() => parseExport(file([{ ...wine, source_kind: 'vivino' }]))).toThrow('unknown source_kind')
+    expect(() => parseExport(file([{ ...wine, count: -1 }]))).toThrow('count must not be negative')
+    expect(() => parseExport(file([{ ...wine, availability: 'kanske' }]))).toThrow('availability must be one of')
+    expect(() => parseExport(file([{ ...wine, source_kind: 'vivino' }]))).toThrow('source_kind must be one of')
     expect(() => parseExport(file([{ ...wine, open_level: 9 }]))).toThrow('open_level')
     expect(() => parseExport(file([wine], [{ drink_id: 7, drunk_on: 'i går' }]))).toThrow('drunk_on')
   })
@@ -213,7 +213,7 @@ describe('parseExport: exportfilen tillbaka till rader', () => {
   it('kräver att name finns och inte bara består av blanksteg', () => {
     expect(() => parseExport(file([{ kind: 'wine' }]))).toThrow('name is required')
     expect(() => parseExport(file([{ kind: 'wine', name: '   ' }]))).toThrow('name is required')
-    expect(() => parseExport(file([{ kind: 'wine', name: null }]))).toThrow('name is required')
+    expect(() => parseExport(file([{ kind: 'wine', name: null }]))).toThrow('name must not be null')
   })
   it('tillåter att valfria fält som source_kind, availability och count utelämnas', () => {
     const minimal = { kind: 'wine', name: 'Riesling' }
@@ -226,7 +226,7 @@ describe('parseExport: exportfilen tillbaka till rader', () => {
   })
   it('validerar att count är ett heltal och inte null', () => {
     expect(() => parseExport(file([{ ...wine, count: 1.5 }]))).toThrow('count must be a whole number')
-    expect(() => parseExport(file([{ ...wine, count: null }]))).toThrow('count must be a whole number')
+    expect(() => parseExport(file([{ ...wine, count: null }]))).toThrow('count must not be null')
   })
   it('kopplar inte avsmakningar till flaskor utan numeriskt id, även om avsmakningen saknar drink_id', () => {
     const { id: _id, ...noId } = wine

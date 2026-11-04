@@ -143,12 +143,12 @@ Read by the cockpit Audits tab. One `- Label: YYYY-MM-DD, result` per check; con
 - Lighthouse: 2026-09-16, warn, a11y 98 (main landmark added to the gate 2026-09-16, not remeasured), best practices 100, SEO 60 by design (noindex) (mobile, no perf)
 - Markup: 2026-09-16, pass, W3C 0 errors, 15 warnings, 0 broken links
 - UX: 2026-09-16, warn, 4 of 6 script checks pass; login links now 44 px and one primary action on the gate (fixed 2026-09-16, remeasure pending), no --interact
-- npm audit: 2026-10-22, pass, 0 in production, 0 in the dev chain
+- npm audit: 2026-11-04, pass, 0 in production; dev chain 10 low/moderate, all in workbox-build under vite-plugin-pwa (fix is a downgrade), 0 high
 - Mutation: 2026-10-30, pass, Stryker 10 on 1 more src files: window 98,78 % (90,24); tests by Mistral Large, read by Claude; earlier: Stryker 10 on 2 src files: export 97,56 % (84,96), local 90,12 % (78,60); tests by Gemini 3.8 Flash and Gemini 4 Argon, reviewed by Claude; before that 2026-10-21, Stryker on 9 src files: api 98,54 % (0,73), hash 100 % (0, no tests before), persist 100 % (0), scan 97,44 % (0), importParse 89,12 % (73,47), sort 92,65 % (72,06), local 78,63 % (58,97), format 100 % and export 89,84 % from 2026-09-24; tests by Gemini 4 Argon, reviewed by Claude; auth.ts cannot run (an SRI test reads its source text, which Stryker instruments), worker/ not run
 - Secrets: 2026-10-22, pass, gitleaks 0 findings in 150 commits, 3 reviewed as public in .gitleaksignore
 - Git history: 2026-10-22, pass, 154 commits via aifabriken tools/history-lane.mjs (Gemini 4 Argon, verified by Claude); a household member's first name removed from 11 files and all history by rewrite 2026-10-22 (still reachable via GitHub PR refs); no secrets, phone numbers or private addresses; BACKLOG §Git history 2026-10-22
 - Actions: 2026-10-22, pass, zizmor 0 high, 0 medium, 0 low after pinning 7 actions to commit SHA (newer zizmor flags unpinned-uses as high)
-- WCAG 2.2 AA: 2026-09-24, warn, axe 4.13.0 0 violations on buildapp.se/flaskor (mobile, one page); manual keyboard pass not done
+- WCAG 2.2 AA: 2026-11-04, pass, axe 4.10.3 0 violations on the built app (guest mode, stubbed data, 10 views at 390 and 1280 px; 3 rules fixed); keyboard reach to detail view fixed, no screen reader pass; earlier 2026-09-24 axe 4.13.0 0 on buildapp.se/flaskor
 - OG image: 2026-10-25, pass, 1200x630 PNG, https://buildapp.se/flaskor/og-image.png
 - Database: 2026-10-25, CF D1
 - Dependabot: 2026-10-29, pass, 0 open alerts
