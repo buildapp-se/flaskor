@@ -4,8 +4,10 @@ status: active
 currentGoal: "Sipdeck-kopplingen (ADR 0001) är live i båda apparna sedan 2026-10-06, ägar-QA återstår."
 nextAction: "Ägar-QA med riktiga inloggningar, sju punkter under rubriken 2026-10-06. Workern deployad 2026-11-03 med nattjobbets stämpling vid serverfel (`bef05ba`, version a4d5f029, `/health` 200); att nattjobbet inte fastnar syns först efter nästa körning."
 blockers: []
-reviewedAt: 2026-11-04
+reviewedAt: 2026-11-17
 ---
+**2026-11-17, uppdateringsrunda (pushad till `main`).** `npm audit fix` plus minor/patch (wrangler 4.164, vite 8.3.8, @vitejs/plugin-react 6.3, jose 6.2.17, @types/node 26.6.6). Audit 13 high/2 moderate före och efter: en picomatch-advisory utan fix (BACKLOG §Beroenden). vitest 5 väntar fortfarande på pool-workers. pool-workers-overriden stannar på wrangler 4.153.0, nyare miniflare bryter `test:worker`. `npm run check` (214 + 108 tester, worker dry-run) och build gröna. Workern är inte omdeployad.
+
 **2026-11-02:** kontaktadressen är nu `kontakt@buildapp.se` (förut `kontakt@orgutveckling.se`). Gäller integritetstexten i src/strings.ts.
 
 **2026-10-17, beroendeuppdatering (lokalt committad, inte pushad).** `npm audit` 9 till 0. Majors: typescript 5.9 till 7.0, vite-plugin-pwa 1.3 till 2.0 (samma manifest och sw.js), @types/node 24 till 26, `@cloudflare/vitest-pool-workers` 0.20 till 0.23 med en `overrides` som ger den rotens wrangler 4.151.1 och miniflare (annars sårbara sharp och undici). Minor: react 19.3, vite 8.3, wrangler 4.151, vitest 4.1.12. vitest 5 väntar på pool-workers (BACKLOG §Beroenden). `npm run check` (119 + 106 tester, worker dry-run), `npm run build` och `npm ci` gröna. En push till main bygger och deployar Pages via `deploy.yml`; Workern deployas bara med `worker:deploy`.

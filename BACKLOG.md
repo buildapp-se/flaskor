@@ -214,8 +214,8 @@ Rättat 2026-10-16 på grenen `fix/owasp-2026-10-16`, varje skydd prövat med en
 ## Beroenden 2026-10-17
 
 - [ ] `[P3]` vitest 5: stannar på 4.1.12, eftersom `@cloudflare/vitest-pool-workers` 0.23.0 (senaste) kräver `vitest ^4.1.0`. Uppgradera när pool-workers stöder 5.
-- [ ] `[P3]` `overrides` i `package.json` pekar pool-workers wrangler och miniflare på samma versioner som roten (pool-workers 0.23 låser sårbara sharp och undici). Höj overriden när wrangler höjs, ta bort den när pool-workers själv låser en fixad miniflare. 2026-11-04: höjd till wrangler 4.153.0 och miniflare 5.20261023.0-beta, plus zod 4.6.7 (pool-workers låser 4.4.3, hög).
-- [ ] `[P3]` `npm audit` 2026-11-04: tio låga och måttliga kvar, alla i `workbox-build` under `vite-plugin-pwa` (ejs, jake, glob, minimatch, deepmerge, bara byggsteget). Enda fixen npm erbjuder är en nedgradering till vite-plugin-pwa 1.1. Vänta på en workbox-build som byter beroenden.
+- [ ] `[P3]` `overrides` i `package.json` pekar pool-workers wrangler och miniflare på samma versioner som roten (pool-workers 0.23 låser sårbara sharp och undici). Höj overriden när wrangler höjs, ta bort den när pool-workers själv låser en fixad miniflare. 2026-11-04: höjd till wrangler 4.153.0 och miniflare 5.20261023.0-beta, plus zod 4.6.7 (pool-workers låser 4.4.3, hög). 2026-11-17: roten höjd till wrangler 4.164.0, men overriden stannar på 4.153.0: miniflare 5.20261117.0-beta saknar `getNodeCompat`, som pool-workers 0.23 importerar, och `test:worker` startar inte.
+- [ ] `[P2]` `npm audit` 2026-11-17: 13 high och 2 moderate, alla i dev- och byggkedjan. De höga är en och samma advisory: picomatch <=4.0.7 (ReDoS) via vite, vitest, tinyglobby, @vitejs/plugin-react, pool-workers och vite-plugin-pwa; 4.0.7 är senaste versionen, ingen fix publicerad, och npm föreslår bara nedgraderingar. De måttliga: glob och minimatch under `workbox-build`. Kör `npm audit fix` igen när picomatch 4.0.8 finns.
 
 ## Git history 2026-10-22
 
