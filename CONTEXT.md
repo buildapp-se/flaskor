@@ -212,3 +212,9 @@ Read by the cockpit Audits tab. One `- Label: YYYY-MM-DD, result` per check; con
 - OG image: 2026-10-25, pass, 1200x630 PNG, https://buildapp.se/flaskor/og-image.png
 - Database: 2026-10-25, CF D1
 - Dependabot: 2026-10-29, pass, 0 open alerts
+- Headers (automated): 2026-11-18, fail, 1 targets; 1 failed, 0 blocked; evidence C:/dev/aifabriken/.runs/audits/2026-11-18-sweep/flaskor.json
+- npm audit (automated): 2026-11-18, fail, 1 targets; 1 failed, 0 blocked; evidence C:/dev/aifabriken/.runs/audits/2026-11-18-sweep/flaskor.json
+- Secrets (automated): 2026-11-18, pass, 2 targets; 0 failed, 0 blocked; evidence C:/dev/aifabriken/.runs/audits/2026-11-18-sweep-flaskor-secrets/flaskor.json
+- Actions (automated): 2026-11-18, pass, zizmor 0 high, 0 medium, 0 low; evidence C:/dev/aifabriken/.runs/audits/2026-11-18-sweep/flaskor.json
+- Markup (automated): 2026-11-18, pass, 1 targets; 0 failed, 0 blocked; evidence C:/dev/aifabriken/.runs/audits/2026-11-18-sweep/flaskor.json
+- WCAG 2.2 AA (automated): 2026-11-18, needs-review, 1 targets; 0 failed, 0 blocked; manual WCAG review outstanding; evidence C:/dev/aifabriken/.runs/audits/2026-11-18-sweep/flaskor.json

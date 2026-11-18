@@ -4,3 +4,8 @@ bb5f0e195c809ead9d5edf2593e7b951a46343e7:src/config.ts:gcp-api-key:7
 # Skrapad Systembolags-HTML i testfixturer, CSS-klassnamn, inget token
 51b813f7295c4fd093bf03575229858b425dff93:worker/test/fixtures/7562401.html:sourcegraph-access-token:137
 51b813f7295c4fd093bf03575229858b425dff93:worker/test/fixtures/1101.html:sourcegraph-access-token:137
+# Samma tre fynd efter historikomskrivningen av main (gamla hashar kvar på feat/sipdeck-koppling), plus arbetsträdets fingeravtryck för gitleaks dir. Granskade 2026-11-18.
+88539c44c107e31b867d51be6a0f8f59e38d4afd:src/config.ts:gcp-api-key:7
+410e3e3b8f826fbd301e570a9c334cb181432f8f:worker/test/fixtures/7562401.html:sourcegraph-access-token:137
+410e3e3b8f826fbd301e570a9c334cb181432f8f:worker/test/fixtures/1101.html:sourcegraph-access-token:137
+src/config.ts:gcp-api-key:7
