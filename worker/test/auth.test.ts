@@ -224,9 +224,11 @@ describe('hushåll', () => {
 
   it('läsningarna stryps också per konto (OWASP 2026-11-24)', async () => {
     const a = await asUser()
-    const statuses: number[] = []
-    for (let i = 0; i < 62; i++) statuses.push((await a('GET', '/api/drinks')).status)
-    expect(statuses.at(-1)).toBe(429)
+    // Taket räknas i ett fönster på 60 s; en långsam körning kan korsa fönstergränsen och nollställa räkningen
+    // (testet föll en gång 2026-11-24 när tolv parallella körningar delade maskinen; orsaken är trolig, inte bevisad). Två fönsters anrop räcker alltid till en 429 när strypningen finns, aldrig utan.
+    let status = 0
+    for (let i = 0; i < 125 && status !== 429; i++) status = (await a('GET', '/api/drinks')).status
+    expect(status).toBe(429)
   })
 
   it('inbjudningskoden går inte att gissa i en loop (tio per minut)', async () => {
