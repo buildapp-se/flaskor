@@ -16,6 +16,12 @@ describe('caviste-länken', () => {
     expect(() => parseCavisteUrl('https://www.caviste.se/om-oss/')).toThrow(/no cav number/)
     expect(() => parseCavisteUrl('bara text')).toThrow(/not a caviste/)
   })
+  it('hämtar bara caviste.se och www.caviste.se, utan port, inloggning eller fråga (OWASP 2026-11-24)', () => {
+    expect(() => parseCavisteUrl('https://intern.caviste.se/cav1')).toThrow(/not a caviste/)
+    expect(() => parseCavisteUrl('https://www.caviste.se:8443/cav/cav0143/')).toThrow(/not a caviste/)
+    expect(() => parseCavisteUrl('https://a:b@www.caviste.se/cav/cav0143/')).toThrow(/not a caviste/)
+    expect(parseCavisteUrl(`${URL}?x=/cav1#y`).url).toBe(URL)
+  })
 })
 
 describe('rubriken per vin', () => {

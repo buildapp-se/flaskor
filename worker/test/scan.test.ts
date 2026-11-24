@@ -2,7 +2,7 @@ import { SELF, env } from 'cloudflare:test'
 import { describe, expect, it } from 'vitest'
 import { countScan, countWrite } from '../src/index.ts'
 import type { LabelGuess, ScanResult } from '../../shared/types.ts'
-import { normalizeEan, parseGuess, parseSearch, parseVolume, queries, rank, terms, validEan } from '../src/scan.ts'
+import { normalizeEan, parseGuess, parseSearch, parseVolume, queries, rank, readLabel, terms, validEan } from '../src/scan.ts'
 // Testerna kör inne i workerd utan filsystem, så fixturen importeras i stället för att läsas.
 import fixture from './fixtures/sb-search-absolut.json'
 
@@ -190,5 +190,12 @@ describe('POST /api/scan', () => {
     // Testets Systembolaget svarar likadant på alla tre frågorna, så dedupen är det enda som håller listan kort.
     const body = await (await scan({ ean: '7312040017034' })).json<ScanResult>()
     expect(new Set(body.candidates.map((c) => c.number)).size).toBe(body.candidates.length)
+  })
+})
+
+describe('Geminis fel (OWASP 2026-11-24)', () => {
+  it('ett 4xx från Gemini blir 502 utan Googles feltext', async () => {
+    // Testets Gemini svarar 403 "no key" på fel nyckel; texten får inte nå klienten.
+    await expect(readLabel('data:image/jpeg;base64,AAAA', 'fel-nyckel')).rejects.toMatchObject({ status: 502, message: 'gemini answered 403' })
   })
 })

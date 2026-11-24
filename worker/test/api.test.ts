@@ -196,6 +196,15 @@ describe('nattjobbets köer (OWASP 2026-10-16)', () => {
     expect((row?.price_checked_at ?? '') > '2026-01-01').toBe(true)
   })
 
+  it('hushållen turas om: 50 aldrig kollade rader i ett hushåll tar inte nattens tak från ett annat (OWASP 2026-11-24)', async () => {
+    const other = await env.DB.prepare("INSERT INTO household (name, invite_code) VALUES ('Andra', 'turas-om-1') RETURNING id").first<number>('id')
+    await env.DB.prepare("WITH RECURSIVE n(i) AS (SELECT 1 UNION ALL SELECT i + 1 FROM n WHERE i < 50) INSERT INTO drink (household_id, kind, name, source_kind, source_id) SELECT ?, 'spirit', 'x' || i, 'systembolaget', CAST(100000 + i AS TEXT) FROM n").bind(other).run()
+    const mine = await env.DB.prepare("INSERT INTO drink (household_id, kind, name, source_kind, source_id, price_checked_at) VALUES (1, 'spirit', 'min', 'systembolaget', '7562401', '2020-01-01T00:00:00.000Z') RETURNING id").first<number>('id')
+    await refreshAll(env.DB, { kind: 'service' })
+    expect(await env.DB.prepare('SELECT price_current AS p FROM drink WHERE id = ?').bind(mine).first<number>('p')).toBe(164)
+    await env.DB.batch([env.DB.prepare('DELETE FROM drink WHERE household_id = ?').bind(other), env.DB.prepare('DELETE FROM household WHERE id = ?').bind(other)])
+  })
+
   it('en rad vars produktsida svarar 5xx och som spegeln inte känner stämplas ändå, så den inte står kvar äldst först varje natt', async () => {
     // 555001 svarar 503 i testets utgående tjänst och finns inte i dumpfixturen; spegeln är tom i detta test.
     const broken = await env.DB.prepare("INSERT INTO drink (household_id, kind, name, source_kind, source_id, price_checked_at) VALUES (1, 'spirit', 'Nere', 'systembolaget', '555001', '2020-01-01T00:00:00.000Z') RETURNING id").first<number>('id')

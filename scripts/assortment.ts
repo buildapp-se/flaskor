@@ -43,12 +43,18 @@ const dump = await retry(async () => {
   if (!response.ok) throw new TransientError(`dumpen svarade ${response.status}`)
   return (await response.json()) as Record<string, unknown>[]
 })
-if (!Array.isArray(dump) || dump.length < 10_000) throw new Error(`dumpen bar ${Array.isArray(dump) ? dump.length : 'inga'} rader, förväntade tiotusentals`)
+// Dumpen kommer från en tredje part utan signatur (OWASP 2026-11-24, A08): en uppblåst eller omskriven dump får inte
+// tömma D1:s skrivkvot, som hela Cloudflare-kontot delar (Sipdeck med). Normalt ~27 000 rader och några tiotal ändrade.
+const DUMP_MAX = 60_000
+/** 10 % av dygnets 100 000 skrivna rader. En större verklig ändring hinner ändå i kapp: nästa natt kostar det redan skrivna inget. */
+const CHANGED_MAX = 10_000
+if (!Array.isArray(dump) || dump.length < 10_000 || dump.length > DUMP_MAX) throw new Error(`dumpen bar ${Array.isArray(dump) ? dump.length : 'inga'} rader, förväntade tiotusentals`)
 
 const run = new Date().toISOString()
 let changed = 0
 for (let i = 0; i < dump.length; i += CHUNK_ROWS) {
   changed += (await post({ run, rows: dump.slice(i, i + CHUNK_ROWS).map(slim) })).upserted
+  if (changed > CHANGED_MAX) throw new Error(`${changed} ändrade rader efter ${i + CHUNK_ROWS} av ${dump.length}: stoppat vid taket ${CHANGED_MAX}, resten tas nästa körning`)
 }
 const numbers = dump.map((r) => String(r['productNumber']))
 const { rows, removed } = await post({ run, done: true, numbers })

@@ -176,7 +176,11 @@ export async function readLabel(image: string, apiKey: string): Promise<LabelGue
       last = new TransientError(`gemini ${model} answered ${response.status}`)
       continue
     }
-    if (!response.ok) throw new FatalError(`gemini answered ${response.status}: ${(await response.text()).slice(0, 200)}`, 502)
+    if (!response.ok) {
+      // Googles feltext loggas men ekas inte till klienten (OWASP 2026-11-24): den kan beskriva nyckeln eller kvoten.
+      console.error(`gemini ${model} answered ${response.status}`, (await response.text()).slice(0, 500))
+      throw new FatalError(`gemini answered ${response.status}`, 502)
+    }
     const text = ((await response.json()) as GeminiBody).candidates?.[0]?.content?.parts?.[0]?.text
     if (!text) throw new FatalError('gemini gave no text', 502)
     return parseGuess(text)

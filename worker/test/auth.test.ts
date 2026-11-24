@@ -1,7 +1,7 @@
 import { SELF, env } from 'cloudflare:test'
 import { importJWK, SignJWT } from 'jose'
 import { describe, expect, it } from 'vitest'
-import { householdOf } from '../src/household.ts'
+import { householdOf, joinHousehold } from '../src/household.ts'
 
 // Inloggningen (beslut 2, 2026-09-15): riktiga RS256-token signerade med testnyckeln, verifierade av Workern mot
 // "Googles" nyckeladress som testmiljön besvarar med den publika halvan. Se worker/vitest.config.ts.
@@ -209,6 +209,24 @@ describe('hushåll', () => {
     // Den som gick kan inte komma tillbaka med koden den kände till.
     expect((await (await b('GET', '/api/me')).json<Me>()).household.invite_code).not.toBe(before)
     expect((await gate('DELETE', '/api/me')).status).toBe(403)
+  })
+
+  it('en kod tar in en person även när två försöker samtidigt (OWASP 2026-11-24)', async () => {
+    // Direkt mot funktionen, så de två anropen flätas ihop vid varje await som två isolat kan göra i molnet.
+    const [owner, b, c] = ['race-a', 'race-b', 'race-c'].map((uid) => ({ kind: 'user' as const, uid: `${uid}-${crypto.randomUUID()}`, email: `${uid}@example.se` }))
+    const target = await householdOf(env.DB, owner!)
+    const code = (await env.DB.prepare('SELECT invite_code FROM household WHERE id = ?').bind(target).first<string>('invite_code'))!
+    const [hb, hc] = [await householdOf(env.DB, b!), await householdOf(env.DB, c!)]
+    const results = await Promise.allSettled([joinHousehold(env.DB, b!, hb, { code }), joinHousehold(env.DB, c!, hc, { code })])
+    expect(results.map((r) => r.status).sort()).toEqual(['fulfilled', 'rejected'])
+    expect(await env.DB.prepare('SELECT COUNT(*) AS n FROM member WHERE household_id = ?').bind(target).first<number>('n')).toBe(2)
+  })
+
+  it('läsningarna stryps också per konto (OWASP 2026-11-24)', async () => {
+    const a = await asUser()
+    const statuses: number[] = []
+    for (let i = 0; i < 62; i++) statuses.push((await a('GET', '/api/drinks')).status)
+    expect(statuses.at(-1)).toBe(429)
   })
 
   it('inbjudningskoden går inte att gissa i en loop (tio per minut)', async () => {

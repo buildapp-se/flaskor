@@ -117,12 +117,20 @@ export async function sendPasswordReset(email: string): Promise<void> {
 export async function signOutUser(): Promise<void> {
   const { auth, mod } = await firebase()
   await mod.signOut(auth)
+  forgetCellar()
+}
+
+function forgetCellar(): void {
   localStorage.removeItem('flaskor.drinks')
   localStorage.removeItem('flaskor.uid')
 }
 
-/** Tar bort Firebase-kontot. Kastar auth/requires-recent-login om inloggningen är gammal; då loggas man in igen och försöker på nytt. */
+/**
+ * Tar bort Firebase-kontot. Kastar auth/requires-recent-login om inloggningen är gammal; då loggas man in igen och försöker på nytt.
+ * Den cachade källaren rensas först (OWASP 2026-11-24): hushållet är redan raderat på servern när den här körs.
+ */
 export async function deleteFirebaseUser(): Promise<void> {
+  forgetCellar()
   const { auth, mod } = await firebase()
   if (auth.currentUser) await mod.deleteUser(auth.currentUser)
 }

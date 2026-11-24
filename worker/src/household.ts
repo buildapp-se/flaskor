@@ -48,18 +48,18 @@ export async function renameHousehold(db: D1Database, householdId: number, body:
 export async function joinHousehold(db: D1Database, who: Identity & { kind: 'user' }, current: number, body: unknown): Promise<void> {
   const code = typeof body === 'object' && body !== null ? (body as { code?: unknown }).code : undefined
   if (typeof code !== 'string' || code.trim() === '') throw new FatalError('code is required')
-  const target = await db.prepare('SELECT id FROM household WHERE invite_code = ?').bind(code.trim().toLowerCase()).first<number>('id')
+  const given = code.trim().toLowerCase()
+  const target = await db.prepare('SELECT id FROM household WHERE invite_code = ?').bind(given).first<number>('id')
   if (target === null) throw new NotFoundError('no household with that code')
   if (target === current) return
   const rows = await db.prepare('SELECT COUNT(*) AS n FROM drink WHERE household_id = ?').bind(current).first<number>('n')
   if (rows !== null && rows > 0) throw new FatalError('current household has drinks', 409)
-  // Sipdeck-kopplingar medlemmen gett gällde det gamla hushållet (ADR 0001): de följer inte med till det nya.
   // Koden byts när den använts (OWASP 2026-10-16, A01): en kod som läckt eller delats en gång gäller inte för evigt.
-  await db.batch([
-    db.prepare('UPDATE member SET household_id = ? WHERE uid = ?').bind(target, who.uid),
-    rotateInvite(db, target),
-    ...dropGrants(db, who.uid),
-  ])
+  // Bytet är villkorat på den gamla koden (OWASP 2026-11-24): av två samtidiga inträden med samma kod vinner ett.
+  const claimed = await db.prepare('UPDATE household SET invite_code = ? WHERE id = ? AND invite_code = ? RETURNING id').bind(newInviteCode(), target, given).first<number>('id')
+  if (claimed === null) throw new NotFoundError('no household with that code')
+  // Sipdeck-kopplingar medlemmen gett gällde det gamla hushållet (ADR 0001): de följer inte med till det nya.
+  await db.batch([db.prepare('UPDATE member SET household_id = ? WHERE uid = ?').bind(target, who.uid), ...dropGrants(db, who.uid)])
   await afterLeaving(db, current)
 }
 

@@ -197,7 +197,7 @@ Verifierat 2026-09-05, detaljer i [docs/RESEARCH.md](docs/RESEARCH.md):
 
 ## Audits
 Read by the cockpit Audits tab. One `- Label: YYYY-MM-DD, result` per check; conventions in elwyn-dash `docs/security.md`.
-- OWASP Top 10: 2026-10-30, pass, code review (Mistral Large; Claude read only the verdict line, lows unread), no live probe; 0 high, 0 medium reported
+- OWASP Top 10: 2026-11-24, warn, code review (Gemini 4 Neon High, every finding checked by Claude), no live probe; 0 high, 1 medium open (daily read budget per account, BACKLOG §OWASP review, 2026-11-24); earlier 2026-10-30, pass, Mistral Large, 0 high, 0 medium reported
 - Headers: 2026-09-16, pass, 6 of 6 on buildapp.se via a host-scoped Transform Rule on the zone, measured after the change
 - TLS: 2026-09-16, pass, SSL Labs A+ on buildapp.se, TLS 1.2 minimum and HSTS since today
 - Lighthouse: 2026-09-16, warn, a11y 98 (main landmark added to the gate 2026-09-16, not remeasured), best practices 100, SEO 60 by design (noindex) (mobile, no perf)

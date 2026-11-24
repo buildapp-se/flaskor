@@ -92,6 +92,7 @@ async function route(request: Request, env: GateEnv): Promise<unknown> {
       return redeemCode(env.DB, sipdeck, await readJson(request))
     }
     if (method === 'DELETE' && path === '/api/sipdeck/link') {
+      await limit(env.LOOKUP_LIMIT)
       await unlinkSelf(env.DB, sipdeck)
       return null
     }
@@ -104,12 +105,11 @@ async function route(request: Request, env: GateEnv): Promise<unknown> {
     if (who.kind !== 'user') throw new FatalError('requires a signed-in account', 403)
     return who
   }
-  // Allt som skriver stryps per konto och räknas mot ett dagstak (OWASP 2026-10-16, A04): D1:s skrivkvot delas av hela
-  // Cloudflare-kontot, Sipdeck med, och 60 anrop i minuten räcker ensamt till att tömma den på ett dygn.
-  if (method !== 'GET') {
-    await throttle(env.LOOKUP_LIMIT, who)
-    if (who.kind === 'user') await countWrite(env.DB, who.uid, path === '/api/drinks/import' ? IMPORT_WEIGHT_MAX : 1)
-  }
+  // Varje anrop stryps per konto (OWASP 2026-11-24, A04), läsningarna också: en export av ett fullt hushåll läser
+  // tusentals rader, och D1:s läskvot delas av hela Cloudflare-kontot, Sipdeck med. Allt som skriver räknas dessutom
+  // mot ett dagstak (OWASP 2026-10-16): 60 anrop i minuten räcker ensamt till att tömma skrivkvoten på ett dygn.
+  await throttle(env.LOOKUP_LIMIT, who)
+  if (method !== 'GET' && who.kind === 'user') await countWrite(env.DB, who.uid, path === '/api/drinks/import' ? IMPORT_WEIGHT_MAX : 1)
 
   if (method === 'GET' && path === '/api/ping') return null
   if (method === 'GET' && path === '/api/me') return getAccount(env.DB, who, hh)
@@ -184,10 +184,7 @@ async function route(request: Request, env: GateEnv): Promise<unknown> {
     return null
   }
 
-  // Allt nedan hämtar från Systembolaget, Vivino eller Caviste åt användaren: ett tak per konto (Rate Limiting-bindningen).
-  // Det som inte är GET räknades redan överst.
-  if (method === 'GET') await throttle(env.LOOKUP_LIMIT, who)
-
+  // Allt nedan hämtar från Systembolaget, Vivino eller Caviste åt användaren; taket per konto räknades redan överst.
   const refresh = path.match(/^\/api\/drinks\/(\d+)\/refresh$/)
   if (refresh?.[1] && method === 'POST') return refreshDrink(env.DB, await getDrink(env.DB, hh, Number(refresh[1])))
 
@@ -472,11 +469,8 @@ export async function refreshAll(db: D1Database, _proof: { kind: 'service' }): P
   const byNumber = new Map<string, Drink[]>()
   // Bara riktiga artikelnummer, och äldst kontrollerade först: en rad som inte går att hämta ska inte ta nattens
   // tak varje natt för andra hushåll (OWASP 2026-10-16). En stämplad rad, även en utgången, hamnar sist nästa natt.
-  const oldestFirst = [...drinks].sort((a, b) => (a.price_checked_at ?? '').localeCompare(b.price_checked_at ?? ''))
-  for (const d of oldestFirst) {
-    if (d.source_kind !== 'systembolaget' || !d.source_id || !/^\d{1,12}$/.test(d.source_id)) continue
-    byNumber.set(d.source_id, [...(byNumber.get(d.source_id) ?? []), d])
-  }
+  const numbered = drinks.filter((d) => d.source_kind === 'systembolaget' && d.source_id && /^\d{1,12}$/.test(d.source_id))
+  for (const d of fairOrder(numbered, (r) => r.price_checked_at)) byNumber.set(d.source_id!, [...(byNumber.get(d.source_id!) ?? []), d])
   // Spegeln svarar för alla rader den känner, utan en enda produktsida; bara resten räknas mot taket (beslut 23).
   const useMirror = await isFresh(db)
   let refreshed = 0
@@ -514,7 +508,7 @@ export async function refreshAll(db: D1Database, _proof: { kind: 'service' }): P
   }
   // Vivino: viner utan betyg eller med betyg äldre än 30 dagar, ett tak per natt så resten tas nästa natt.
   let vivino = 0
-  const due = drinks.filter((d) => vivinoDue(d)).sort((a, b) => (a.vivino_checked_at ?? '').localeCompare(b.vivino_checked_at ?? ''))
+  const due = fairOrder(drinks.filter((d) => vivinoDue(d)), (r) => r.vivino_checked_at)
   // En rad som felar stämplas som kollad för nästan 30 dagar sedan: den prövas igen i morgon men efter de andra, så
   // tjugo trasiga länkar inte tar Vivino-taket varje natt (OWASP 2026-10-16).
   const retryStamp = new Date(Date.now() - (VIVINO_MAX_AGE_DAYS - 1) * 86_400_000).toISOString()
@@ -533,6 +527,24 @@ export async function refreshAll(db: D1Database, _proof: { kind: 'service' }): P
     }
   }
   return { refreshed, mirrored, failed, vivino, written }
+}
+
+/**
+ * Äldst kontrollerade först, men hushållen turas om (OWASP 2026-11-24): varje hushålls n:te rad går före alla
+ * hushålls (n+1):te. Kontrolldatumet går att skriva från klienten, så utan turordning kan ett konto med 50 aldrig
+ * kollade rader ta nattens tak från alla andra varje natt.
+ */
+function fairOrder(rows: Drink[], checkedAt: (d: Drink) => string | null): Drink[] {
+  const byAge = [...rows].sort((a, b) => (checkedAt(a) ?? '').localeCompare(checkedAt(b) ?? ''))
+  const seen = new Map<number, number>()
+  const turn = new Map<Drink, number>()
+  for (const d of byAge) {
+    const n = seen.get(d.household_id) ?? 0
+    turn.set(d, n)
+    seen.set(d.household_id, n + 1)
+  }
+  // sort är stabil: inom samma tur står raderna kvar äldst först.
+  return byAge.sort((a, b) => (turn.get(a) ?? 0) - (turn.get(b) ?? 0))
 }
 
 /** Så gammal får "Pris kollat" bli innan natten skriver raden bara för datumets skull. */

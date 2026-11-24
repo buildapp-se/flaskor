@@ -18,10 +18,14 @@ export function parseCavisteUrl(input: string): { number: string; url: string } 
   } catch {
     throw new FatalError('not a caviste link')
   }
-  if (url.protocol !== 'https:' || !/(^|\.)caviste\.se$/i.test(url.hostname)) throw new FatalError('not a caviste link')
+  // Bara de två värdnamnen, standardporten och sökvägen (OWASP 2026-11-24): routen är öppen utan konto, så den ska inte
+  // gå att använda för att nå andra underdomäner eller skicka godtyckliga frågor via Workern.
+  if (url.protocol !== 'https:' || !/^(www\.)?caviste\.se$/i.test(url.hostname) || url.port || url.username || url.password) {
+    throw new FatalError('not a caviste link')
+  }
   const nr = url.pathname.match(/\/cav0*(\d+)/i)?.[1]
   if (!nr) throw new FatalError('no cav number in caviste link')
-  return { number: nr, url: url.toString() }
+  return { number: nr, url: `https://${url.hostname}${url.pathname}` }
 }
 
 /** HTML-entiteter och taggar bort, blanktecken normaliserade. Cavistes text är full av &#8211; och &nbsp;. */
