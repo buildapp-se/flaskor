@@ -4,11 +4,16 @@ import { usePersisted } from './persist.ts'
 let state: unknown
 let initialized = false
 let memoized: { fn: unknown; deps: readonly unknown[] } | null = null
+let ref: { current: unknown } | null = null
+// Komponenten avmonteras innan React hinner köra uppdateringen (Import navigerar bort direkt efter sparningen).
+let unmounted = false
 
 function resetHookMount() {
   state = undefined
   initialized = false
   memoized = null
+  ref = null
+  unmounted = false
 }
 
 vi.mock('react', () => ({
@@ -18,10 +23,12 @@ vi.mock('react', () => ({
       initialized = true
     }
     const setValue = (updater: T | ((prev: T) => T)) => {
+      if (unmounted) return
       state = typeof updater === 'function' ? (updater as (prev: T) => T)(state as T) : updater
     }
     return [state as T, setValue]
   },
+  useRef: <T,>(init: T) => (ref ??= { current: init }),
   useCallback: <T extends (...args: never[]) => unknown>(fn: T, deps: readonly unknown[]) => {
     if (!memoized || deps.length !== memoized.deps.length || deps.some((d, i) => !Object.is(d, memoized!.deps[i]))) {
       memoized = { fn, deps }
@@ -90,6 +97,15 @@ describe('usePersisted', () => {
     resetHookMount()
     const [reloaded] = usePersisted('flaskor.test', INITIAL)
     expect(reloaded).toEqual({ query: 'barolo', sort: 'price', dueOnly: true })
+  })
+
+  it('sparar till localStorage även när komponenten avmonteras före Reacts uppdatering', () => {
+    // UX-audit 2026-11-24: Importera tömde utkastet och navigerade bort i samma tick, och utkastet låg kvar.
+    const [, update] = usePersisted('flaskor.test', INITIAL)
+    update({ query: 'barolo' })
+    unmounted = true
+    update({ dueOnly: true })
+    expect(JSON.parse(localStorage.getItem('flaskor.test')!)).toEqual({ query: 'barolo', sort: 'price', dueOnly: true })
   })
 
   it('uppdaterar state även om localStorage kastar vid skrivning', () => {

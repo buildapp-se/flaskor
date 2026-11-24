@@ -123,6 +123,7 @@ export async function signOutUser(): Promise<void> {
 function forgetCellar(): void {
   localStorage.removeItem('flaskor.drinks')
   localStorage.removeItem('flaskor.uid')
+  localStorage.removeItem('flaskor.importDraft')
 }
 
 /**

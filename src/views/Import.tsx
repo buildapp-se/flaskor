@@ -4,6 +4,7 @@ import { api } from '../api.ts'
 import { kr } from '../format.ts'
 import { navigate, PATHS } from '../hash.ts'
 import { parseImport, type ImportedRow } from '../importParse.ts'
+import { usePersisted } from '../persist.ts'
 import { useStore } from '../store.tsx'
 import { S } from '../strings.ts'
 import { Bottle } from './Add.tsx'
@@ -53,7 +54,10 @@ function toInput(row: Row): DrinkInput {
 
 export function Import() {
   const { add, remove, setUndo } = useStore()
-  const [text, setText] = useState('')
+  // Det inklistrade svaret överlever en omladdning (Zeigarnik, UX-audit 2026-11-24) och töms när importen sparats.
+  // Utloggningen tar bort nyckeln (`signOutUser`).
+  const [draft, setDraft] = usePersisted('flaskor.importDraft', { text: '' })
+  const text = draft.text
   const [rows, setRows] = useState<Row[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
@@ -126,6 +130,7 @@ export function Import() {
     }
     setSaving(null)
     if (created.length === 0) return
+    setDraft({ text: '' })
     const ids = created.map((d) => d.id)
     setUndo(S.import.done(ids.length), async () => {
       for (const id of ids) await remove(id)
@@ -157,7 +162,7 @@ export function Import() {
           </pre>
           <label className="fl-field">
             <span className="fl-label">{S.import.pasteLabel}</span>
-            <textarea className="fl-input fl-import__area" rows={8} value={text} onChange={(e) => setText(e.target.value)} placeholder={S.import.pastePlaceholder} />
+            <textarea className="fl-input fl-import__area" rows={8} value={text} onChange={(e) => setDraft({ text: e.target.value })} placeholder={S.import.pastePlaceholder} />
           </label>
           {error && <div className="fl-error">{error}</div>}
           <button className="fl-btn fl-btn--primary" type="button" disabled={text.trim() === ''} onClick={load}>
