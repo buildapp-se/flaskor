@@ -163,14 +163,94 @@ describe('caviste, kanterna', () => {
       return new Response('sidan')
     })
     expect(await fetchCaviste(URL)).toBe('sidan')
-    expect(seen[0]?.redirect).toBe('manual')
+    expect(seen[0]).toEqual({ headers: { 'user-agent': 'Mozilla/5.0 (compatible; flaskor/1.0; +https://buildapp.se/flaskor)', accept: 'text/html' }, redirect: 'manual' })
     vi.stubGlobal('fetch', async () => new Response('', { status: 404 }))
-    await expect(fetchCaviste(URL)).rejects.toBeInstanceOf(NotFoundError)
+    await expect(fetchCaviste(URL)).rejects.toThrow(new NotFoundError(`caviste page ${URL} not found`))
     vi.stubGlobal('fetch', async () => new Response('', { status: 301 }))
-    await expect(fetchCaviste(URL)).rejects.toBeInstanceOf(TransientError)
+    await expect(fetchCaviste(URL)).rejects.toThrow(new TransientError('caviste answered 301'))
     vi.stubGlobal('fetch', async () => {
       throw new Error('nät')
     })
-    await expect(fetchCaviste(URL)).rejects.toBeInstanceOf(TransientError)
+    await expect(fetchCaviste(URL)).rejects.toThrow(new TransientError('caviste unreachable: Error: nät'))
+  })
+})
+
+// Mutationstest 2026-11-24, andra varvet: varianter av sidans format som CAV0143 inte visar.
+describe('caviste, formatvarianter', () => {
+  const cell = (inner: string) => `<tr><td>${inner}</td></tr>`
+  const box = (...rows: string[]) => `<p>cav0007 innehåller ${rows.length} flaskor</p><tr><td>meny</td></tr><table>${rows.join('')}</table>`
+  const one = (row: string) => parseCavistePage(box(row), '7', URL)[0]!
+
+  it('länkar: bara https och de två värdnamnen, hela värdnamnet', () => {
+    expect(() => parseCavisteUrl('http://www.caviste.se/cav/cav0143/')).toThrow(/not a caviste/)
+    expect(() => parseCavisteUrl('https://caviste.se.example.com/cav/cav0143/')).toThrow(/not a caviste/)
+  })
+
+  it('text: <br> utan snedstreck, entitet mitt i ord, kanter trimmas', () => {
+    expect(text('  A<br>B<br />C&hellip;D  ')).toBe('A B C D')
+  })
+
+  it('rubrik: inga mellanslag runt bindestreck och kr, tvåsiffrigt antal, "6fl."', () => {
+    expect(parseHeading('12 flaskor Barolo–1250kr')).toEqual({ count: 12, vintage: null, name: 'Barolo', price: 1250 })
+    expect(parseHeading('6fl. Chablis - 300 kr').count).toBe(6)
+  })
+
+  it('rubrik som inte börjar med antalet, eller med [.pdf] mitt i, kastar med texten (högst 120 tecken)', () => {
+    expect(() => parseHeading('Rubrik 3 flaskor Barolo – 100 kr')).toThrow(/not understood: Rubrik 3 flaskor Barolo – 100 kr$/)
+    expect(() => parseHeading('Läs mer [.pdf]')).toThrow(/not understood: Läs mer$/)
+    expect(() => parseHeading('A [.pdf] B')).toThrow(/not understood: A \[\.pdf\] B$/)
+    expect(() => parseHeading('x'.repeat(200))).toThrow(new RegExp(`not understood: x{120}$`))
+  })
+
+  it('druvor: procent utan mellanslag eller med mellanslag före, sist i texten, alla ord som inte är druvor', () => {
+    expect(parseGrapes('60%syrah, 40 % grenache, 10% gamay')).toBe('syrah, grenache, gamay')
+    expect(parseGrapes('13% alcohol. 75% volym. 10% ny ek. 5% ek.')).toBeNull()
+  })
+
+  it('karaffering: utan mellanslag, tvåsiffrigt, två decimaler', () => {
+    expect(parseDecant('Karafferas:2 tim.')).toBe(2)
+    expect(parseDecant('Karafferas: 12 tim.')).toBe(12)
+    expect(parseDecant('Karafferas: 1,25 tim.')).toBe(1.25)
+  })
+
+  it('med <em>: bara texten före sista </em> är spec, resten är smaknoten', () => {
+    const w = one(cell('<h4 class="t">1 flaska Testvin – 200 kr</h4><p><em>Rött vin. AOC Bourgogne. 100% pinot noir. 13% alkohol.</em><br />Drick: 2030-2032. Passar till ost.</p>'))
+    expect(w).toMatchObject({ category: 'Rött vin', region: 'AOC Bourgogne', alcohol: 13, drink_from: null, drink_to: null, taste: 'Drick: 2030-2032. Passar till ost.', food: 'ost' })
+  })
+
+  it('utan <em> och utan avslutande </td>: rubriken räknas inte in i specen', () => {
+    const w = one('<tr><td><h4 class="t">1 flaska 2021 Testvin – 200 kr</h4>Rött vin. AOC Bourgogne. 12,25% alkohol. Drick:2030 - 2032. Serveringstemp: 16 C</tr>')
+    expect(w).toMatchObject({ name: 'Testvin', category: 'Rött vin', region: 'AOC Bourgogne', alcohol: 12.25, drink_from: 2030, drink_to: 2032, serve_temp: '16' })
+  })
+
+  it('fält som saknas blir null; typ och ursprung måste stå först och sist', () => {
+    const w = one(cell('<h4>1 flaska Testvin – 200 kr</h4>Vinlikör. Italien DOC.'))
+    expect(w).toMatchObject({ owned: false, availability: 'unknown', category: null, region: null, alcohol: null, drink_from: null, drink_to: null, serve_temp: null, image_url: null, grapes: null, decant_hours: null })
+  })
+
+  it('temperatur och alkohol i varianter', () => {
+    expect(one(cell('<h4>1 flaska X – 1 kr</h4>Rött vin. 13 % alkohol. Serveringstemp:16°C.'))).toMatchObject({ alcohol: 13, serve_temp: '16' })
+    expect(one(cell('<h4>1 flaska X – 1 kr</h4>Rött vin. 13%alkohol. Serveringstemp: 16° C.'))).toMatchObject({ alcohol: 13, serve_temp: '16' })
+  })
+
+  it('maten: bara sista meningen, utan punkt, trimmad; ingen "till" ger null', () => {
+    const food = (taste: string) => one(cell(`<h4>1 flaska X – 1 kr</h4><em>Rött vin.</em>${taste}`)).food
+    expect(food('Passar till ost. Gott.')).toBeNull()
+    expect(food('Passar till ost')).toBe('ost')
+    expect(food('Passar till ost .')).toBe('ost')
+    expect(food('Bara gott.')).toBeNull()
+  })
+
+  it('bilden: länken vinner över srcset, http går också, storlekssuffixet bort', () => {
+    const img = (inner: string) => one(cell(`${inner}<h4>1 flaska X – 1 kr</h4>Rött vin.`)).image_url
+    expect(img('<img srcset="https://www.caviste.se/wp-content/uploads/2022/01/CAV7-annan-300x900.jpg 300w"><a href="http://www.caviste.se/wp-content/uploads/2022/01/CAV7-flaska.jpg">bild</a>')).toBe(
+      'http://www.caviste.se/wp-content/uploads/2022/01/CAV7-flaska.jpg',
+    )
+    expect(img('<a href="http://www.caviste.se/wp-content/uploads/2022/01/CAV7-flaska-300x900.jpg">bild</a>')).toBe('http://www.caviste.se/wp-content/uploads/2022/01/CAV7-flaska.jpg')
+    expect(img('<img src="http://www.caviste.se/wp-content/uploads/2022/01/CAV7-b.jpg">')).toBe('http://www.caviste.se/wp-content/uploads/2022/01/CAV7-b.jpg')
+  })
+
+  it('en rad utan rubrik kastar som en oläslig rubrik', () => {
+    expect(() => parseCavistePage(box(cell('ingen rubrik')), '7', URL)).toThrow(/not understood: $/)
   })
 })
