@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs'
-import { describe, expect, it } from 'vitest'
-import { parseCavisteUrl, parseCavistePage, parseDecant, parseGrapes, parseHeading } from '../worker/src/caviste.ts'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { NotFoundError, TransientError } from '../shared/errors.ts'
+import { fetchCaviste, parseCavisteUrl, parseCavistePage, parseDecant, parseGrapes, parseHeading, text } from '../worker/src/caviste.ts'
 
 // Riktig produktsida hämtad 2026-09-09: CAV0143, tre viner från Colombera & Garella.
 const page = readFileSync('worker/test/fixtures/caviste-cav0143.html', 'utf8')
@@ -102,5 +103,74 @@ describe('hela sidan', () => {
 
   it('kastar när sidan inte har någon innehållstabell', () => {
     expect(() => parseCavistePage('<html><body>inget här</body></html>', '143', URL)).toThrow(/no bottle table/)
+  })
+})
+
+// Mutationstest 2026-11-24: grenarna som CAV0143 inte når.
+describe('caviste, kanterna', () => {
+  afterEach(() => vi.unstubAllGlobals())
+
+  it('text: taggar, radbrytningar, numeriska och namngivna entiteter, blanktecken', () => {
+    expect(text('<p>A<br/>B&nbsp;&amp;&quot;C&quot;&#8211;D &hellip;  E</p>')).toBe('A B &"C"–D E')
+  })
+
+  it('rubrik: utan årgång, "fl.", pris med tusentalsmellanrum, pris 0 blir null', () => {
+    expect(parseHeading('2 fl. Bourgogne Rouge - 1 250 kr')).toEqual({ count: 2, vintage: null, name: 'Bourgogne Rouge', price: 1250 })
+    expect(parseHeading('1 flaska 2019 Gratis — 0 kr').price).toBeNull()
+  })
+
+  it('druvor: "och" och "från" avslutar, alkohol och ek räknas inte, dubbletter bort', () => {
+    expect(parseGrapes('60% Syrah och 40% grenache från gamla stockar. 13,5% alkohol. 20% nya ek. 10% syrah.')).toBe('syrah, grenache')
+  })
+
+  it('karaffering med decimalkomma', () => {
+    expect(parseDecant('Karafferas: 1,5 tim.')).toBe(1.5)
+    expect(parseDecant('Karafferas: gärna.')).toBeNull()
+  })
+
+  it('en låda utan <em>: hela cellen är spec, ingen smaknot; okänd typ och ursprung blir null', () => {
+    const html = `<p>CAV0007 innehåller 1 flaskor</p><table><tr><td><img srcset="https://www.caviste.se/wp-content/uploads/2022/01/CAV0007-x-300x1116.jpg 300w"><h4>1 flaska 2021 Testvin – 200 kr</h4><p>Cider. Normandie. 100% äpple. 5,5% alkohol. Drick: 2022–2024. Serveringstemp: 8 - 10 °C.</p></td></tr></table>`
+    const [w] = parseCavistePage(html, '7', 'https://caviste.se/cav/cav0007/', new Date('2026-11-24T00:00:00Z'))
+    expect(w).toMatchObject({
+      name: 'Testvin',
+      count: 1,
+      vintage: 2021,
+      price_current: 200,
+      category: null,
+      region: null,
+      grapes: 'äpple',
+      alcohol: 5.5,
+      drink_from: 2022,
+      drink_to: 2024,
+      serve_temp: '8-10',
+      taste: null,
+      food: null,
+      image_url: 'https://www.caviste.se/wp-content/uploads/2022/01/CAV0007-x.jpg',
+      source_id: '7',
+      source_url: 'https://caviste.se/cav/cav0007/',
+      price_checked_at: '2026-11-24T00:00:00.000Z',
+    })
+  })
+
+  it('tabell utan rader kastar', () => {
+    expect(() => parseCavistePage('CAV0007 innehåller 2 flaskor<table></table>', '7', URL)).toThrow(/empty bottle table/)
+  })
+
+  it('fetchCaviste: följer inga omdirigeringar, 404 NotFound, annat fel Transient', async () => {
+    const seen: RequestInit[] = []
+    vi.stubGlobal('fetch', async (_url: string, init: RequestInit) => {
+      seen.push(init)
+      return new Response('sidan')
+    })
+    expect(await fetchCaviste(URL)).toBe('sidan')
+    expect(seen[0]?.redirect).toBe('manual')
+    vi.stubGlobal('fetch', async () => new Response('', { status: 404 }))
+    await expect(fetchCaviste(URL)).rejects.toBeInstanceOf(NotFoundError)
+    vi.stubGlobal('fetch', async () => new Response('', { status: 301 }))
+    await expect(fetchCaviste(URL)).rejects.toBeInstanceOf(TransientError)
+    vi.stubGlobal('fetch', async () => {
+      throw new Error('nät')
+    })
+    await expect(fetchCaviste(URL)).rejects.toBeInstanceOf(TransientError)
   })
 })

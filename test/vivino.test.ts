@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { findHit, parseVivinoUrl, parseWinePage, plausible, queryFor, refreshVivino, vivinoDue } from '../worker/src/vivino.ts'
+import { NotFoundError, TransientError } from '../shared/errors.ts'
+import { fetchWine, findHit, findVivino, parseVivinoUrl, parseWinePage, plausible, queryFor, refreshVivino, tokens, vivinoDue, vivinoPatch, vivinoToPreview } from '../worker/src/vivino.ts'
 
 const page = readFileSync('worker/test/fixtures/vivino-le-grappin.html', 'utf8')
 
@@ -89,5 +90,148 @@ describe('vivino-länk', () => {
       await refreshVivino({ name: 'Le Grappin Bourgogne', producer: null, vivino_url: null })
       expect(calls[0]).toContain('search_term=')
     })
+
+    it('ett tillfälligt fel på vinsidan kastas vidare; en oläsbar länk söker på namnet', async () => {
+      vi.stubGlobal('fetch', async () => new Response('', { status: 503 }))
+      await expect(refreshVivino({ name: 'x', producer: null, vivino_url: 'https://www.vivino.com/w/2379181' })).rejects.toBeInstanceOf(TransientError)
+      const calls: string[] = []
+      vi.stubGlobal('fetch', async (url: string) => {
+        calls.push(url)
+        return new Response(page)
+      })
+      vi.spyOn(console, 'error').mockImplementation(() => {})
+      const now = new Date('2026-11-24T12:00:00Z')
+      const patch = await refreshVivino({ name: 'Savigny-les-Beaune Rouge', producer: 'Le Grappin', vivino_url: 'https://example.com/w/1' }, now)
+      expect(calls).toEqual(['https://www.vivino.com/sv/explore?search_term=Le%20Grappin%20Savigny-les-Beaune%20Rouge'])
+      expect(patch).toEqual({ vivino_rating: 4.2, vivino_count: 774, vivino_url: 'https://www.vivino.com/w/1661808', vivino_checked_at: '2026-11-24T12:00:00.000Z' })
+    })
+
+    it('från den sparade länken stämplas hämtdatumet', async () => {
+      vi.stubGlobal('fetch', async () => new Response(wine))
+      const patch = await refreshVivino({ name: 'x', producer: null, vivino_url: 'https://www.vivino.com/w/2379181' }, new Date('2026-11-24T12:00:00Z'))
+      expect(patch.vivino_checked_at).toBe('2026-11-24T12:00:00.000Z')
+    })
+  })
+})
+
+// Mutationstest 2026-11-24: grenarna som fixturerna inte når.
+describe('vivino, kanterna', () => {
+  const wine = readFileSync('worker/test/fixtures/vivino-w-2379181.html', 'utf8')
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    vi.restoreAllMocks()
+  })
+
+  it('träff utan vin-id ger null', () => {
+    expect(findHit(page.replace('&quot;wine&quot;:{&quot;id&quot;:1661808}', ''))).toBeNull()
+  })
+
+  it('sökord: gemener utan diakriter, minst tre tecken, inga årtal', () => {
+    expect(tokens('Château Rosé ab 2019 12')).toEqual(['chateau', 'rose'])
+  })
+
+  it('rimlighet: exakt hälften räcker, under hälften inte', () => {
+    expect(plausible('alpha beta', 'Alpha')).toBe(true)
+    expect(plausible('alpha beta gamma', 'Alpha')).toBe(false)
+  })
+
+  it('producenten upprepas inte oavsett skiftläge', () => {
+    expect(queryFor({ name: 'le grappin beaune', producer: 'Le Grappin' })).toBe('le grappin beaune')
+  })
+
+  it('dags att hämta: exakt 30 dagar är inte för gammalt', () => {
+    const now = new Date('2026-09-06T00:00:00Z')
+    const base = { kind: 'wine', vivino_checked_at: '2026-08-07T00:00:00Z' } as Parameters<typeof vivinoDue>[0]
+    expect(vivinoDue(base, now)).toBe(false)
+    expect(vivinoDue({ ...base, vivino_checked_at: '2026-08-06T23:59:59Z' }, now)).toBe(true)
+  })
+
+  it('ingen träff ger tomma fält men hämtdatum', () => {
+    expect(vivinoPatch(null, new Date('2026-11-24T00:00:00Z'))).toEqual({ vivino_rating: null, vivino_count: null, vivino_url: null, vivino_checked_at: '2026-11-24T00:00:00.000Z' })
+  })
+
+  it('findVivino: svensk söksida, fel blir Transient, orimlig träff null', async () => {
+    const calls: string[] = []
+    vi.stubGlobal('fetch', async (url: string) => {
+      calls.push(url)
+      return new Response(page)
+    })
+    expect(await findVivino('Le Grappin Savigny')).toMatchObject({ rating: 4.2 })
+    expect(calls).toEqual(['https://www.vivino.com/sv/explore?search_term=Le%20Grappin%20Savigny'])
+    expect(await findVivino('Château Margaux')).toBeNull()
+    vi.stubGlobal('fetch', async () => new Response('', { status: 429 }))
+    await expect(findVivino('x')).rejects.toBeInstanceOf(TransientError)
+    vi.stubGlobal('fetch', async () => {
+      throw new Error('nät')
+    })
+    await expect(findVivino('x')).rejects.toBeInstanceOf(TransientError)
+  })
+
+  it('länken: underdomäner till vivino.com godtas, liknande värdar och dåliga årtal inte', () => {
+    expect(parseVivinoUrl(' https://m.vivino.com/w/12 ')).toEqual({ wineId: '12', year: null })
+    expect(() => parseVivinoUrl('https://notvivino.com/w/1')).toThrow(/not a vivino link/)
+    expect(() => parseVivinoUrl('https://www.vivino.com/wines/1')).toThrow(/no wine id/)
+    expect(parseVivinoUrl('https://www.vivino.com/w/1?year=20180').year).toBeNull()
+    expect(parseVivinoUrl('https://www.vivino.com/w/1?year=U.V.').year).toBeNull()
+  })
+
+  it('vinsida utan producent, okänd typ och land, nollbetyg, ingen bild eller mat', () => {
+    const html = '"wine":{"id":5,"name":"Bl\\u00e5 Druva","type_id":99,"region":{"id":1,"name":"","country":{"code":"xx","name":"Narnia"}},"statistics":{"status":"Normal","ratings_count":3,"ratings_average":0}}'
+    expect(parseWinePage(html, '5')).toEqual({
+      name: 'Blå Druva',
+      winery: null,
+      category: null,
+      region: null,
+      country: 'Narnia',
+      grapes: null,
+      alcohol: null,
+      image_url: null,
+      rating: null,
+      count: 3,
+      food: null,
+    })
+  })
+
+  it('vinsida: starkvin, absolut bildadress före vinet, samma region en gång', () => {
+    const html =
+      '"bottle_large":"https://img.example/b.png","wine":{"id":6,"name":"Porto","type_id":7,"region":{"id":1,"name":"Douro"},"winery":{"id":2,"name":"Quinta"},"region":{"id":1,"name":"Douro"}}'
+    expect(parseWinePage(html, '6')).toMatchObject({ name: 'Quinta Porto', category: 'Starkvin, söta viner', region: 'Douro', image_url: 'https://img.example/b.png', rating: null, count: null })
+  })
+
+  it('förhandsvisningen ur vinsidan: önskelistan, källa manual, årgång och länk', () => {
+    const v = vivinoToPreview(parseWinePage(wine, '2379181'), '2379181', 2018, new Date('2026-11-24T00:00:00Z'))
+    expect(v).toMatchObject({
+      kind: 'wine',
+      owned: false,
+      name: 'Colombera & Garella Cascina Cottignano Bramaterra',
+      producer: 'Colombera & Garella',
+      vintage: 2018,
+      category: 'Rött vin',
+      source_kind: 'manual',
+      availability: 'unknown',
+      count: 0,
+      vivino_rating: 3.9,
+      vivino_count: 1877,
+      vivino_url: 'https://www.vivino.com/w/2379181',
+      vivino_checked_at: '2026-11-24T00:00:00.000Z',
+    })
+  })
+
+  it('fetchWine: 404 NotFound, andra fel Transient, annars sidan', async () => {
+    vi.stubGlobal('fetch', async () => new Response('', { status: 404 }))
+    await expect(fetchWine('1')).rejects.toBeInstanceOf(NotFoundError)
+    vi.stubGlobal('fetch', async () => new Response('', { status: 500 }))
+    await expect(fetchWine('1')).rejects.toBeInstanceOf(TransientError)
+    vi.stubGlobal('fetch', async () => {
+      throw new Error('nät')
+    })
+    await expect(fetchWine('1')).rejects.toBeInstanceOf(TransientError)
+    const calls: string[] = []
+    vi.stubGlobal('fetch', async (url: string) => {
+      calls.push(url)
+      return new Response('sidan')
+    })
+    expect(await fetchWine('7')).toBe('sidan')
+    expect(calls).toEqual(['https://www.vivino.com/w/7'])
   })
 })
