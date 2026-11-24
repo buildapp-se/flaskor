@@ -10,8 +10,9 @@ Specifikation: [ADR 0001](docs/adr/0001-sipdeck-hemma.md). Byggt och live 2026-1
 - [x] `[P1]` (byggt 2026-10-06, `src/sipdeck.test.ts`, gästflödet kört i Chrome på 390 och 1 280 px) Kontextlänk till Sipdecks recept; integrationstester för flera flaskor, sista slut, hushållsbyte, raderat konto, två hushåll och fel projekt-token.
 - [x] `[P2]` (byggt 2026-10-06) Svensk inköpsväg: `#/lagg-till?q=` kör söket, produkten väljs före önskelistan.
 - [x] `[P1]` (2026-10-06) Migrering 0010 körd mot lokal D1 med riktiga rader, utrullnings- och återställningsplan i `HANDOFF.md`.
-- [ ] `[P1]` **Patrik:** godkänn utrullningen och kör den i ordningen i `HANDOFF.md`. Sedan ägar-QA med riktiga inloggningar (listan där).
-- [ ] `[P3]` Inköpshjälpens sökord är ingrediensens svenska namn. "Kaffelikör" ger noll träffar hos Systembolaget; användaren får skriva om frågan. Ett eget sökord per ingrediens (fältet `buy` i Sipdecks `drinks.json` läses redan) om det stör. Kandidat refuserad 2026-10-31: den tog bort diakriter ur användarens sökning, men bara Kahlúa är verifierat; å, ä och ö hos Systembolaget är inte provat och kan förstöra svenska sökningar.
+- [x] `[P1]` (utrullad 2026-10-06 kl. 17:38 till 18:20 på Patriks ja, steg och kontroller i `HANDOFF.md` §2026-10-06) **Patrik:** godkänn utrullningen och kör den i ordningen i `HANDOFF.md`.
+- [ ] `[P1]` **Patrik:** ägar-QA av Sipdeck-kopplingen med riktiga inloggningar, sju punkter i `HANDOFF.md` §Ägar-QA efter utrullning.
+- [x] `[P3]` (reproduceras inte 2026-11-24: live-sök via `flaskor-api.buildapp.se/api/search` gav 10 träffar på "Kaffelikör", 8 på både "Kahlúa" och "Kahlua", 10 på "Glögg", "Moët", "Smögen" och "Côtes du Rhône". Systembolagets sök tål nu diakriter och hittar ingrediensnamnet; ingen kodändring) Inköpshjälpens sökord är ingrediensens svenska namn. "Kaffelikör" ger noll träffar hos Systembolaget; användaren får skriva om frågan. Ett eget sökord per ingrediens (fältet `buy` i Sipdecks `drinks.json` läses redan) om det stör. Kandidat refuserad 2026-10-31: den tog bort diakriter ur användarens sökning, men bara Kahlúa är verifierat; å, ä och ö hos Systembolaget är inte provat och kan förstöra svenska sökningar.
 
 ## Byggt
 
@@ -215,7 +216,7 @@ Rättat 2026-10-16 på grenen `fix/owasp-2026-10-16`, varje skydd prövat med en
 
 - [ ] `[P3]` vitest 5: stannar på 4.1.12, eftersom `@cloudflare/vitest-pool-workers` 0.23.0 (senaste) kräver `vitest ^4.1.0`. Uppgradera när pool-workers stöder 5.
 - [ ] `[P3]` `overrides` i `package.json` pekar pool-workers wrangler och miniflare på samma versioner som roten (pool-workers 0.23 låser sårbara sharp och undici). Höj overriden när wrangler höjs, ta bort den när pool-workers själv låser en fixad miniflare. 2026-11-04: höjd till wrangler 4.153.0 och miniflare 5.20261023.0-beta, plus zod 4.6.7 (pool-workers låser 4.4.3, hög). 2026-11-17: roten höjd till wrangler 4.164.0, men overriden stannar på 4.153.0: miniflare 5.20261117.0-beta saknar `getNodeCompat`, som pool-workers 0.23 importerar, och `test:worker` startar inte.
-- [ ] `[P2]` `npm audit` 2026-11-17: 13 high och 2 moderate, alla i dev- och byggkedjan. De höga är en och samma advisory: picomatch <=4.0.7 (ReDoS) via vite, vitest, tinyglobby, @vitejs/plugin-react, pool-workers och vite-plugin-pwa; 4.0.7 är senaste versionen, ingen fix publicerad, och npm föreslår bara nedgraderingar. De måttliga: glob och minimatch under `workbox-build`. Kör `npm audit fix` igen när picomatch 4.0.8 finns.
+- [ ] `[P2]` `npm audit` 2026-11-17: 13 high och 2 moderate, alla i dev- och byggkedjan. De höga är en och samma advisory: picomatch <=4.0.7 (ReDoS) via vite, vitest, tinyglobby, @vitejs/plugin-react, pool-workers och vite-plugin-pwa; 4.0.7 är senaste versionen, ingen fix publicerad, och npm föreslår bara nedgraderingar. De måttliga: glob och minimatch under `workbox-build`. Kör `npm audit fix` igen när picomatch 4.0.8 finns. Kollat 2026-11-24: picomatch senast 4.0.7, pool-workers senast 0.23.0, oförändrat.
 
 ## Git history 2026-10-22
 
@@ -229,3 +230,7 @@ Unika tillagda rader i 154 commits granskade av Gemini 4 Argon (`tools/history-l
 - [x] `[P3]` (rättad 2026-11-04, PR #4) Detaljvyn med Ändra öppen saknade h1: rubriken står kvar ovanför formuläret.
 - [x] `[P3]` (rättad 2026-11-04, PR #4) Köpt-arket i Önskelistan: prisrutan gick utanför arket på 390 px.
 - [x] `[P3]` (rättad 2026-11-04, PR #4) Plus och minus i Köpt-arket och Barskåpet hade namnen "−" och "+".
+
+## Sweep 2026-11-24
+
+- [x] `[P2]` (rättad 2026-11-24, `7a9bc54`) En bildlänk som svarar 404 även efter bytet webp till png, eller en egen bildlänk som inte finns, visade en trasig bildruta i listan och detaljvyn. `Bottle` visar nu designens platshållare. Verifierat i Chromium mot byggd `dist` i gästläge på 390 px: tre rader (egen 404, Systembolags-webp som saknas, hel bild) gav en bild och två platshållare; samma kontroll före ändringen gav tre `<img>` varav två trasiga.

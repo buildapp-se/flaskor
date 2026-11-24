@@ -4,8 +4,10 @@ status: active
 currentGoal: "Sipdeck-kopplingen (ADR 0001) är live i båda apparna sedan 2026-10-06, ägar-QA återstår."
 nextAction: "Ägar-QA med riktiga inloggningar, sju punkter under rubriken 2026-10-06. Workern deployad 2026-11-03 med nattjobbets stämpling vid serverfel (`bef05ba`, version a4d5f029, `/health` 200); att nattjobbet inte fastnar syns först efter nästa körning."
 blockers: []
-reviewedAt: 2026-11-18
+reviewedAt: 2026-11-24
 ---
+**2026-11-24, backlogsweep (worktree `flaskor-sweep-1124`, gren `sweep/2026-11-24`, pushad till `main`).** Inga öppna P0 till P2 som en agent kan göra ensam: resten är ägar-QA, dagspris från fler källor (väntar på Patriks val av källa) och picomatch utan fix. Gjort: `Bottle` visar platshållaren när en bild svarar 404 även efter png-bytet (`7a9bc54`, BACKLOG §Sweep 2026-11-24; löser sidofyndet om 516 nedan i klienten). Inköpshjälpens P3 stängd: Systembolagets sök hittar nu "Kaffelikör" och tål diakriter (live-sök). Utrullnings-P1:an bockad, den var gjord 2026-10-06. Headers-raden (fail, CSP utan skriptbegränsning) går inte att rätta här: auditen läser HTTP-headern, som sätts av zonens Transform Rule för hela buildapp.se, inte av repot. `npm run check` (214 + 108 tester, torrdeploy) och `npm run build` gröna. Workern orörd.
+
 **2026-11-18, auditrader (aifabriken-sviten med `--write`).** Headers, npm audit, Secrets, Actions, Markup och WCAG som `(automated)`-rader i CONTEXT. Secrets föll först på tre fynd: mains historik är omskriven, så fingeravtrycken i `.gitleaksignore` pekade på gamla hashar (finns kvar på `feat/sipdeck-koppling`). Samma tre fynd tillagda med nya hashar plus arbetsträdets fingeravtryck för Firebase-nyckeln; sedan pass. Headers fail (CSP saknar skriptbegränsning, känt) och npm audit fail (13 high, 2 moderate, känt).
 
 **2026-11-17, uppdateringsrunda (pushad till `main`).** `npm audit fix` plus minor/patch (wrangler 4.164, vite 8.3.8, @vitejs/plugin-react 6.3, jose 6.2.17, @types/node 26.6.6). Audit 13 high/2 moderate före och efter: en picomatch-advisory utan fix (BACKLOG §Beroenden). vitest 5 väntar fortfarande på pool-workers. pool-workers-overriden stannar på wrangler 4.153.0, nyare miniflare bryter `test:worker`. `npm run check` (214 + 108 tester, worker dry-run) och build gröna. Workern är inte omdeployad.
