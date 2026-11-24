@@ -1830,9 +1830,14 @@ p {
   border-radius: var(--fl-r-md);
   box-shadow: var(--fl-shadow);
   font-size: 14px;
-  white-space: nowrap;
+}
+/* Texten bryts, knapparna inte: gästens påminnelse är längre än skärmen på 390 px (2026-11-24). */
+.fl-undo span {
+  min-width: 0;
 }
 .fl-undo button {
+  white-space: nowrap;
+  flex-shrink: 0;
   color: inherit;
   font-weight: 600;
   min-height: 32px;
