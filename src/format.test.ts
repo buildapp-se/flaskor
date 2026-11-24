@@ -60,6 +60,9 @@ describe('parseDecimal', () => {
     expect(parseDecimal('  ')).toBeNull()
     expect(() => parseDecimal('abc')).toThrow()
     expect(() => parseDecimal('1,2,3')).toThrow()
+    // Inget sifferfält i formulären kan vara negativt: -50 kr blev en negativ summa i Barskåpet (2026-11-24).
+    expect(() => parseDecimal('-50')).toThrow()
+    expect(parseDecimal('0')).toBe(0)
     expect(isDecimal('')).toBe(true)
     expect(isDecimal('12x')).toBe(false)
   })

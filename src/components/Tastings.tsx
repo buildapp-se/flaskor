@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { Drink, Tasting } from '../../shared/types.ts'
+import { LONG_TEXT_MAX } from '../../shared/sanitize.ts'
 import { dateShort } from '../format.ts'
 import { useStore } from '../store.tsx'
 import { S } from '../strings.ts'
@@ -112,7 +113,7 @@ export function Tastings({ drinkId }: { drinkId: number }) {
           </div>
           <label className="fl-field fl-tasting__wide">
             <span className="fl-label">{S.tasting.note}</span>
-            <textarea className="fl-input fl-edit__area" rows={2} value={note} onChange={(e) => setNote(e.target.value)} />
+            <textarea className="fl-input fl-edit__area" rows={2} maxLength={LONG_TEXT_MAX} value={note} onChange={(e) => setNote(e.target.value)} />
           </label>
           <div className="fl-sheet__actions">
             <button type="button" className="fl-btn fl-btn--secondary" onClick={() => setAdding(false)}>

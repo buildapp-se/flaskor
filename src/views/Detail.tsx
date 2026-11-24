@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { LONG_TEXT_MAX, TEXT_MAX, URL_MAX } from '../../shared/sanitize.ts'
 import type { Drink, DrinkPatch } from '../../shared/types.ts'
 import { windowState } from '../../shared/window.ts'
 import { Locked } from '../components/Locked.tsx'
@@ -270,6 +271,8 @@ const NUMBERS: ReadonlyArray<Field> = ['vintage', 'alcohol', 'volume', 'drink_fr
 const WINE_ONLY: ReadonlyArray<Field> = ['drink_from', 'drink_to', 'decant_hours', 'grapes', 'vintage', 'vivino_url']
 /** Vivino täcker vinets betyg, så det egna betygsfältet är bara till för sprit och öl. */
 const RATING_ONLY: ReadonlyArray<Field> = ['rating', 'rating_url']
+/** Samma tak som servern (shared/sanitize.ts): ett längre namn sparades av gästen men nekades kontot med 400. */
+const URLS: ReadonlyArray<Field> = ['rating_url', 'vivino_url', 'image_url']
 
 /** Formuläret med alla fält. Används av Ändra i detaljvyn och av "Skriv in själv" i Lägg till (då med egna knapptexter). */
 export function EditForm({ drink, onCancel, onSave, saveLabel = S.detail.save }: { drink: Drink; onCancel: () => void; onSave: (p: DrinkPatch) => void; saveLabel?: string }) {
@@ -333,9 +336,9 @@ export function EditForm({ drink, onCancel, onSave, saveLabel = S.detail.save }:
           <label key={f} className={TEXTAREAS.includes(f) ? 'fl-field fl-edit__wide' : 'fl-field'}>
             <span className="fl-label">{S.detail.fields[f]}</span>
             {TEXTAREAS.includes(f) ? (
-              <textarea className="fl-input fl-edit__area" rows={3} value={values[f]} onChange={(e) => setValues({ ...values, [f]: e.target.value })} />
+              <textarea className="fl-input fl-edit__area" rows={3} maxLength={LONG_TEXT_MAX} value={values[f]} onChange={(e) => setValues({ ...values, [f]: e.target.value })} />
             ) : (
-              <input className="fl-input" name={f} required={f === 'name'} inputMode={NUMBERS.includes(f) ? 'decimal' : undefined} value={values[f]} onChange={(e) => {
+              <input className="fl-input" name={f} required={f === 'name'} maxLength={URLS.includes(f) ? URL_MAX : TEXT_MAX} inputMode={NUMBERS.includes(f) ? 'decimal' : undefined} value={values[f]} onChange={(e) => {
                   e.target.setCustomValidity('')
                   setValues({ ...values, [f]: e.target.value })
                 }} />

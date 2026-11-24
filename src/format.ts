@@ -29,7 +29,8 @@ export function decimalText(value: number | null): string {
 export function parseDecimal(raw: string): number | null {
   const t = raw.replace(/[\s  ]/g, '').replace(/(kr|%)$/i, '')
   if (t === '') return null
-  if (!/^-?\d+([.,]\d+)?$/.test(t)) throw new FatalError(`not a number: ${raw}`)
+  // Inget minustecken: pris, årgång, volym, alkohol, fönster och betyg är aldrig negativa.
+  if (!/^\d+([.,]\d+)?$/.test(t)) throw new FatalError(`not a number: ${raw}`)
   return Number(t.replace(',', '.'))
 }
 
