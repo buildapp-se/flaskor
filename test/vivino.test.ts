@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { NotFoundError, TransientError } from '../shared/errors.ts'
+import { FatalError, NotFoundError, TransientError } from '../shared/errors.ts'
 import { fetchWine, findHit, findVivino, parseVivinoUrl, parseWinePage, plausible, queryFor, refreshVivino, tokens, vivinoDue, vivinoPatch, vivinoToPreview } from '../worker/src/vivino.ts'
 
 const page = readFileSync('worker/test/fixtures/vivino-le-grappin.html', 'utf8')
@@ -233,5 +233,66 @@ describe('vivino, kanterna', () => {
     })
     expect(await fetchWine('7')).toBe('sidan')
     expect(calls).toEqual(['https://www.vivino.com/w/7'])
+  })
+})
+
+// Mutationstest 2026-11-24, andra rundan: sökblockets gränser, saknade fält och vinsidans kanter.
+describe('vivino, gränserna', () => {
+  const enc = (s: string) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;')
+  const hit = (name: string) => `{"wine":{"id":42},"name":"${name}","wine_ratings_average":4.1,"wine_ratings_count":12}`
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    vi.restoreAllMocks()
+  })
+
+  it('träffens namn avkodas: apostrof och et-tecken', () => {
+    expect(findHit(`<p>${enc(`"matches":[${hit("D'Arenberg & Co")}]`)}</p>`)?.name).toBe("D'Arenberg & Co")
+  })
+
+  it('bara sökblocket läses: inget före listan, inget efter en tom lista', () => {
+    expect(findHit(enc(`"title":"x","name":"Sidans namn",`) + enc(`"matches":[${hit('Le Vin')}]`))?.name).toBe('Le Vin')
+    expect(findHit(enc(hit('Annat vin')) + enc('"matches":[]'))).toBeNull()
+    expect(findHit(enc('"matches":[]') + enc(`"recommended":[${hit('Annat vin')}]`))).toBeNull()
+  })
+
+  it('en träff utan namn, betyg eller antal ger null och kastar inte', () => {
+    const full = hit('Le Vin')
+    for (const cut of [',"name":"Le Vin"', ',"wine_ratings_average":4.1', ',"wine_ratings_count":12']) {
+      expect(findHit(enc(`"matches":[${full.replace(cut, '')}]`))).toBeNull()
+    }
+  })
+
+  it('sökord: tre tecken räcker, bara fyrsiffriga årtal stryks', () => {
+    expect(tokens('Vin 2019 12345 cuvee2019 2019abc')).toEqual(['vin', '12345', 'cuvee2019', '2019abc'])
+  })
+
+  it('länken: skräp och lånade värdnamn nekas, vivino.com utan www godtas', () => {
+    expect(() => parseVivinoUrl('inte en länk')).toThrow(FatalError)
+    expect(() => parseVivinoUrl('https://vivino.com.evil.example/w/1')).toThrow(/not a vivino link/)
+    expect(parseVivinoUrl('https://vivino.com/w/3')).toEqual({ wineId: '3', year: null })
+  })
+
+  it('vinsida: trasig escape behålls rå, bilden nära vinet, typ 24, tom region, flera druvor', () => {
+    expect(parseWinePage('"wine":{"id":8,"name":"Bad \\q"}', '8').name).toBe('Bad \\q')
+    const html =
+      '"bottle_large":"//far.example/a.png"' +
+      ' '.repeat(3100) +
+      '"wine":{"id":9,"name":"N","type_id":24,"region":{"id":1,"name":""},"winery":{"id":2,"name":"W"},"region":{"id":3,"name":"Piemonte"},' +
+      '"grapes":[{"id":1,"name":"Syrah"},{"id":2,"name":"Grenache"}],"bottle_large":"//near.example/b.png"}'
+    expect(parseWinePage(html, '9')).toMatchObject({
+      category: 'Starkvin, söta viner',
+      region: 'Piemonte',
+      grapes: 'Syrah, Grenache',
+      image_url: 'https://near.example/b.png',
+    })
+  })
+
+  it('refreshVivino: utan sparad länk inget fellogg; tillfälligt fel kastas även när söket skulle svara', async () => {
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {})
+    vi.stubGlobal('fetch', async () => new Response(page))
+    await refreshVivino({ name: 'Le Grappin Savigny', producer: null, vivino_url: null })
+    expect(log).not.toHaveBeenCalled()
+    vi.stubGlobal('fetch', async (url: string) => (url.includes('/w/') ? new Response('', { status: 503 }) : new Response(page)))
+    await expect(refreshVivino({ name: 'Le Grappin Savigny', producer: null, vivino_url: 'https://www.vivino.com/w/2379181' })).rejects.toBeInstanceOf(TransientError)
   })
 })
