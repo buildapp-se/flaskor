@@ -1,3 +1,4 @@
+import { FatalError } from '../shared/errors.ts'
 import type { Drink } from '../shared/types.ts'
 import { S } from './strings.ts'
 
@@ -14,6 +15,32 @@ export function kr(amount: number): string {
 /** "12,5 %": decimalkomma, hårt mellanslag före procenttecknet. */
 export function pct(value: number): string {
   return `${String(value).replace('.', ',')}${NBSP}%`
+}
+
+/** "13,5" i ett inmatningsfält: decimalkomma, så det som visas går att skicka tillbaka oförändrat. */
+export function decimalText(value: number | null): string {
+  return value === null ? '' : String(value).replace('.', ',')
+}
+
+/**
+ * Ett tal som det skrivs i svensk form: "1 299", "129,90", "149 kr", "13,5 %". Tomt ger null (inget värde);
+ * allt annat som inte är ett tal kastar, så en felskrivning aldrig tyst blir tomt eller NaN.
+ */
+export function parseDecimal(raw: string): number | null {
+  const t = raw.replace(/[\s  ]/g, '').replace(/(kr|%)$/i, '')
+  if (t === '') return null
+  if (!/^-?\d+([.,]\d+)?$/.test(t)) throw new FatalError(`not a number: ${raw}`)
+  return Number(t.replace(',', '.'))
+}
+
+/** Sant när fältet är tomt eller ett tal som `parseDecimal` tar. */
+export function isDecimal(raw: string): boolean {
+  try {
+    parseDecimal(raw)
+    return true
+  } catch {
+    return false
+  }
 }
 
 /** "2025–2032", eller null när fönstret saknas. */

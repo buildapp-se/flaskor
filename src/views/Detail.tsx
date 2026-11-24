@@ -5,7 +5,7 @@ import { Locked } from '../components/Locked.tsx'
 import { Pill } from '../components/Pill.tsx'
 import { Stock } from '../components/Stock.tsx'
 import { Tastings } from '../components/Tastings.tsx'
-import { articleNo, availabilityText, dateShort, kr, pct, temp } from '../format.ts'
+import { articleNo, availabilityText, dateShort, decimalText, isDecimal, kr, parseDecimal, pct, temp } from '../format.ts'
 import { navigate, PATHS } from '../hash.ts'
 import { IconExternal, IconMinus, IconPlus } from '../icons.tsx'
 import { drinksLink } from '../sipdeck.ts'
@@ -281,17 +281,17 @@ export function EditForm({ drink, onCancel, onSave, saveLabel = S.detail.save }:
     region: drink.region ?? '',
     category: drink.category ?? '',
     grapes: drink.grapes ?? '',
-    alcohol: drink.alcohol?.toString() ?? '',
+    alcohol: decimalText(drink.alcohol),
     volume: drink.volume_ml?.toString() ?? '',
     drink_from: drink.drink_from?.toString() ?? '',
     drink_to: drink.drink_to?.toString() ?? '',
     serve_temp: drink.serve_temp ?? '',
     decant_hours: drink.decant_hours?.toString() ?? '',
     food: drink.food ?? '',
-    price_paid: drink.price_paid?.toString() ?? '',
+    price_paid: decimalText(drink.price_paid),
     note: drink.note ?? '',
     taste: drink.taste ?? '',
-    rating: drink.rating?.toString() ?? '',
+    rating: decimalText(drink.rating),
     rating_url: drink.rating_url ?? '',
     vivino_url: drink.vivino_url ?? '',
     image_url: drink.image_url ?? '',
@@ -299,12 +299,22 @@ export function EditForm({ drink, onCancel, onSave, saveLabel = S.detail.save }:
   const [values, setValues] = useState(initial)
   const fields = (Object.keys(S.detail.fields) as Field[]).filter((f) => (drink.kind === 'wine' || !WINE_ONLY.includes(f)) && (drink.kind !== 'wine' || !RATING_ONLY.includes(f)))
 
-  function submit() {
+  function submit(form: HTMLFormElement) {
+    // "1 299" blev NaN och sparades som tomt (2026-11-24): ett sifferfält som inte är ett tal stoppar nu sparningen.
+    const bad = fields.find((f) => NUMBERS.includes(f) && !isDecimal(values[f]))
+    if (bad) {
+      const input = form.elements.namedItem(bad)
+      if (input instanceof HTMLInputElement) {
+        input.setCustomValidity(S.badNumber)
+        input.reportValidity()
+      }
+      return
+    }
     const p: Record<string, unknown> = {}
     for (const f of fields) {
       const raw = values[f].trim()
       const key = f === 'volume' ? 'volume_ml' : f
-      p[key] = raw === '' ? null : NUMBERS.includes(f) ? Number(raw.replace(',', '.')) : raw
+      p[key] = raw === '' ? null : NUMBERS.includes(f) ? parseDecimal(raw) : raw
     }
     if (typeof p['name'] !== 'string') p['name'] = drink.name
     onSave(p as DrinkPatch)
@@ -315,7 +325,7 @@ export function EditForm({ drink, onCancel, onSave, saveLabel = S.detail.save }:
       className="fl-edit"
       onSubmit={(e) => {
         e.preventDefault()
-        submit()
+        submit(e.currentTarget)
       }}
     >
       <div className="fl-edit__grid">
@@ -325,7 +335,10 @@ export function EditForm({ drink, onCancel, onSave, saveLabel = S.detail.save }:
             {TEXTAREAS.includes(f) ? (
               <textarea className="fl-input fl-edit__area" rows={3} value={values[f]} onChange={(e) => setValues({ ...values, [f]: e.target.value })} />
             ) : (
-              <input className="fl-input" required={f === 'name'} inputMode={NUMBERS.includes(f) ? 'decimal' : undefined} value={values[f]} onChange={(e) => setValues({ ...values, [f]: e.target.value })} />
+              <input className="fl-input" name={f} required={f === 'name'} inputMode={NUMBERS.includes(f) ? 'decimal' : undefined} value={values[f]} onChange={(e) => {
+                  e.target.setCustomValidity('')
+                  setValues({ ...values, [f]: e.target.value })
+                }} />
             )}
           </label>
         ))}

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Drink, Kind, Stock } from '../../shared/types.ts'
-import { articleNo, availabilityText, kr } from '../format.ts'
+import { articleNo, availabilityText, decimalText, isDecimal, kr, parseDecimal } from '../format.ts'
 import { detailPath, navigate } from '../hash.ts'
 import { Rating } from '../components/Rating.tsx'
 import { Locked } from '../components/Locked.tsx'
@@ -266,8 +266,9 @@ function WishRow({ drink, stock, onBuy }: { drink: Drink; stock: Stock | null; o
 function BoughtSheet({ drink, onCancel, onConfirm }: { drink: Drink; onCancel: () => void; onConfirm: (count: number, price: number | null) => void }) {
   const ref = useRef<HTMLDialogElement>(null)
   const [count, setCount] = useState(1)
-  const [price, setPrice] = useState(drink.price_current === null ? '' : String(drink.price_current))
+  const [price, setPrice] = useState(decimalText(drink.price_current))
   const spirit = drink.kind === 'spirit'
+  const priceOk = isDecimal(price)
 
   useEffect(() => {
     ref.current?.showModal()
@@ -297,16 +298,21 @@ function BoughtSheet({ drink, onCancel, onConfirm }: { drink: Drink; onCancel: (
           <label className="fl-field">
             <span className="fl-label">{S.wishlist.sheet.price}</span>
             <div className="fl-money">
-              <input inputMode="decimal" value={price} onChange={(e) => setPrice(e.target.value)} />
+              <input inputMode="decimal" value={price} aria-invalid={!priceOk} aria-describedby={priceOk ? undefined : 'fl-bought-price'} onChange={(e) => setPrice(e.target.value)} />
               <span>{S.units.kr}</span>
             </div>
           </label>
         </div>
+        {!priceOk && (
+          <p id="fl-bought-price" className="fl-error">
+            {S.badNumber}
+          </p>
+        )}
         <div className="fl-sheet__actions">
           <button type="button" className="fl-btn fl-btn--secondary" onClick={onCancel}>
             {S.wishlist.sheet.cancel}
           </button>
-          <button type="button" className="fl-btn fl-btn--primary" onClick={() => onConfirm(count, price.trim() === '' ? null : Number(price.replace(',', '.')))}>
+          <button type="button" className="fl-btn fl-btn--primary" disabled={!priceOk} onClick={() => onConfirm(count, parseDecimal(price))}>
             {spirit ? S.wishlist.sheet.confirmBar : S.wishlist.sheet.confirmCellar}
           </button>
         </div>

@@ -261,6 +261,8 @@ export const S = {
     failed: 'Kunde inte läsa fotot. Försök igen, gärna med bättre ljus.',
     tooMany: 'Dagens fotokvot är slut. Skriv in flaskan själv, eller fota igen i morgon.',
   },
+  /** Ett sifferfält med något annat än ett tal i (Ändra, Köpt-arket). */
+  badNumber: 'Skriv ett tal, till exempel 1 299 eller 13,5.',
   detail: {
     serving: 'Servering',
     decant: 'Karaffering',

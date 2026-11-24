@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { kr, pct, temp, volume, yearRange, dateShort, articleNo, availabilityText } from './format.ts'
+import { kr, pct, temp, volume, yearRange, dateShort, articleNo, availabilityText, decimalText, isDecimal, parseDecimal } from './format.ts'
 
 // Hårt mellanslag (U+00A0) i belopp och enheter, så de aldrig radbryts.
 const N = '\u00a0'
@@ -44,5 +44,28 @@ describe('format', () => {
     expect(availabilityText({ availability: 'sold_out', sb_assortment: null })).toBe('Slutsåld')
     // Utgått står ensamt: sortimentet är inte längre sant.
     expect(availabilityText({ availability: 'discontinued', sb_assortment: 'FS' })).toBe('Utgått ur sortimentet')
+  })
+})
+
+describe('parseDecimal', () => {
+  it('läser tal som de skrivs på svenska', () => {
+    expect(parseDecimal('1 299')).toBe(1299)
+    expect(parseDecimal(`1${N}299`)).toBe(1299)
+    expect(parseDecimal('129,90')).toBe(129.9)
+    expect(parseDecimal('129.9')).toBe(129.9)
+    expect(parseDecimal(' 149 kr ')).toBe(149)
+    expect(parseDecimal('13,5 %')).toBe(13.5)
+  })
+  it('tomt är inget värde, felskrivning kastar i stället för NaN', () => {
+    expect(parseDecimal('  ')).toBeNull()
+    expect(() => parseDecimal('abc')).toThrow()
+    expect(() => parseDecimal('1,2,3')).toThrow()
+    expect(isDecimal('')).toBe(true)
+    expect(isDecimal('12x')).toBe(false)
+  })
+  it('decimalText skriver tillbaka med decimalkomma', () => {
+    expect(decimalText(13.5)).toBe('13,5')
+    expect(decimalText(null)).toBe('')
+    expect(parseDecimal(decimalText(129.9))).toBe(129.9)
   })
 })
