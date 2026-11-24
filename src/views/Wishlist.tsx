@@ -240,7 +240,7 @@ function WishRow({ drink, stock, onBuy }: { drink: Drink; stock: Stock | null; o
         </div>
         <div className="fl-wish__line">
           {price !== null && <span className="fl-wish__price">{kr(price)}</span>}
-          {price !== null && ' · '}
+          {price !== null && (source || number) && ' · '}
           {source}
           {source && number && ' · '}
           {number &&
@@ -266,7 +266,8 @@ function WishRow({ drink, stock, onBuy }: { drink: Drink; stock: Stock | null; o
 function BoughtSheet({ drink, onCancel, onConfirm }: { drink: Drink; onCancel: () => void; onConfirm: (count: number, price: number | null) => void }) {
   const ref = useRef<HTMLDialogElement>(null)
   const [count, setCount] = useState(1)
-  const [price, setPrice] = useState(decimalText(drink.price_current))
+  // Raden visar dagspriset, annars det inskrivna priset; arket förifyller samma, så en egen rads pris inte nollas vid Köpt.
+  const [price, setPrice] = useState(decimalText(drink.price_current ?? drink.price_paid))
   const spirit = drink.kind === 'spirit'
   const priceOk = isDecimal(price)
 
