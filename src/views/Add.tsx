@@ -411,10 +411,12 @@ function CandidateList({ candidates, disabled, onPick }: { candidates: Candidate
 /** Flaskfotot: Systembolagets frilagda bild, eller platshållaren ur designen när bild saknas. */
 export function Bottle({ url, size }: { url: string | null; size: 'sm' | 'md' | 'lg' | 'xl' }) {
   // Äldre produkter saknar webp på Systembolagets CDN (516 Bacardi Carta Blanca gav 404 2026-09-13) men har alltid png.
-  // Ett byte, sedan får bilden vara trasig: annars loopar onError när även png saknas.
+  // Ett byte; saknas även png (eller svarar en egen bildlänk 404) visas platshållaren i stället för en trasig ruta.
+  const [broken, setBroken] = useState<string | null>(null)
   const fallback = (e: SyntheticEvent<HTMLImageElement>) => {
     const img = e.currentTarget
     if (img.src.endsWith('_200.webp')) img.src = img.src.replace(/_200\.webp$/, '_200.png')
+    else setBroken(url)
   }
-  return url ? <img className={`fl-bottle fl-bottle--${size}`} src={url} alt="" loading="lazy" onError={fallback} /> : <div className={`fl-bottle fl-bottle--${size} fl-bottle--empty`} />
+  return url && broken !== url ? <img className={`fl-bottle fl-bottle--${size}`} src={url} alt="" loading="lazy" onError={fallback} /> : <div className={`fl-bottle fl-bottle--${size} fl-bottle--empty`} />
 }
