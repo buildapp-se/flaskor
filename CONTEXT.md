@@ -208,7 +208,8 @@ Read by the cockpit Audits tab. One `- Label: YYYY-MM-DD, result` per check; con
 - Secrets: 2026-10-22, pass, gitleaks 0 findings in 150 commits, 3 reviewed as public in .gitleaksignore
 - Git history: 2026-10-22, pass, 154 commits via aifabriken tools/history-lane.mjs (Gemini 4 Argon, verified by Claude); a household member's first name removed from 11 files and all history by rewrite 2026-10-22 (still reachable via GitHub PR refs); no secrets, phone numbers or private addresses; BACKLOG §Git history 2026-10-22
 - Actions: 2026-10-22, pass, zizmor 0 high, 0 medium, 0 low after pinning 7 actions to commit SHA (newer zizmor flags unpinned-uses as high)
-- WCAG 2.2 AA: 2026-11-04, pass, axe 4.10.3 0 violations on the built app (guest mode, stubbed data, 10 views at 390 and 1280 px; 3 rules fixed); keyboard reach to detail view fixed, no screen reader pass; earlier 2026-09-24 axe 4.13.0 0 on buildapp.se/flaskor
+- Speed: 2026-11-25, pass, live, 8 views in guest mode: 390 px 4x CPU Slow 4G LCP 1 608 to 1 836 ms (before 1 928 to 2 172), CLS max 0,0001 (before 0,237); 1440 px LCP 176 to 212 ms; hashed assets max-age=14400 (zone, BACKLOG §Fart 2026-11-25)
+- WCAG 2.2 AA: 2026-11-25, pass, axe 4.14.0 0 violations live on buildapp.se/flaskor (guest mode, stubbed data, 8 views at 390 and 1440 px), no screen reader pass; earlier 2026-11-04, axe 4.10.3 0 violations on the built app (guest mode, stubbed data, 10 views at 390 and 1280 px; 3 rules fixed); keyboard reach to detail view fixed, no screen reader pass; earlier 2026-09-24 axe 4.13.0 0 on buildapp.se/flaskor
 - OG image: 2026-10-25, pass, 1200x630 PNG, https://buildapp.se/flaskor/og-image.png
 - Database: 2026-10-25, CF D1
 - Dependabot: 2026-10-29, pass, 0 open alerts
