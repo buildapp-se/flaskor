@@ -24,9 +24,11 @@ export interface Store {
   error: string | null
   reload(): Promise<void>
   patch(id: number, patch: DrinkPatch): Promise<void>
+  /** Flera rader i en rendering: massåtgärderna. En per rad ritade om hela tabellen per rad (200 rader 11 s, scenariojakten 2026-11-25). */
+  patchMany(changes: Array<[number, DrinkPatch]>): Promise<void>
   add(input: DrinkInput): Promise<Drink>
   refresh(id: number): Promise<void>
-  remove(id: number): Promise<void>
+  remove(id: number | number[]): Promise<void>
   /** Texten på ångra-raden, eller null när det inte finns något att ångra. */
   undo: string | null
   setUndo(label: string, run: () => Promise<void>): void
@@ -149,6 +151,18 @@ export function StoreProvider({ onLocked, children, guest = false, onSignIn = ()
           await reload()
         }
       },
+      async patchMany(changes) {
+        const byId = new Map(changes)
+        mutate((list) => list.map((d) => (byId.has(d.id) ? { ...d, ...byId.get(d.id) } : d)))
+        try {
+          const rows = new Map<number, Drink>()
+          for (const [id, p] of changes) rows.set(id, await backend.patchDrink(id, p))
+          mutate((list) => list.map((d) => rows.get(d.id) ?? d))
+        } catch (err) {
+          fail(err)
+          await reload()
+        }
+      },
       async add(input) {
         const row = await backend.createDrink(input)
         replace(row)
@@ -163,11 +177,12 @@ export function StoreProvider({ onLocked, children, guest = false, onSignIn = ()
           fail(err)
         }
       },
-      async remove(id) {
-        // Raden försvinner direkt; misslyckas servern laddas listan om och raden kommer tillbaka.
-        mutate((list) => list.filter((d) => d.id !== id))
+      async remove(ids) {
+        // Raderna försvinner direkt; misslyckas servern laddas listan om och raderna kommer tillbaka.
+        const gone = new Set([ids].flat())
+        mutate((list) => list.filter((d) => !gone.has(d.id)))
         try {
-          await backend.deleteDrink(id)
+          for (const id of gone) await backend.deleteDrink(id)
         } catch (err) {
           fail(err)
           await reload()
@@ -207,19 +222,17 @@ export function useStore(): Store {
 
 /** Massåtgärder ur tabellen (BACKLOG 40), delade mellan Källaren och Barskåpet. Båda med ångra i tio minuter. */
 export function useBulkActions() {
-  const { patch, remove, setUndo, guest, backend } = useStore()
+  const { patchMany, remove, setUndo, guest, backend } = useStore()
   async function removeMany(rows: Drink[]) {
     const items = await restorable(rows, backend)
-    for (const d of rows) await remove(d.id)
+    await remove(rows.map((d) => d.id))
     setUndo(S.undo.removed(rows.length), async () => {
       await importItems(items, guest)
     })
   }
   async function rewishMany(rows: Drink[]) {
-    for (const d of rows) await patch(d.id, { owned: false, count: 0, open_level: null })
-    setUndo(S.undo.rewished(rows.length), async () => {
-      for (const d of rows) await patch(d.id, { owned: true, count: d.count, open_level: d.open_level })
-    })
+    await patchMany(rows.map((d) => [d.id, { owned: false, count: 0, open_level: null }]))
+    setUndo(S.undo.rewished(rows.length), () => patchMany(rows.map((d) => [d.id, { owned: true, count: d.count, open_level: d.open_level }])))
   }
   return { removeMany, rewishMany }
 }
