@@ -2001,3 +2001,13 @@ p {
 .fl-wish__stock--out {
   color: var(--fl-ink-2);
 }
+
+/* iOS Safari zoomar in sidan när ett fält under 16 px får fokus, och zoomen ligger kvar efteråt. På pekskärm får
+   alla fält därför 16 px; desktop behåller designens 13 och 15 px. !important eftersom fälten har egna klasser. */
+@media (pointer: coarse) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
