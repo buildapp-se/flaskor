@@ -140,6 +140,11 @@ function Shell() {
   useEffect(loadHousehold, [loadHousehold])
   // Detaljvyn hör till Källaren eller Barskåpet i navigeringen, importen till Lägg till.
   const active = route.view === 'detail' ? (drinks?.find((d) => d.id === route.id)?.kind === 'spirit' ? 'bar' : 'cellar') : route.view === 'import' ? 'add' : route.view
+  // Fliken och skärmläsarens sidbyte säger vilken vy som är öppen, inte bara "Flaskor" (2026-11-25).
+  const viewTitle = route.view === 'detail' ? drinks?.find((d) => d.id === route.id)?.name : route.view === 'import' ? S.import.title : S.nav[route.view]
+  useEffect(() => {
+    document.title = viewTitle ? `${viewTitle} · ${S.appName}` : S.appName
+  }, [viewTitle])
   const owned = drinks?.filter((d) => d.owned) ?? []
   const bottles = owned.reduce((sum, d) => sum + d.count, 0)
   const value = owned.reduce((sum, d) => sum + valueOf(d), 0)
