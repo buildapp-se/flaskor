@@ -217,6 +217,21 @@ export async function importItems(items: ImportItem[], guest: boolean, wait: (ms
   return items.length
 }
 
+/**
+ * Raderna som importItems tar dem, med loggen, så Ångra efter en massborttagning ger tillbaka allt (scenariojakten
+ * 2026-11-25: förut kom raderna tillbaka utan avsmakningar). Läses före borttagningen, loggen tas bort med raden.
+ * Mot kontot kapas loggen till det ett importanrop rymmer, annars nekar importItems hela ångringen.
+ */
+export async function restorable(rows: Drink[], backend: Backend): Promise<ImportItem[]> {
+  const cap = backend === localBackend ? Infinity : IMPORT_WEIGHT_MAX - 1
+  return Promise.all(
+    rows.map(async ({ id, household_id: _h, created_at: _c, updated_at: _u, last_drunk_on: _l, last_rating: _r, tasting_count, ...input }) => ({
+      ...input,
+      tastings: tasting_count > 0 ? (await backend.listTastings(id)).slice(0, cap).map(({ drunk_on, rating, note }) => ({ drunk_on, rating, note })) : [],
+    })),
+  )
+}
+
 /** Delar raderna i bitar där rader plus avsmakningar ryms i IMPORT_WEIGHT_MAX och kroppen i IMPORT_BYTES_MAX. Ordningen behålls. */
 export function chunkImport<T extends ImportItem>(items: T[]): T[][] {
   const chunks: T[][] = []

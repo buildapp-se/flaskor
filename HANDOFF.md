@@ -6,6 +6,8 @@ nextAction: "Ägar-QA med riktiga inloggningar, sju punkter under rubriken 2026-
 blockers: []
 reviewedAt: 2026-11-25
 ---
+**2026-11-25, scenariojakt (worktree `C:/dev/_wt/flaskor-1125c`, gren `scen/2026-11-25`).** Pågår. Flerstegsscenarier i gästläge mot lokal server (vecka komprimerad, två flikar, utgången session, hundratals rader, export och återimport, uppgradering från gårdagens sparade läge, breddbyte), sedan batch 8:s parkerade kodpunkter.
+
 **2026-11-25, fart och tillgänglighet (worktree `C:/dev/_wt/flaskor-1125s`, gren `speed/2026-11-25`).** Klar, pushad till `main` (`ca96d30`), Pages-körning 45523012399 grön. CLS på mobil Slow 4G högst 0,237 till 0,0001 (reservtypsnitt med webbtypsnittens mått, gästlistan direkt), LCP mobil cirka 2,0 till 1,7 s (Firebase-SDK:n förhämtad med SRI, `registerSW.js` med defer), OG-bilden ur förcachen, sidtitel per vy. axe 0 fel på åtta vyer i två bredder före och efter. Siffror och det som inte ändrades i BACKLOG §Fart och tillgänglighet 2026-11-25. `npm run check` (269 + 112 tester, torrdeploy) och `npm run build` gröna. Workern orörd.
 
 **2026-11-24, användarjakt 2 (worktree `C:/dev/_wt/flaskor-1124k`, gren `hunt2/2026-11-24`).** Klar. Gick det jakt 1 inte gick: tomlägen, inloggningskortet, Konto med export, rensning och import, massborttagning med Ångra, okänd flaska och okänd adress, andra besöket utan nät via service workern, och länkarna. Rättat: decimalkomma i karaffering och tusentalsmellanslag i Vivino-röster, CSV-källan på svenska, h1 på okänd flaska (BACKLOG §Användarjakt 2). `npm run check` (269 klienttester, 112 Worker-tester, torrdeploy) och `npm run build` gröna. Workern orörd.

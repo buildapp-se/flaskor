@@ -3,7 +3,7 @@ import { IMPORT_WEIGHT_MAX, type ImportItem } from '../shared/types.ts'
 import { api } from './api.ts'
 import { parseExport, toJson } from './export.ts'
 import { FatalError, TransientError } from '../shared/errors.ts'
-import { blankDrink, chunkImport, localBackend, clearLocal, importItems, localCount, localExport, localSaves, uploadLocal, ImportAbortedError, ImportTooLargeError } from './local.ts'
+import { blankDrink, chunkImport, localBackend, clearLocal, importItems, restorable, localCount, localExport, localSaves, uploadLocal, ImportAbortedError, ImportTooLargeError } from './local.ts'
 
 const { id: _i, household_id: _h, created_at: _c, updated_at: _u, last_drunk_on: _l, last_rating: _r, tasting_count: _t, ...base } = blankDrink('wine')
 const item = (name: string, tastings = 0): ImportItem => ({ ...base, name, tastings: Array.from({ length: tastings }, () => ({ drunk_on: '2026-09-01', rating: null, note: null })) })
@@ -48,6 +48,28 @@ describe('localBackend', () => {
       key: () => null
     } as any
     clearLocal()
+  })
+
+  // Scenariojakt 2026-11-25: Ångra efter massborttagning gav tillbaka raderna utan loggen.
+  it('restorable plus importItems ger tillbaka raden med loggen', async () => {
+    const row = await localBackend.createDrink({ ...base, name: 'Barolo', note: 'köp mer' })
+    await localBackend.addTasting(row.id, { drunk_on: '2026-11-01', rating: 4, note: 'fint' })
+    await localBackend.addTasting(row.id, { drunk_on: '2026-11-15', rating: 5, note: null })
+    const [listed] = await localBackend.listDrinks()
+    const items = await restorable([listed!], localBackend)
+    await localBackend.deleteDrink(row.id)
+    await importItems(items, true)
+    const [back] = await localBackend.listDrinks()
+    expect(back).toMatchObject({ name: 'Barolo', note: 'köp mer', tasting_count: 2, last_drunk_on: '2026-11-15', last_rating: 5 })
+  })
+
+  it('restorable kapar loggen mot kontot till det ett importanrop rymmer, och frågar inte rader utan logg', async () => {
+    const listTastings = vi.fn(async () => Array.from({ length: 50 }, (_, i) => ({ id: i, drink_id: 7, drunk_on: '2026-01-01', rating: null, note: null, created_at: '' })))
+    const rows = [{ ...blankDrink('wine'), id: 7, name: 'A', tasting_count: 50 }, { ...blankDrink('wine'), id: 8, name: 'B' }]
+    const [a, b] = await restorable(rows, { ...localBackend, listTastings })
+    expect(a!.tastings).toHaveLength(IMPORT_WEIGHT_MAX - 1)
+    expect(b!.tastings).toEqual([])
+    expect(listTastings).toHaveBeenCalledTimes(1)
   })
 
   it('kan skapa och spara en dryck med rätt tidsformat', async () => {

@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { UnauthorizedError } from '../shared/errors.ts'
 import type { Drink, DrinkInput, DrinkPatch } from '../shared/types.ts'
 import { api } from './api.ts'
-import { localBackend, localDrinks, localSaves, type Backend } from './local.ts'
+import { importItems, localBackend, localDrinks, localSaves, restorable, type Backend } from './local.ts'
 import { S } from './strings.ts'
 
 // Servern är sanningen, klienten cachar senaste hämtning (beslut 11). Skrivningar går direkt till Workern.
@@ -207,11 +207,12 @@ export function useStore(): Store {
 
 /** Massåtgärder ur tabellen (BACKLOG 40), delade mellan Källaren och Barskåpet. Båda med ångra i tio minuter. */
 export function useBulkActions() {
-  const { patch, remove, add, setUndo } = useStore()
+  const { patch, remove, setUndo, guest, backend } = useStore()
   async function removeMany(rows: Drink[]) {
+    const items = await restorable(rows, backend)
     for (const d of rows) await remove(d.id)
     setUndo(S.undo.removed(rows.length), async () => {
-      for (const { id: _id, household_id: _h, created_at: _c, updated_at: _u, ...input } of rows) await add(input)
+      await importItems(items, guest)
     })
   }
   async function rewishMany(rows: Drink[]) {
