@@ -97,7 +97,7 @@ describe('CSV för svensk Excel', () => {
     const row = csv.split('\r\n')[1]!
     const fields = row.split(';')
     expect(fields[22]).toBe('3')
-    expect(fields[23]).toBe('systembolaget')
+    expect(fields[23]).toBe('Systembolaget')
     expect(fields[24]).toBe('71234')
     expect(fields[25]).toBe('https://www.systembolaget.se/produkt/vin/71234/')
   })

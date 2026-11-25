@@ -26,7 +26,12 @@ export function Detail({ id }: { id: number }) {
   const [armed, setArmed] = useState(false)
   if (drinks === null) return <div className="fl-muted">{S.loading}</div>
   const drink = drinks.find((d) => d.id === id)
-  if (!drink) return <p className="fl-muted">{S.detail.notFound}</p>
+  if (!drink)
+    return (
+      <div className="fl-head">
+        <h1>{S.detail.notFound}</h1>
+      </div>
+    )
 
   const spirit = drink.kind === 'spirit'
   const wine = drink.kind === 'wine'
@@ -289,7 +294,7 @@ export function EditForm({ drink, onCancel, onSave, saveLabel = S.detail.save }:
     drink_from: drink.drink_from?.toString() ?? '',
     drink_to: drink.drink_to?.toString() ?? '',
     serve_temp: drink.serve_temp ?? '',
-    decant_hours: drink.decant_hours?.toString() ?? '',
+    decant_hours: decimalText(drink.decant_hours),
     food: drink.food ?? '',
     price_paid: decimalText(drink.price_paid),
     note: drink.note ?? '',

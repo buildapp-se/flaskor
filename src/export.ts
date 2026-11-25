@@ -31,7 +31,7 @@ const COLUMNS: ReadonlyArray<Column> = [
   ['Betyg', (d) => d.vivino_rating ?? d.rating],
   ['Senast drucken', (d) => d.last_drunk_on],
   ['Antal avsmakningar', (d) => d.tasting_count],
-  ['Källa', (d) => d.source_kind],
+  ['Källa', (d) => ({ systembolaget: 'Systembolaget', caviste: 'Caviste', manual: 'Egen' })[d.source_kind]],
   ['Artikelnummer', (d) => d.source_id],
   ['Länk', (d) => d.source_url],
 ]

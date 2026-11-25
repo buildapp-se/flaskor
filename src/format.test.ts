@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { kr, pct, temp, volume, yearRange, dateShort, articleNo, availabilityText, decimalText, isDecimal, parseDecimal } from './format.ts'
+import { S } from './strings.ts'
 
 // Hårt mellanslag (U+00A0) i belopp och enheter, så de aldrig radbryts.
 const N = '\u00a0'
@@ -70,5 +71,19 @@ describe('parseDecimal', () => {
     expect(decimalText(13.5)).toBe('13,5')
     expect(decimalText(null)).toBe('')
     expect(parseDecimal(decimalText(129.9))).toBe(129.9)
+  })
+})
+
+describe('karaffering', () => {
+  it('halva timmar med decimalkomma', () => {
+    expect(S.detail.decantHours(1.5)).toBe('1,5 timmar')
+    expect(S.detail.decantHours(1)).toBe('1 timme')
+  })
+})
+
+describe('Vivino-röster', () => {
+  it('tusentalsavgränsare i antalet röster', () => {
+    expect(S.detail.vivinoRated('4,2', 1200)).toBe('★ 4,2 på Vivino (1 200 röster)')
+    expect(S.rating.votes(12500)).toBe('Vivino, 12 500 röster')
   })
 })

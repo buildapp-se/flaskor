@@ -5,7 +5,7 @@ import { Highlight } from '../components/Highlight.tsx'
 import { Pill } from '../components/Pill.tsx'
 import { Rating } from '../components/Rating.tsx'
 import { LastDrunk } from '../components/Tastings.tsx'
-import { articleNo, kr, yearRange } from '../format.ts'
+import { articleNo, decimalText, kr, yearRange } from '../format.ts'
 import { detailPath, navigate } from '../hash.ts'
 import { IconArrow, IconMinus, IconPlus } from '../icons.tsx'
 import { usePersisted } from '../persist.ts'
@@ -57,7 +57,7 @@ const COLUMNS: ReadonlyArray<Column> = [
       ),
   },
   { key: 'serve_temp', numeric: true, render: (d) => d.serve_temp ?? '' },
-  { key: 'decant', numeric: true, render: (d) => d.decant_hours ?? '' },
+  { key: 'decant', numeric: true, render: (d) => decimalText(d.decant_hours) },
   { key: 'vivino', numeric: true, render: (d) => <Rating drink={d} count /> },
   { key: 'food', wide: true, render: (d, q) => text(d.food, q) },
   { key: 'open_level', render: (d) => (d.open_level === null ? '' : S.bar.level[d.open_level]) },

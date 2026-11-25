@@ -12,7 +12,7 @@ export function Rating({ drink, count = false }: { drink: Drink; count?: boolean
   return url ? (
     <a className="fl-rating" href={url} target="_blank" rel="noreferrer" title={title}>
       {text}
-      {count && vivino && drink.vivino_count !== null && <span className="fl-rating__count">({drink.vivino_count})</span>}
+      {count && vivino && drink.vivino_count !== null && <span className="fl-rating__count">({drink.vivino_count.toLocaleString('sv-SE')})</span>}
     </a>
   ) : (
     <span className="fl-rating" title={title}>
