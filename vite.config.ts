@@ -30,6 +30,11 @@ export default defineConfig({
         ],
       },
       workbox: {
+        // Nytt bygge tar över vid nästa öppning. Utan dessa väntade den nya workern tills varje flik och den installerade
+        // appen stängts helt (registerSW.js skickar inget SKIP_WAITING), så en app i bakgrunden stod kvar på gamla bygget
+        // (scenariojakten 2026-11-25). Sidan laddas inte om under användaren: bytet syns vid nästa navigering.
+        skipWaiting: true,
+        clientsClaim: true,
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
         // OG-bilden (74 kB) läses bara av länkförhandsvisningar, aldrig av appen: inte i varje installations förcache.
         globIgnores: ['og-image.png'],
