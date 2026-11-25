@@ -1,3 +1,12 @@
+/* Reservtypsnitt med webbtypsnittens mått (2026-11-25): medan Google Fonts laddar ritas texten lika bred, så bytet
+   flyttar inget (CLS på mobil Slow 4G 0,19 till 0,24 utan). size-adjust mätt i Chromium som breddkvoten mot en svensk
+   provtext, ascent och descent ur webbtypsnitten delade med samma kvot. ponytail: lokala Arial och Times New Roman finns
+   på Windows, macOS och iOS; Android saknar dem och faller till nästa namn i stacken som förut. */
+@font-face { font-family: 'Work Sans fallback'; src: local('Arial'); size-adjust: 110.5%; ascent-override: 84%; descent-override: 22%; line-gap-override: 0%; }
+@font-face { font-family: 'Work Sans fallback'; font-weight: 600 700; src: local('Arial Bold'); size-adjust: 103.5%; ascent-override: 90%; descent-override: 23%; line-gap-override: 0%; }
+@font-face { font-family: 'Instrument Serif fallback'; src: local('Times New Roman'); size-adjust: 82%; ascent-override: 121%; descent-override: 38%; line-gap-override: 0%; }
+@font-face { font-family: 'Instrument Serif fallback'; font-style: italic; src: local('Times New Roman Italic'); size-adjust: 86.6%; ascent-override: 114%; descent-override: 36%; line-gap-override: 0%; }
+
 :root {
   /* färg */
   --fl-bg: #EFE8DB;
@@ -14,8 +23,8 @@
   --fl-wait: #6E6455;     --fl-wait-tint: rgba(33,27,18,.06);
 
   /* typ */
-  --fl-font-serif: 'Instrument Serif', Georgia, serif;
-  --fl-font-sans: 'Work Sans', system-ui, sans-serif;
+  --fl-font-serif: 'Instrument Serif', 'Instrument Serif fallback', Georgia, serif;
+  --fl-font-sans: 'Work Sans', 'Work Sans fallback', system-ui, sans-serif;
   --fl-display: 400 40px/1.05 var(--fl-font-serif);
   --fl-title: 400 24px/1.15 var(--fl-font-serif);
   --fl-name: 400 18px/1.2 var(--fl-font-serif);

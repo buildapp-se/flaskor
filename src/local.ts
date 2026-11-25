@@ -58,10 +58,15 @@ function getLocal(data: LocalData, id: number): Drink {
   return drink
 }
 
+/** Gästens rader direkt, utan väntan: första renderingen visar listan i stället för "Laddar" (som gav layoutskiftet i detaljvyn). */
+export function localDrinks(): Drink[] {
+  const data = read()
+  return data.drinks.map((d) => withTastings(d, data.tastings))
+}
+
 export const localBackend = {
   async listDrinks(): Promise<Drink[]> {
-    const data = read()
-    return data.drinks.map((d) => withTastings(d, data.tastings))
+    return localDrinks()
   },
   async createDrink(input: DrinkInput): Promise<Drink> {
     const data = read()

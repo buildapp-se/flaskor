@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { UnauthorizedError } from '../shared/errors.ts'
 import type { Drink, DrinkInput, DrinkPatch } from '../shared/types.ts'
 import { api } from './api.ts'
-import { localBackend, localSaves, type Backend } from './local.ts'
+import { localBackend, localDrinks, localSaves, type Backend } from './local.ts'
 import { S } from './strings.ts'
 
 // Servern är sanningen, klienten cachar senaste hämtning (beslut 11). Skrivningar går direkt till Workern.
@@ -58,8 +58,8 @@ const remindAt = (saves: number) => saves === 1 || saves % 5 === 0
 
 export function StoreProvider({ onLocked, children, guest = false, onSignIn = () => {} }: { onLocked: () => void; children: ReactNode; guest?: boolean; onSignIn?: () => void }) {
   const backend: Backend = guest ? localBackend : api
-  // En gäst har ingen servercache: localStorage är källan.
-  const [drinks, setDrinks] = useState<Drink[] | null>(() => (guest ? null : readCache()))
+  // En gäst har ingen servercache: localStorage är källan, och den går att läsa direkt.
+  const [drinks, setDrinks] = useState<Drink[] | null>(() => (guest ? localDrinks() : readCache()))
   const [notice, setNotice] = useState<string | null>(null)
   useEffect(() => {
     if (notice === null) return
