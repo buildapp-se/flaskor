@@ -11,5 +11,9 @@ describe('SRI för Firebase-SDK:n', () => {
     const integrity = (JSON.parse(map ?? '{}') as { integrity?: Record<string, string> }).integrity ?? {}
     expect(modules).toHaveLength(2)
     for (const url of modules) expect(integrity[url], url).toMatch(/^sha384-[A-Za-z0-9+/]{64}$/)
+    // Förhämtningen (2026-11-25) måste peka på samma versioner med samma hash, annars laddas SDK:n två gånger eller nekas.
+    const preloads = [...readFileSync('index.html', 'utf8').matchAll(/<link rel="modulepreload" href="([^"]+)" integrity="([^"]+)"/g)].map((m) => [m[1], m[2]])
+    expect(preloads.map(([url]) => url).sort()).toEqual([...modules].sort())
+    for (const [url, hash] of preloads) expect(hash, url).toBe(integrity[url!])
   })
 })

@@ -26,6 +26,9 @@
         }
       }
     </script>
+    <!-- Hämta SDK:n parallellt med bundeln: appen väntar på Firebase innan något ritas (mobil Slow 4G, se BACKLOG §Fart 2026-11-25). Samma adresser och hashar som import-mappen; test/sri.test.ts håller dem lika. -->
+    <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js" integrity="sha384-RJIsoe0CFvPanuqLw3NPVreeQfBNBS6DotHoCTfrxasRhbZXK3oIK/kWJLO/hCaU" />
+    <link rel="modulepreload" href="https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js" integrity="sha384-AgtBGZZ/u/7uqnj2oxrSf5J+QuQXF4sEG1w/6PUzbyR3RIG7mkXR2z8Tpdeqay0t" />
   </head>
   <body>
     <div id="app"></div>

@@ -10,6 +10,8 @@ export default defineConfig({
     // Skrivningar kräver nät. autoUpdate: ingen "ladda om"-banner, inget pågående arbete att förlora.
     VitePWA({
       registerType: 'autoUpdate',
+      // registerSW.js med defer: annars blockerar den renderingen i <head> (2026-11-25).
+      injectRegister: 'script-defer',
       includeAssets: ['favicon.svg', 'icon.svg', 'apple-touch-icon.png'],
       manifest: {
         name: 'Flaskor',
@@ -29,6 +31,8 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
+        // OG-bilden (74 kB) läses bara av länkförhandsvisningar, aldrig av appen: inte i varje installations förcache.
+        globIgnores: ['og-image.png'],
         runtimeCaching: [
           { urlPattern: /^https:\/\/fonts\.googleapis\.com\//, handler: 'StaleWhileRevalidate', options: { cacheName: 'google-fonts-css' } },
           { urlPattern: /^https:\/\/fonts\.gstatic\.com\//, handler: 'CacheFirst', options: { cacheName: 'google-fonts', expiration: { maxEntries: 8, maxAgeSeconds: 60 * 60 * 24 * 365 } } },
