@@ -37,10 +37,9 @@ export default defineConfig({
         clientsClaim: true,
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
         // OG-bilden (74 kB) läses bara av länkförhandsvisningar, aldrig av appen: inte i varje installations förcache.
-        globIgnores: ['og-image.png'],
+        // Typsnittens latin-ext (å, ä, ö ligger i latin) behövs bara för t.ex. polska och tjeckiska namn: hämtas när de syns.
+        globIgnores: ['og-image.png', '**/*latin-ext*'],
         runtimeCaching: [
-          { urlPattern: /^https:\/\/fonts\.googleapis\.com\//, handler: 'StaleWhileRevalidate', options: { cacheName: 'google-fonts-css' } },
-          { urlPattern: /^https:\/\/fonts\.gstatic\.com\//, handler: 'CacheFirst', options: { cacheName: 'google-fonts', expiration: { maxEntries: 8, maxAgeSeconds: 60 * 60 * 24 * 365 } } },
           // Firebase-SDK:n (src/auth.ts) ligger på en versionsmärkt adress: utan den i cachen startar appen inte utan nät.
           { urlPattern: /^https:\/\/www\.gstatic\.com\/firebasejs\//, handler: 'CacheFirst', options: { cacheName: 'firebase-sdk', expiration: { maxEntries: 6, maxAgeSeconds: 60 * 60 * 24 * 365 } } },
           { urlPattern: /^https:\/\/product-cdn\.systembolaget\.se\//, handler: 'CacheFirst', options: { cacheName: 'bottle-images', expiration: { maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 90 } } },
